@@ -252,7 +252,10 @@ export default function PortfoliosPage() {
 
         {portfolios.map((portfolio) => (
           <TabsContent key={portfolio.portfolioId} value={portfolio.portfolioId} className="space-y-6">
-            <PortfolioTabs portfolio={portfolio} />
+            <PortfolioTabs 
+              portfolioId={portfolio.portfolioId} 
+              portfolioName={portfolio.name}
+            />
           </TabsContent>
         ))}
       </Tabs>

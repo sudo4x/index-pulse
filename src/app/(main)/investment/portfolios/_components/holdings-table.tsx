@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MoreVertical, Plus, History, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
   const [holdings, setHoldings] = useState<HoldingDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchHoldings = async () => {
     if (!portfolioId || portfolioId === "undefined") {
@@ -30,8 +31,10 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
     }
 
     setIsLoading(true);
+    
     try {
       const response = await fetch(`/api/holdings?portfolioId=${portfolioId}&includeHistorical=${showHistorical}`);
+      
       if (!response.ok) {
         throw new Error("获取持仓数据失败");
       }
@@ -53,9 +56,21 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
   };
 
   useEffect(() => {
-    if (portfolioId && portfolioId !== "undefined") {
-      fetchHoldings();
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
+
+    if (portfolioId && portfolioId !== "undefined") {
+      timeoutRef.current = setTimeout(() => {
+        fetchHoldings();
+      }, 50); // 50ms 防抖
+    }
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [portfolioId, showHistorical]);
 
   const formatCurrency = (value: number) => {
