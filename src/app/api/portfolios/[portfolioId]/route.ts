@@ -15,6 +15,15 @@ export async function GET(
 ) {
   try {
     const { portfolioId } = await params;
+    const portfolioIdInt = parseInt(portfolioId);
+    
+    if (isNaN(portfolioIdInt)) {
+      return NextResponse.json(
+        { error: "portfolioId 必须是有效的数字" },
+        { status: 400 }
+      );
+    }
+    
     const user = await getCurrentUser();
 
     if (!user) {
@@ -25,7 +34,7 @@ export async function GET(
       .select()
       .from(portfolios)
       .where(
-        and(eq(portfolios.id, portfolioId), eq(portfolios.userId, user.id))
+        and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id))
       )
       .limit(1);
 
@@ -56,6 +65,15 @@ export async function PUT(
 ) {
   try {
     const { portfolioId } = await params;
+    const portfolioIdInt = parseInt(portfolioId);
+    
+    if (isNaN(portfolioIdInt)) {
+      return NextResponse.json(
+        { error: "portfolioId 必须是有效的数字" },
+        { status: 400 }
+      );
+    }
+    
     const user = await getCurrentUser();
 
     if (!user) {
@@ -84,7 +102,7 @@ export async function PUT(
       .update(portfolios)
       .set(updateData)
       .where(
-        and(eq(portfolios.id, portfolioId), eq(portfolios.userId, user.id))
+        and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id))
       )
       .returning();
 
@@ -115,6 +133,15 @@ export async function DELETE(
 ) {
   try {
     const { portfolioId } = await params;
+    const portfolioIdInt = parseInt(portfolioId);
+    
+    if (isNaN(portfolioIdInt)) {
+      return NextResponse.json(
+        { error: "portfolioId 必须是有效的数字" },
+        { status: 400 }
+      );
+    }
+    
     const user = await getCurrentUser();
 
     if (!user) {
@@ -124,7 +151,7 @@ export async function DELETE(
     const deletedPortfolio = await db
       .delete(portfolios)
       .where(
-        and(eq(portfolios.id, portfolioId), eq(portfolios.userId, user.id))
+        and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id))
       )
       .returning();
 

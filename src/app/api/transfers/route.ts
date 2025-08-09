@@ -24,8 +24,15 @@ export async function GET(request: Request) {
       .where(eq(portfolios.userId, user.id));
 
     if (portfolioId) {
+      const portfolioIdInt = parseInt(portfolioId);
+      if (isNaN(portfolioIdInt)) {
+        return NextResponse.json(
+          { error: "portfolioId 必须是有效的数字" },
+          { status: 400 }
+        );
+      }
       query = query.where(
-        and(eq(portfolios.userId, user.id), eq(transfers.portfolioId, portfolioId))
+        and(eq(portfolios.userId, user.id), eq(transfers.portfolioId, portfolioIdInt))
       );
     }
 
@@ -70,7 +77,7 @@ export async function POST(request: Request) {
       .from(portfolios)
       .where(
         and(
-          eq(portfolios.id, transferData.portfolioId),
+          eq(portfolios.id, parseInt(transferData.portfolioId)),
           eq(portfolios.userId, user.id)
         )
       )

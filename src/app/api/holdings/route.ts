@@ -26,11 +26,19 @@ export async function GET(request: Request) {
     }
 
     // 验证组合所有权
+    const portfolioIdInt = parseInt(portfolioId);
+    if (isNaN(portfolioIdInt)) {
+      return NextResponse.json(
+        { error: "portfolioId 必须是有效的数字" },
+        { status: 400 }
+      );
+    }
+
     const portfolio = await db
       .select()
       .from(portfolios)
       .where(
-        and(eq(portfolios.id, portfolioId), eq(portfolios.userId, user.id))
+        and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id))
       )
       .limit(1);
 
@@ -45,13 +53,13 @@ export async function GET(request: Request) {
     const symbols = await db
       .selectDistinct({ symbol: transactions.symbol })
       .from(transactions)
-      .where(eq(transactions.portfolioId, portfolioId));
+      .where(eq(transactions.portfolioId, portfolioIdInt));
 
     // 计算每个股票的持仓信息
     const holdings = [];
     for (const { symbol } of symbols) {
       try {
-        const holding = await PortfolioCalculator.calculateHoldingStats(portfolioId, symbol);
+        const holding = await PortfolioCalculator.calculateHoldingStats(portfolioIdInt.toString(), symbol);
         if (holding && (includeHistorical || holding.isActive)) {
           holdings.push(holding);
         }

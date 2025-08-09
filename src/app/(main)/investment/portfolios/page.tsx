@@ -32,9 +32,14 @@ export default function PortfoliosPage() {
       const result = await response.json();
       
       if (result.success) {
-        setPortfolios(result.data);
-        if (result.data.length > 0 && !activePortfolioId) {
-          setActivePortfolioId(result.data[0].portfolioId);
+        // 将数据库字段 id 映射为 portfolioId
+        const mappedData = result.data.map((portfolio: any) => ({
+          ...portfolio,
+          portfolioId: portfolio.id.toString(),
+        }));
+        setPortfolios(mappedData);
+        if (mappedData.length > 0 && !activePortfolioId) {
+          setActivePortfolioId(mappedData[0].portfolioId);
         }
       }
     } catch (error) {
@@ -77,7 +82,7 @@ export default function PortfoliosPage() {
       
       if (result.success) {
         setPortfolios(prev => [...prev, {
-          portfolioId: result.data.id,
+          portfolioId: result.data.id.toString(),
           name: result.data.name,
           totalAssets: 0,
           marketValue: 0,
@@ -91,7 +96,7 @@ export default function PortfoliosPage() {
           dayFloatRate: 0,
         }]);
         
-        setActivePortfolioId(result.data.id);
+        setActivePortfolioId(result.data.id.toString());
         setNewPortfolioName("");
         setIsCreateDialogOpen(false);
         

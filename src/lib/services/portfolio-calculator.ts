@@ -12,13 +12,18 @@ export class PortfolioCalculator {
    * 计算单个品种的持仓信息
    */
   static async calculateHoldingStats(portfolioId: string, symbol: string): Promise<HoldingDetail | null> {
+    const portfolioIdInt = parseInt(portfolioId);
+    if (isNaN(portfolioIdInt)) {
+      throw new Error("portfolioId 必须是有效的数字");
+    }
+
     // 获取该品种的所有交易记录
     const holdingTransactions = await db
       .select()
       .from(transactions)
       .where(
         and(
-          eq(transactions.portfolioId, portfolioId),
+          eq(transactions.portfolioId, portfolioIdInt),
           eq(transactions.symbol, symbol)
         )
       )
@@ -137,11 +142,16 @@ export class PortfolioCalculator {
    * 计算组合概览信息
    */
   static async calculatePortfolioOverview(portfolioId: string): Promise<PortfolioOverview> {
+    const portfolioIdInt = parseInt(portfolioId);
+    if (isNaN(portfolioIdInt)) {
+      throw new Error("portfolioId 必须是有效的数字");
+    }
+
     // 获取所有持仓品种
     const holdingSymbols = await db
       .selectDistinct({ symbol: transactions.symbol })
       .from(transactions)
-      .where(eq(transactions.portfolioId, portfolioId));
+      .where(eq(transactions.portfolioId, portfolioIdInt));
 
     // 计算所有持仓的统计数据
     const holdingDetails: HoldingDetail[] = [];
@@ -156,7 +166,7 @@ export class PortfolioCalculator {
     const transferRecords = await db
       .select()
       .from(transfers)
-      .where(eq(transfers.portfolioId, portfolioId));
+      .where(eq(transfers.portfolioId, portfolioIdInt));
 
     let cash = 0;
     let principal = 0; // 本金（转入金额）
