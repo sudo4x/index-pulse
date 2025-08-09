@@ -25,6 +25,12 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
   const { toast } = useToast();
 
   const fetchTransfers = async () => {
+    if (!portfolioId || portfolioId === "undefined") {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const response = await fetch(`/api/transfers?portfolioId=${portfolioId}`);
       if (!response.ok) {
@@ -48,7 +54,9 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
   };
 
   useEffect(() => {
-    fetchTransfers();
+    if (portfolioId && portfolioId !== "undefined") {
+      fetchTransfers();
+    }
   }, [portfolioId]);
 
   const formatCurrency = (value: number) => {

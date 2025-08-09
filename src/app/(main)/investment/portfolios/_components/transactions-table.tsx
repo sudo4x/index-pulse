@@ -26,6 +26,12 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
   const { toast } = useToast();
 
   const fetchTransactions = async () => {
+    if (!portfolioId || portfolioId === "undefined") {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
     try {
       let url = `/api/transactions?portfolioId=${portfolioId}`;
       if (symbol) {
@@ -54,7 +60,9 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
   };
 
   useEffect(() => {
-    fetchTransactions();
+    if (portfolioId && portfolioId !== "undefined") {
+      fetchTransactions();
+    }
   }, [portfolioId, symbol]);
 
   const formatCurrency = (value: number) => {

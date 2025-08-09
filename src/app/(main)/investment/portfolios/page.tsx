@@ -22,6 +22,11 @@ export default function PortfoliosPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
 
+  // 处理组合切换
+  const handlePortfolioChange = (portfolioId: string) => {
+    setActivePortfolioId(portfolioId);
+  };
+
   // 获取投资组合列表
   const fetchPortfolios = async () => {
     try {
@@ -34,12 +39,23 @@ export default function PortfoliosPage() {
       if (result.success) {
         // 将数据库字段 id 映射为 portfolioId
         const mappedData = result.data.map((portfolio: any) => ({
-          ...portfolio,
           portfolioId: portfolio.id.toString(),
+          name: portfolio.name,
+          totalAssets: 0,
+          marketValue: 0,
+          cash: 0,
+          principal: 0,
+          floatAmount: 0,
+          floatRate: 0,
+          accumAmount: 0,
+          accumRate: 0,
+          dayFloatAmount: 0,
+          dayFloatRate: 0,
         }));
         setPortfolios(mappedData);
         if (mappedData.length > 0 && !activePortfolioId) {
-          setActivePortfolioId(mappedData[0].portfolioId);
+          const firstPortfolioId = mappedData[0].portfolioId;
+          setActivePortfolioId(firstPortfolioId);
         }
       }
     } catch (error) {
@@ -81,7 +97,7 @@ export default function PortfoliosPage() {
       const result = await response.json();
       
       if (result.success) {
-        setPortfolios(prev => [...prev, {
+        const newPortfolio = {
           portfolioId: result.data.id.toString(),
           name: result.data.name,
           totalAssets: 0,
@@ -94,7 +110,8 @@ export default function PortfoliosPage() {
           accumRate: 0,
           dayFloatAmount: 0,
           dayFloatRate: 0,
-        }]);
+        };
+        setPortfolios(prev => [...prev, newPortfolio]);
         
         setActivePortfolioId(result.data.id.toString());
         setNewPortfolioName("");
@@ -118,6 +135,7 @@ export default function PortfoliosPage() {
   useEffect(() => {
     fetchPortfolios();
   }, []);
+
 
   if (isLoading) {
     return (
@@ -181,7 +199,7 @@ export default function PortfoliosPage() {
         </div>
       </div>
 
-      <Tabs value={activePortfolioId || undefined} onValueChange={setActivePortfolioId}>
+      <Tabs value={activePortfolioId || undefined} onValueChange={handlePortfolioChange}>
         <div className="flex items-center justify-between">
           <TabsList>
             {portfolios.map((portfolio) => (

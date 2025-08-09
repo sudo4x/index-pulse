@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowUpRight, ArrowDownRight, TrendingUp, TrendingDown, Plus, ArrowLeftRight, DollarSign, MinusCircle, PlusCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,11 +24,56 @@ interface PortfolioTabsProps {
 export function PortfolioTabs({ portfolio }: PortfolioTabsProps) {
   const [showHistoricalHoldings, setShowHistoricalHoldings] = useState(false);
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
+  const [currentPortfolio, setCurrentPortfolio] = useState<PortfolioOverview>(portfolio);
+
+  // 获取组合概览数据
+  const fetchPortfolioOverview = async (portfolioId: string) => {
+    try {
+      const response = await fetch(`/api/portfolios/${portfolioId}/overview`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          return result.data;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching portfolio overview:", error);
+    }
+    return null;
+  };
+
+  // 当组合切换时，更新概览数据
+  useEffect(() => {
+    const updateOverview = async () => {
+      if (portfolio.portfolioId && portfolio.portfolioId !== "undefined") {
+        const overview = await fetchPortfolioOverview(portfolio.portfolioId);
+        if (overview) {
+          setCurrentPortfolio({
+            ...portfolio,
+            totalAssets: overview.totalAssets,
+            marketValue: overview.marketValue,
+            cash: overview.cash,
+            principal: overview.principal,
+            floatAmount: overview.floatAmount,
+            floatRate: overview.floatRate,
+            accumAmount: overview.accumAmount,
+            accumRate: overview.accumRate,
+            dayFloatAmount: overview.dayFloatAmount,
+            dayFloatRate: overview.dayFloatRate,
+          });
+        } else {
+          setCurrentPortfolio(portfolio);
+        }
+      }
+    };
+
+    updateOverview();
+  }, [portfolio.portfolioId]);
 
   return (
     <div className="space-y-6">
       {/* 组合概览信息 */}
-      <OverviewCards portfolio={portfolio} />
+      <OverviewCards portfolio={currentPortfolio} />
 
       {/* 详细信息 Tab */}
       <Tabs defaultValue="holdings" className="space-y-4">
@@ -84,17 +129,17 @@ export function PortfolioTabs({ portfolio }: PortfolioTabsProps) {
 
         <TabsContent value="holdings" className="space-y-4">
           <HoldingsTable 
-            portfolioId={portfolio.portfolioId} 
+            portfolioId={currentPortfolio.portfolioId} 
             showHistorical={showHistoricalHoldings}
           />
         </TabsContent>
 
         <TabsContent value="transactions" className="space-y-4">
-          <TransactionsTable portfolioId={portfolio.portfolioId} />
+          <TransactionsTable portfolioId={currentPortfolio.portfolioId} />
         </TabsContent>
 
         <TabsContent value="transfers" className="space-y-4">
-          <TransfersTable portfolioId={portfolio.portfolioId} />
+          <TransfersTable portfolioId={currentPortfolio.portfolioId} />
         </TabsContent>
       </Tabs>
 
@@ -102,7 +147,7 @@ export function PortfolioTabs({ portfolio }: PortfolioTabsProps) {
       <TransactionDialog
         isOpen={activeDialog === "buy" || activeDialog === "sell"}
         onClose={() => setActiveDialog(null)}
-        portfolioId={portfolio.portfolioId}
+        portfolioId={currentPortfolio.portfolioId}
         defaultType={activeDialog === "buy" ? "buy" : activeDialog === "sell" ? "sell" : undefined}
       />
 
@@ -110,7 +155,7 @@ export function PortfolioTabs({ portfolio }: PortfolioTabsProps) {
       <TransferDialog
         isOpen={activeDialog === "transfer"}
         onClose={() => setActiveDialog(null)}
-        portfolioId={portfolio.portfolioId}
+        portfolioId={currentPortfolio.portfolioId}
       />
     </div>
   );

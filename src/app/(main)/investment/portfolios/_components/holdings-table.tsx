@@ -24,6 +24,12 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
   const { toast } = useToast();
 
   const fetchHoldings = async () => {
+    if (!portfolioId || portfolioId === "undefined") {
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const response = await fetch(`/api/holdings?portfolioId=${portfolioId}&includeHistorical=${showHistorical}`);
       if (!response.ok) {
@@ -47,7 +53,9 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
   };
 
   useEffect(() => {
-    fetchHoldings();
+    if (portfolioId && portfolioId !== "undefined") {
+      fetchHoldings();
+    }
   }, [portfolioId, showHistorical]);
 
   const formatCurrency = (value: number) => {

@@ -46,8 +46,8 @@ export class PortfolioCalculator {
     let liquidationTime: Date | null = null;
 
     for (const transaction of holdingTransactions) {
-      const shares = Number(transaction.shares) || 0;
-      const amount = Number(transaction.amount) || 0;
+      const shares = parseFloat(String(transaction.shares)) || 0;
+      const amount = parseFloat(String(transaction.amount)) || 0;
 
       switch (transaction.type) {
         case TransactionType.BUY:
@@ -67,22 +67,22 @@ export class PortfolioCalculator {
 
         case TransactionType.MERGE:
           // 合股：原股数 / 合股比例
-          const mergeRatio = Number(transaction.unitShares) || 1;
+          const mergeRatio = parseFloat(String(transaction.unitShares)) || 1;
           totalShares = totalShares / mergeRatio;
           buyShares = buyShares / mergeRatio;
           break;
 
         case TransactionType.SPLIT:
           // 拆股：原股数 * 拆股比例
-          const splitRatio = Number(transaction.unitShares) || 1;
+          const splitRatio = parseFloat(String(transaction.unitShares)) || 1;
           totalShares = totalShares * splitRatio;
           buyShares = buyShares * splitRatio;
           break;
 
         case TransactionType.DIVIDEND:
           // 现金股息
-          const dividend = Number(transaction.unitDividend) || 0;
-          const increaseShares = Number(transaction.unitIncreaseShares) || 0;
+          const dividend = parseFloat(String(transaction.unitDividend)) || 0;
+          const increaseShares = parseFloat(String(transaction.unitIncreaseShares)) || 0;
           
           if (dividend > 0) {
             totalDividend += dividend * totalShares;
@@ -100,10 +100,11 @@ export class PortfolioCalculator {
     // 计算成本和盈亏
     const holdCost = buyShares > 0 ? totalBuyAmount / buyShares : 0; // 持仓成本
     const dilutedCost = totalShares > 0 ? (totalBuyAmount - totalSellAmount - totalDividend) / totalShares : 0; // 摊薄成本
-    const marketValue = totalShares * currentPrice.currentPrice; // 市值
+    const marketValue = totalShares * parseFloat(String(currentPrice.currentPrice)) || 0; // 市值
     
     // 浮动盈亏
-    const floatAmount = (currentPrice.currentPrice - holdCost) * totalShares;
+    const currentPriceValue = parseFloat(String(currentPrice.currentPrice)) || 0;
+    const floatAmount = (currentPriceValue - holdCost) * totalShares;
     const floatRate = holdCost > 0 ? floatAmount / (holdCost * totalShares) : 0;
 
     // 累计盈亏
@@ -172,7 +173,7 @@ export class PortfolioCalculator {
     let principal = 0; // 本金（转入金额）
 
     for (const transfer of transferRecords) {
-      const amount = Number(transfer.amount);
+      const amount = parseFloat(String(transfer.amount)) || 0;
       if (transfer.type === TransferType.DEPOSIT) {
         cash += amount;
         principal += amount;
@@ -181,11 +182,34 @@ export class PortfolioCalculator {
       }
     }
 
-    // 扣除已投资的现金（买入金额 - 卖出金额）
-    const investedCash = holdingDetails.reduce((sum, holding) => {
-      // 这里需要从交易记录中获取实际的买卖金额
-      return sum; // 简化处理
-    }, 0);
+    // 获取所有买卖交易计算现金变动
+    const allTransactions = await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.portfolioId, portfolioIdInt));
+
+    let totalBuyAmount = 0;
+    let totalSellAmount = 0;
+    let totalDividend = 0;
+
+    for (const transaction of allTransactions) {
+      const amount = parseFloat(String(transaction.amount)) || 0;
+      
+      switch (transaction.type) {
+        case TransactionType.BUY:
+          totalBuyAmount += amount;
+          break;
+        case TransactionType.SELL:
+          totalSellAmount += amount;
+          break;
+        case TransactionType.DIVIDEND:
+          totalDividend += amount;
+          break;
+      }
+    }
+
+    // 从现金中扣除净投资金额
+    cash = cash - totalBuyAmount + totalSellAmount + totalDividend;
 
     // 汇总组合数据
     const totalMarketValue = holdingDetails.reduce((sum, holding) => sum + holding.marketValue, 0);
