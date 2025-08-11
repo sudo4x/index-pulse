@@ -24,9 +24,7 @@ export default function LoginV1() {
         <div className="w-full max-w-md space-y-10 py-24 lg:py-32">
           <div className="space-y-4 text-center">
             <div className="font-medium tracking-tight">登录</div>
-            <div className="text-muted-foreground mx-auto max-w-xl">
-              欢迎回来。请输入您的邮箱和密码来登录系统。
-            </div>
+            <div className="text-muted-foreground mx-auto max-w-xl">欢迎回来。请输入您的邮箱和密码来登录系统。</div>
           </div>
           <div className="space-y-4">
             <LoginForm />

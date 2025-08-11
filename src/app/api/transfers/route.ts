@@ -26,20 +26,12 @@ export async function GET(request: Request) {
     if (portfolioId) {
       const portfolioIdInt = parseInt(portfolioId);
       if (isNaN(portfolioIdInt)) {
-        return NextResponse.json(
-          { error: "portfolioId 必须是有效的数字" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "portfolioId 必须是有效的数字" }, { status: 400 });
       }
-      query = query.where(
-        and(eq(portfolios.userId, user.id), eq(transfers.portfolioId, portfolioIdInt))
-      );
+      query = query.where(and(eq(portfolios.userId, user.id), eq(transfers.portfolioId, portfolioIdInt)));
     }
 
-    const results = await query.orderBy(
-      desc(transfers.transferDate),
-      desc(transfers.createdAt)
-    );
+    const results = await query.orderBy(desc(transfers.transferDate), desc(transfers.createdAt));
 
     // 格式化返回数据
     const formattedResults = results.map((result) => ({
@@ -53,10 +45,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Error fetching transfers:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -75,27 +64,16 @@ export async function POST(request: Request) {
     const portfolio = await db
       .select()
       .from(portfolios)
-      .where(
-        and(
-          eq(portfolios.id, parseInt(transferData.portfolioId)),
-          eq(portfolios.userId, user.id)
-        )
-      )
+      .where(and(eq(portfolios.id, parseInt(transferData.portfolioId)), eq(portfolios.userId, user.id)))
       .limit(1);
 
     if (portfolio.length === 0) {
-      return NextResponse.json(
-        { error: "Portfolio not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
     }
 
     // 验证必填字段
     if (!transferData.type || !transferData.amount || !transferData.transferDate) {
-      return NextResponse.json(
-        { error: "缺少必填字段" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "缺少必填字段" }, { status: 400 });
     }
 
     const newTransfer = await db
@@ -118,9 +96,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error creating transfer:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

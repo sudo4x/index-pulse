@@ -21,12 +21,7 @@ export class PortfolioCalculator {
     const holdingTransactions = await db
       .select()
       .from(transactions)
-      .where(
-        and(
-          eq(transactions.portfolioId, portfolioIdInt),
-          eq(transactions.symbol, symbol)
-        )
-      )
+      .where(and(eq(transactions.portfolioId, portfolioIdInt), eq(transactions.symbol, symbol)))
       .orderBy(transactions.transactionDate);
 
     if (holdingTransactions.length === 0) {
@@ -83,11 +78,11 @@ export class PortfolioCalculator {
           // 现金股息
           const dividend = parseFloat(String(transaction.unitDividend)) || 0;
           const increaseShares = parseFloat(String(transaction.unitIncreaseShares)) || 0;
-          
+
           if (dividend > 0) {
             totalDividend += dividend * totalShares;
           }
-          
+
           // 转增股
           if (increaseShares > 0) {
             totalShares += increaseShares * totalShares;
@@ -101,7 +96,7 @@ export class PortfolioCalculator {
     const holdCost = buyShares > 0 ? totalBuyAmount / buyShares : 0; // 持仓成本
     const dilutedCost = totalShares > 0 ? (totalBuyAmount - totalSellAmount - totalDividend) / totalShares : 0; // 摊薄成本
     const marketValue = totalShares * parseFloat(String(currentPrice.currentPrice)) || 0; // 市值
-    
+
     // 浮动盈亏
     const currentPriceValue = parseFloat(String(currentPrice.currentPrice)) || 0;
     const floatAmount = (currentPriceValue - holdCost) * totalShares;
@@ -113,8 +108,10 @@ export class PortfolioCalculator {
 
     // 当日盈亏（这里简化处理，实际需要昨日收盘价）
     const dayFloatAmount = currentPrice.change * totalShares;
-    const dayFloatRate = currentPrice.currentPrice > 0 ? 
-      dayFloatAmount / ((currentPrice.currentPrice - currentPrice.change) * totalShares) : 0;
+    const dayFloatRate =
+      currentPrice.currentPrice > 0
+        ? dayFloatAmount / ((currentPrice.currentPrice - currentPrice.change) * totalShares)
+        : 0;
 
     return {
       id: `${portfolioId}-${symbol}`,
@@ -164,10 +161,7 @@ export class PortfolioCalculator {
     }
 
     // 获取转账记录计算现金
-    const transferRecords = await db
-      .select()
-      .from(transfers)
-      .where(eq(transfers.portfolioId, portfolioIdInt));
+    const transferRecords = await db.select().from(transfers).where(eq(transfers.portfolioId, portfolioIdInt));
 
     let cash = 0;
     let principal = 0; // 本金（转入金额）
@@ -183,10 +177,7 @@ export class PortfolioCalculator {
     }
 
     // 获取所有买卖交易计算现金变动
-    const allTransactions = await db
-      .select()
-      .from(transactions)
-      .where(eq(transactions.portfolioId, portfolioIdInt));
+    const allTransactions = await db.select().from(transactions).where(eq(transactions.portfolioId, portfolioIdInt));
 
     let totalBuyAmount = 0;
     let totalSellAmount = 0;
@@ -194,7 +185,7 @@ export class PortfolioCalculator {
 
     for (const transaction of allTransactions) {
       const amount = parseFloat(String(transaction.amount)) || 0;
-      
+
       switch (transaction.type) {
         case TransactionType.BUY:
           totalBuyAmount += amount;
@@ -216,7 +207,7 @@ export class PortfolioCalculator {
     const totalFloatAmount = holdingDetails.reduce((sum, holding) => sum + holding.floatAmount, 0);
     const totalAccumAmount = holdingDetails.reduce((sum, holding) => sum + holding.accumAmount, 0);
     const totalDayFloatAmount = holdingDetails.reduce((sum, holding) => sum + holding.dayFloatAmount, 0);
-    
+
     const totalAssets = totalMarketValue + cash;
     const floatRate = totalMarketValue > 0 ? totalFloatAmount / totalMarketValue : 0;
     const accumRate = principal > 0 ? totalAccumAmount / principal : 0;
@@ -243,11 +234,7 @@ export class PortfolioCalculator {
    */
   private static async getStockPrice(symbol: string) {
     // 先从缓存中获取
-    const cached = await db
-      .select()
-      .from(stockPrices)
-      .where(eq(stockPrices.symbol, symbol))
-      .limit(1);
+    const cached = await db.select().from(stockPrices).where(eq(stockPrices.symbol, symbol)).limit(1);
 
     if (cached.length > 0) {
       const price = cached[0];

@@ -7,10 +7,7 @@ export async function POST(request: Request) {
     const { email, password } = await request.json();
 
     if (!email || !password) {
-      return NextResponse.json(
-        { success: false, error: "邮箱和密码不能为空" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: "邮箱和密码不能为空" }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -22,10 +19,7 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error("Supabase auth error:", error);
-      return NextResponse.json(
-        { success: false, error: `登录失败: ${error.message}` },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: `登录失败: ${error.message}` }, { status: 401 });
     }
 
     // 登录成功时，确保用户数据已同步
@@ -48,9 +42,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Login error:", error);
-    return NextResponse.json(
-      { success: false, error: "服务器错误" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "服务器错误" }, { status: 500 });
   }
 }

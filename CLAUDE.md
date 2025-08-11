@@ -9,6 +9,7 @@ IndexPulse 是一个基于 Next.js 15 的现代化管理后台模板，专门用
 ## 常用命令
 
 ### 开发和构建
+
 ```bash
 npm run dev           # 启动开发服务器 (http://localhost:3000)
 npm run build         # 构建生产版本
@@ -16,13 +17,51 @@ npm run start         # 启动生产服务器
 ```
 
 ### 代码质量
+
 ```bash
 npm run lint          # 运行 ESLint 检查
 npm run format        # 使用 Prettier 格式化代码
 npm run format:check  # 检查代码格式是否符合要求
 ```
 
+### Lint 和格式化工作流程
+
+**【重要！】为避免格式化冲突和减少不必要的代码变化，必须严格按照以下步骤执行：**
+
+1. **修复 Lint 错误的标准流程**：
+
+   ```bash
+   # 步骤1：先运行格式化，让 Prettier 统一所有格式
+   npm run format
+
+   # 步骤2：检查剩余的 lint 错误
+   npm run lint
+
+   # 步骤3：手动修复 lint 错误（仅修复逻辑问题，不调整格式）
+   # 修改时要严格遵循当前文件的格式风格
+
+   # 步骤4：最后再运行一次格式化确保一致性
+   npm run format
+   ```
+
+2. **手动修改代码时的注意事项**：
+   - 严格遵循 Prettier 的格式规则（缩进、换行、空格等）
+   - 不要在格式化后再手动调整代码格式
+   - 优先修复功能性错误，避免纯格式调整
+   - 使用编辑器的自动格式化功能保持一致性
+
+3. **避免的反模式**：
+   - ❌ 先手动修改，再格式化（会导致大量格式变化）
+   - ❌ 在格式化后再手动调整缩进或换行
+   - ❌ 混合修复逻辑和格式问题
+
+4. **推荐的编辑器配置**：
+   - 启用保存时自动运行 Prettier
+   - 配置 ESLint 自动修复简单问题
+   - 使用项目的 .prettierrc 和 eslint.config.mjs 配置
+
 ### 主题预设生成
+
 ```bash
 npm run generate:presets  # 生成自定义主题预设文件
 ```
@@ -30,6 +69,7 @@ npm run generate:presets  # 生成自定义主题预设文件
 ## 项目架构
 
 ### 核心技术栈
+
 - **框架**: Next.js 15 (App Router)
 - **语言**: TypeScript
 - **样式**: Tailwind CSS v4
@@ -41,6 +81,7 @@ npm run generate:presets  # 生成自定义主题预设文件
 - **拖拽**: DND Kit
 
 ### 目录结构 (共定位文件系统)
+
 项目采用共定位架构模式，页面、组件和逻辑按功能分组，每个路由文件夹包含所需的所有内容：
 
 - `src/app/` - Next.js App Router 页面
@@ -59,39 +100,50 @@ npm run generate:presets  # 生成自定义主题预设文件
 - `src/styles/presets/` - 主题预设样式
 
 ### 关键配置文件
+
 - `src/config/app-config.ts` - 应用主要配置
 - `src/navigation/sidebar/sidebar-items.ts` - 侧边栏导航配置
 - `next.config.mjs` - Next.js 配置，包含重定向规则
 - `components.json` - Shadcn UI 组件配置
 
 ### 主题系统
+
 项目支持多种主题预设：
+
 - 默认 (Shadcn Neutral)
 - Tangerine (橘色主题)
-- Brutalist (野兽派风格)  
+- Brutalist (野兽派风格)
 - Soft Pop (柔和流行色)
 
 主题通过 Zustand store 管理，支持亮色/暗色模式切换。
 
 ### 仪表板页面
+
 当前可用的仪表板：
+
 - **Default** (`/dashboard/default`) - 默认仪表板
 - **CRM** (`/dashboard/crm`) - 客户关系管理
 - **Finance** (`/dashboard/finance`) - 财务管理
 
 ### 认证系统
+
 提供两个版本的登录和注册页面：
+
 - v1: `/auth/v1/login`, `/auth/v1/register`
 - v2: `/auth/v2/login`, `/auth/v2/register`
 
 ### 状态管理
+
 使用 Zustand 进行状态管理，主要 store：
+
 - `preferences-store.ts` - 主题和布局偏好设置
 
 ### 投资组合管理系统
+
 项目已集成完整的投资组合管理功能：
 
 #### 数据库设计 (Supabase + Drizzle ORM)
+
 - **用户表** (`users`) - 基于 Supabase Auth
 - **投资组合表** (`portfolios`) - 用户的投资组合
 - **持仓品种表** (`holdings`) - 股票持仓信息
@@ -101,6 +153,7 @@ npm run generate:presets  # 生成自定义主题预设文件
 - **股票价格表** (`stock_prices`) - 实时行情缓存
 
 #### API接口
+
 - `/api/portfolios/*` - 组合 CRUD 操作
 - `/api/holdings/*` - 持仓数据查询
 - `/api/transactions/*` - 交易记录管理
@@ -108,14 +161,17 @@ npm run generate:presets  # 生成自定义主题预设文件
 - `/api/stock-prices/*` - 实时行情获取
 
 #### 核心计算逻辑
+
 使用 `PortfolioCalculator` 服务实现财务计算：
+
 - **持股数计算**：∑买入数量 + ∑红股数量 + ∑拆股所增数量 - ∑卖出数量 - ∑合股所减数量
 - **摊薄成本**：(∑买入金额 - ∑卖出金额 - ∑现金股息) / 持股数
 - **持仓成本**：∑买入金额 / (∑买入数量 + ∑红股数量 + ∑拆股所增数量 - ∑合股所减数量)
-- **浮动盈亏**：(当前价 - 持仓成本) * 多仓持股数
+- **浮动盈亏**：(当前价 - 持仓成本) \* 多仓持股数
 - **累计盈亏**：多仓市值 - ∑买入金额 + ∑卖出金额 + ∑现金股息
 
 #### 前端页面结构
+
 - `src/app/(main)/investment/portfolios/` - 投资组合管理主页
 - 多 Tab 组合切换界面
 - 组合概况信息展示（总市值、今日盈亏、浮动盈亏、累计盈亏等）
@@ -125,7 +181,9 @@ npm run generate:presets  # 生成自定义主题预设文件
 - 动态交易表单（根据交易类型显示不同字段）
 
 #### 实时行情集成
+
 集成腾讯财经接口获取股票实时行情：
+
 - 支持 A股、港股、美股等多市场
 - 自动缓存机制（5分钟有效期）
 - 批量查询优化
@@ -133,26 +191,32 @@ npm run generate:presets  # 生成自定义主题预设文件
 ## 开发注意事项
 
 ### 代码规范
+
 - 项目使用严格的 ESLint 和 Prettier 配置
 - 支持 Husky git hooks 和 lint-staged
 - 所有组件使用 TypeScript 严格模式
 - 遵循 Next.js 15 App Router 最佳实践
 
 ### 路径别名
+
 使用 `@/` 别名指向 `src/` 目录，在 `tsconfig.json` 中配置。
 
 ### 样式系统
+
 - 使用 Tailwind CSS v4 进行样式编写
 - 通过 CSS 变量系统支持主题切换
 - 预设主题文件位于 `src/styles/presets/`
 
 ### 组件开发
+
 - 基于 Shadcn UI 进行组件开发
 - 新组件应放置在对应功能模块的 `_components/` 目录下
 - 全局共享组件放在 `src/components/` 目录
 
 ### 数据表格
+
 使用 TanStack Table 构建复杂数据表格，支持：
+
 - 排序、过滤、分页
 - 列拖拽排序
 - 行拖拽排序
@@ -165,7 +229,6 @@ npm run generate:presets  # 生成自定义主题预设文件
 - 多种布局选项 (可折叠侧边栏、内容宽度变化)
 - 基于配置的 UI 系统，易于维护和扩展
 - 模块化架构，便于功能扩展
-
 
 ## Code Architecture
 

@@ -16,23 +16,22 @@ export async function syncAuthUser(authUser: {
     }
 
     // 检查用户是否已存在（通过 authId 查找）
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.authId, authUser.id))
-      .limit(1);
+    const existingUser = await db.select().from(users).where(eq(users.authId, authUser.id)).limit(1);
 
     if (existingUser.length === 0) {
       // 创建新用户记录
-      const [newUser] = await db.insert(users).values({
-        authId: authUser.id,
-        email: authUser.email,
-      }).returning({
-        id: users.id,
-        authId: users.authId,
-        email: users.email,
-      });
-      
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          authId: authUser.id,
+          email: authUser.email,
+        })
+        .returning({
+          id: users.id,
+          authId: users.authId,
+          email: users.email,
+        });
+
       console.log(`Created user record for ${authUser.email} with ID ${newUser.id}`);
       return newUser;
     } else {
@@ -49,7 +48,7 @@ export async function syncAuthUser(authUser: {
           authId: users.authId,
           email: users.email,
         });
-        
+
       console.log(`Updated user record for ${authUser.email} with ID ${updatedUser.id}`);
       return updatedUser;
     }

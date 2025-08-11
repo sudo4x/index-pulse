@@ -6,7 +6,15 @@ import { Plus, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -35,7 +43,7 @@ export default function PortfoliosPage() {
         throw new Error("获取投资组合失败");
       }
       const result = await response.json();
-      
+
       if (result.success) {
         // 将数据库字段 id 映射为 portfolioId
         const mappedData = result.data.map((portfolio: any) => ({
@@ -95,7 +103,7 @@ export default function PortfoliosPage() {
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         const newPortfolio = {
           portfolioId: result.data.id.toString(),
@@ -111,12 +119,12 @@ export default function PortfoliosPage() {
           dayFloatAmount: 0,
           dayFloatRate: 0,
         };
-        setPortfolios(prev => [...prev, newPortfolio]);
-        
+        setPortfolios((prev) => [...prev, newPortfolio]);
+
         setActivePortfolioId(result.data.id.toString());
         setNewPortfolioName("");
         setIsCreateDialogOpen(false);
-        
+
         toast({
           title: "成功",
           description: "投资组合创建成功",
@@ -136,7 +144,6 @@ export default function PortfoliosPage() {
     fetchPortfolios();
   }, []);
 
-
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -155,7 +162,7 @@ export default function PortfoliosPage() {
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="size-4 mr-2" />
+              <Plus className="mr-2 size-4" />
               创建投资组合
             </Button>
           </DialogTrigger>
@@ -212,7 +219,7 @@ export default function PortfoliosPage() {
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
-                  <Plus className="size-4 mr-2" />
+                  <Plus className="mr-2 size-4" />
                   添加组合
                 </Button>
               </DialogTrigger>
@@ -244,7 +251,7 @@ export default function PortfoliosPage() {
               </DialogContent>
             </Dialog>
             <Button size="sm" variant="outline">
-              <Settings className="size-4 mr-2" />
+              <Settings className="mr-2 size-4" />
               管理组合
             </Button>
           </div>
@@ -252,10 +259,7 @@ export default function PortfoliosPage() {
 
         {portfolios.map((portfolio) => (
           <TabsContent key={portfolio.portfolioId} value={portfolio.portfolioId} className="space-y-6">
-            <PortfolioTabs 
-              portfolioId={portfolio.portfolioId} 
-              portfolioName={portfolio.name}
-            />
+            <PortfolioTabs portfolioId={portfolio.portfolioId} portfolioName={portfolio.name} />
           </TabsContent>
         ))}
       </Tabs>

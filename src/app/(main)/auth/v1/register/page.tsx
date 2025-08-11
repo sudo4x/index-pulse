@@ -12,9 +12,7 @@ export default function RegisterV1() {
         <div className="w-full max-w-md space-y-10 py-24 lg:py-32">
           <div className="space-y-4 text-center">
             <div className="font-medium tracking-tight">注册</div>
-            <div className="text-muted-foreground mx-auto max-w-xl">
-              请填写以下信息来创建您的账户。
-            </div>
+            <div className="text-muted-foreground mx-auto max-w-xl">请填写以下信息来创建您的账户。</div>
           </div>
           <div className="space-y-4">
             <RegisterForm />

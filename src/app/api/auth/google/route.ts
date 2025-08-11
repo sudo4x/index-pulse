@@ -13,10 +13,7 @@ export async function POST() {
     });
 
     if (error) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
 
     return NextResponse.json({
@@ -25,9 +22,6 @@ export async function POST() {
     });
   } catch (error) {
     console.error("Google auth error:", error);
-    return NextResponse.json(
-      { success: false, error: "服务器错误" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: "服务器错误" }, { status: 500 });
   }
 }

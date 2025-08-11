@@ -86,11 +86,11 @@ export function OverviewCards({ portfolio }: OverviewCardsProps) {
           <Card key={item.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
-              <item.icon className="size-4 text-muted-foreground" />
+              <item.icon className="text-muted-foreground size-4" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{item.value}</div>
-              <p className="text-xs text-muted-foreground">{item.description}</p>
+              <p className="text-muted-foreground text-xs">{item.description}</p>
             </CardContent>
           </Card>
         ))}
@@ -102,28 +102,17 @@ export function OverviewCards({ portfolio }: OverviewCardsProps) {
           <Card key={item.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
-              <item.icon 
-                className={cn(
-                  "size-4",
-                  item.isPositive ? "text-green-600" : "text-red-600"
-                )} 
-              />
+              <item.icon className={cn("size-4", item.isPositive ? "text-green-600" : "text-red-600")} />
             </CardHeader>
             <CardContent>
-              <div className={cn(
-                "text-2xl font-bold",
-                item.isPositive ? "text-green-600" : "text-red-600"
-              )}>
+              <div className={cn("text-2xl font-bold", item.isPositive ? "text-green-600" : "text-red-600")}>
                 {item.value}
               </div>
               <div className="flex items-center space-x-2">
-                <span className={cn(
-                  "text-sm font-medium",
-                  item.isPositive ? "text-green-600" : "text-red-600"
-                )}>
+                <span className={cn("text-sm font-medium", item.isPositive ? "text-green-600" : "text-red-600")}>
                   {item.rate}
                 </span>
-                <span className="text-xs text-muted-foreground">{item.description}</span>
+                <span className="text-muted-foreground text-xs">{item.description}</span>
               </div>
             </CardContent>
           </Card>

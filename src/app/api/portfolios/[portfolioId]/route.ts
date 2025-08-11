@@ -9,21 +9,15 @@ interface Params {
 }
 
 // 获取特定投资组合信息
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<Params> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<Params> }) {
   try {
     const { portfolioId } = await params;
     const portfolioIdInt = parseInt(portfolioId);
-    
+
     if (isNaN(portfolioIdInt)) {
-      return NextResponse.json(
-        { error: "portfolioId 必须是有效的数字" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "portfolioId 必须是有效的数字" }, { status: 400 });
     }
-    
+
     const user = await getCurrentUser();
 
     if (!user) {
@@ -33,16 +27,11 @@ export async function GET(
     const portfolio = await db
       .select()
       .from(portfolios)
-      .where(
-        and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id))
-      )
+      .where(and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id)))
       .limit(1);
 
     if (portfolio.length === 0) {
-      return NextResponse.json(
-        { error: "Portfolio not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -51,29 +40,20 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching portfolio:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 // 更新投资组合信息
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<Params> }
-) {
+export async function PUT(request: Request, { params }: { params: Promise<Params> }) {
   try {
     const { portfolioId } = await params;
     const portfolioIdInt = parseInt(portfolioId);
-    
+
     if (isNaN(portfolioIdInt)) {
-      return NextResponse.json(
-        { error: "portfolioId 必须是有效的数字" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "portfolioId 必须是有效的数字" }, { status: 400 });
     }
-    
+
     const user = await getCurrentUser();
 
     if (!user) {
@@ -83,17 +63,14 @@ export async function PUT(
     const { name, sortOrder } = await request.json();
 
     const updateData: any = { updatedAt: new Date() };
-    
+
     if (name !== undefined) {
       if (typeof name !== "string" || name.trim().length === 0) {
-        return NextResponse.json(
-          { error: "组合名称不能为空" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "组合名称不能为空" }, { status: 400 });
       }
       updateData.name = name.trim();
     }
-    
+
     if (sortOrder !== undefined) {
       updateData.sortOrder = sortOrder;
     }
@@ -101,16 +78,11 @@ export async function PUT(
     const updatedPortfolio = await db
       .update(portfolios)
       .set(updateData)
-      .where(
-        and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id))
-      )
+      .where(and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id)))
       .returning();
 
     if (updatedPortfolio.length === 0) {
-      return NextResponse.json(
-        { error: "Portfolio not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -119,29 +91,20 @@ export async function PUT(
     });
   } catch (error) {
     console.error("Error updating portfolio:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 // 删除投资组合
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<Params> }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<Params> }) {
   try {
     const { portfolioId } = await params;
     const portfolioIdInt = parseInt(portfolioId);
-    
+
     if (isNaN(portfolioIdInt)) {
-      return NextResponse.json(
-        { error: "portfolioId 必须是有效的数字" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "portfolioId 必须是有效的数字" }, { status: 400 });
     }
-    
+
     const user = await getCurrentUser();
 
     if (!user) {
@@ -150,16 +113,11 @@ export async function DELETE(
 
     const deletedPortfolio = await db
       .delete(portfolios)
-      .where(
-        and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id))
-      )
+      .where(and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id)))
       .returning();
 
     if (deletedPortfolio.length === 0) {
-      return NextResponse.json(
-        { error: "Portfolio not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -168,9 +126,6 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Error deleting portfolio:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

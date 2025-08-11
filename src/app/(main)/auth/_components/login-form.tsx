@@ -46,7 +46,7 @@ export function LoginForm() {
         window.location.href = "/dashboard/default";
       } else {
         toast("登录失败", {
-          description: result.error || "请检查邮箱和密码",
+          description: result.error ?? "请检查邮箱和密码",
         });
       }
     } catch (error) {

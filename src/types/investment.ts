@@ -1,22 +1,22 @@
 // 交易类型枚举
 export enum TransactionType {
-  BUY = 1,           // 买入
-  SELL = 2,          // 卖出
-  MERGE = 3,         // 合股
-  SPLIT = 4,         // 拆股
-  DIVIDEND = 9,      // 除权除息
+  BUY = 1, // 买入
+  SELL = 2, // 卖出
+  MERGE = 3, // 合股
+  SPLIT = 4, // 拆股
+  DIVIDEND = 9, // 除权除息
 }
 
 // 转账类型枚举
 export enum TransferType {
-  DEPOSIT = 1,       // 转入
-  WITHDRAW = 2,      // 转出
+  DEPOSIT = 1, // 转入
+  WITHDRAW = 2, // 转出
 }
 
 // 交易类型名称映射
 export const TransactionTypeNames: Record<TransactionType, string> = {
   [TransactionType.BUY]: "买入",
-  [TransactionType.SELL]: "卖出", 
+  [TransactionType.SELL]: "卖出",
   [TransactionType.MERGE]: "合股",
   [TransactionType.SPLIT]: "拆股",
   [TransactionType.DIVIDEND]: "除权除息",
@@ -32,38 +32,38 @@ export const TransferTypeNames: Record<TransferType, string> = {
 export interface PortfolioOverview {
   portfolioId: string;
   name: string;
-  totalAssets: number;        // 总资产
-  marketValue: number;        // 总市值
-  cash: number;              // 现金
-  principal: number;         // 本金
-  floatAmount: number;       // 浮动盈亏额
-  floatRate: number;         // 浮动盈亏率
-  accumAmount: number;       // 累计盈亏额
-  accumRate: number;         // 累计盈亏率
-  dayFloatAmount: number;    // 当日盈亏额
-  dayFloatRate: number;      // 当日盈亏率
+  totalAssets: number; // 总资产
+  marketValue: number; // 总市值
+  cash: number; // 现金
+  principal: number; // 本金
+  floatAmount: number; // 浮动盈亏额
+  floatRate: number; // 浮动盈亏率
+  accumAmount: number; // 累计盈亏额
+  accumRate: number; // 累计盈亏率
+  dayFloatAmount: number; // 当日盈亏额
+  dayFloatRate: number; // 当日盈亏率
 }
 
 // 持仓详情接口
 export interface HoldingDetail {
   id: string;
-  symbol: string;            // 股票代码
-  name: string;             // 股票名称
-  shares: number;           // 持股数
-  currentPrice: number;     // 现价
-  change: number;           // 涨跌额
-  changePercent: number;    // 涨跌幅
-  marketValue: number;      // 市值
-  dilutedCost: number;     // 摊薄成本
-  holdCost: number;        // 持仓成本
-  floatAmount: number;     // 浮动盈亏额
-  floatRate: number;       // 浮动盈亏率
-  accumAmount: number;     // 累计盈亏额
-  accumRate: number;       // 累计盈亏率
-  dayFloatAmount: number;  // 当日盈亏额
-  dayFloatRate: number;    // 当日盈亏率
-  isActive: boolean;       // 是否活跃持仓
-  openTime: string;        // 开仓时间
+  symbol: string; // 股票代码
+  name: string; // 股票名称
+  shares: number; // 持股数
+  currentPrice: number; // 现价
+  change: number; // 涨跌额
+  changePercent: number; // 涨跌幅
+  marketValue: number; // 市值
+  dilutedCost: number; // 摊薄成本
+  holdCost: number; // 持仓成本
+  floatAmount: number; // 浮动盈亏额
+  floatRate: number; // 浮动盈亏率
+  accumAmount: number; // 累计盈亏额
+  accumRate: number; // 累计盈亏率
+  dayFloatAmount: number; // 当日盈亏额
+  dayFloatRate: number; // 当日盈亏率
+  isActive: boolean; // 是否活跃持仓
+  openTime: string; // 开仓时间
   liquidationTime?: string; // 清仓时间
 }
 
@@ -82,12 +82,12 @@ export interface TransactionDetail {
   commissionRate?: number;
   tax?: number;
   taxRate?: number;
-  unitShares?: number;      // 合股拆股相关
-  unitDividend?: number;    // 每股股息
+  unitShares?: number; // 合股拆股相关
+  unitDividend?: number; // 每股股息
   unitIncreaseShares?: number; // 每股转增股数
-  recordDate?: string;      // 股权登记日
+  recordDate?: string; // 股权登记日
   comment?: string;
-  description: string;      // 描述信息
+  description: string; // 描述信息
 }
 
 // 转账记录详情接口

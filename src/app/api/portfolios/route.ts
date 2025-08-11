@@ -25,10 +25,7 @@ export async function GET() {
     });
   } catch (error) {
     console.error("Error fetching portfolios:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -44,10 +41,7 @@ export async function POST(request: Request) {
     const { name } = await request.json();
 
     if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: "组合名称不能为空" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "组合名称不能为空" }, { status: 400 });
     }
 
     // 获取当前最大排序值
@@ -75,9 +69,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error creating portfolio:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

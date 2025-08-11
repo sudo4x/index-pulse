@@ -12,9 +12,9 @@ export function GoogleButton({ className, ...props }: React.ComponentProps<typeo
       const response = await fetch("/api/auth/google", {
         method: "POST",
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success && result.url) {
         window.location.href = result.url;
       }
@@ -24,13 +24,7 @@ export function GoogleButton({ className, ...props }: React.ComponentProps<typeo
   };
 
   return (
-    <Button 
-      variant="secondary" 
-      className={cn(className)} 
-      onClick={handleGoogleLogin}
-      type="button"
-      {...props}
-    >
+    <Button variant="secondary" className={cn(className)} onClick={handleGoogleLogin} type="button" {...props}>
       <SimpleIcon icon={siGoogle} className="size-4" />
       使用 Google 继续
     </Button>

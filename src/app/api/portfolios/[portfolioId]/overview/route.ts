@@ -7,21 +7,15 @@ interface Params {
 }
 
 // 获取投资组合概览数据
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<Params> }
-) {
+export async function GET(request: Request, { params }: { params: Promise<Params> }) {
   try {
     const { portfolioId } = await params;
     const portfolioIdInt = parseInt(portfolioId);
-    
+
     if (isNaN(portfolioIdInt)) {
-      return NextResponse.json(
-        { error: "portfolioId 必须是有效的数字" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "portfolioId 必须是有效的数字" }, { status: 400 });
     }
-    
+
     const user = await getCurrentUser();
 
     if (!user) {
@@ -37,9 +31,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error fetching portfolio overview:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -47,29 +47,16 @@ export async function GET(request: Request) {
     if (portfolioId) {
       const portfolioIdInt = parseInt(portfolioId);
       if (isNaN(portfolioIdInt)) {
-        return NextResponse.json(
-          { error: "portfolioId 必须是有效的数字" },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "portfolioId 必须是有效的数字" }, { status: 400 });
       }
-      query = query.where(
-        and(eq(portfolios.userId, user.id), eq(transactions.portfolioId, portfolioIdInt))
-      );
+      query = query.where(and(eq(portfolios.userId, user.id), eq(transactions.portfolioId, portfolioIdInt)));
     }
 
     if (symbol) {
-      query = query.where(
-        and(
-          eq(portfolios.userId, user.id),
-          eq(transactions.symbol, symbol.toUpperCase())
-        )
-      );
+      query = query.where(and(eq(portfolios.userId, user.id), eq(transactions.symbol, symbol.toUpperCase())));
     }
 
-    const results = await query.orderBy(
-      desc(transactions.transactionDate),
-      desc(transactions.createdAt)
-    );
+    const results = await query.orderBy(desc(transactions.transactionDate), desc(transactions.createdAt));
 
     // 格式化返回数据
     const formattedResults = results.map((transaction) => ({
@@ -84,10 +71,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Error fetching transactions:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -106,19 +90,11 @@ export async function POST(request: Request) {
     const portfolio = await db
       .select()
       .from(portfolios)
-      .where(
-        and(
-          eq(portfolios.id, parseInt(transactionData.portfolioId)),
-          eq(portfolios.userId, user.id)
-        )
-      )
+      .where(and(eq(portfolios.id, parseInt(transactionData.portfolioId)), eq(portfolios.userId, user.id)))
       .limit(1);
 
     if (portfolio.length === 0) {
-      return NextResponse.json(
-        { error: "Portfolio not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
     }
 
     // 计算交易金额
@@ -131,9 +107,7 @@ export async function POST(request: Request) {
         amount: calculatedAmount,
         symbol: transactionData.symbol.toUpperCase(),
         transactionDate: new Date(transactionData.transactionDate),
-        recordDate: transactionData.recordDate
-          ? new Date(transactionData.recordDate)
-          : null,
+        recordDate: transactionData.recordDate ? new Date(transactionData.recordDate) : null,
       })
       .returning();
 
@@ -149,17 +123,14 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error creating transaction:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 // 计算交易金额
 function calculateTransactionAmount(transactionData: any): string {
   const type = transactionData.type as TransactionType;
-  
+
   switch (type) {
     case TransactionType.BUY:
     case TransactionType.SELL:
@@ -167,22 +138,22 @@ function calculateTransactionAmount(transactionData: any): string {
       const price = Number(transactionData.price || 0);
       const commission = Number(transactionData.commission || 0);
       const tax = Number(transactionData.tax || 0);
-      
+
       let amount = shares * price;
-      
+
       if (type === TransactionType.BUY) {
         amount += commission + tax; // 买入时加上费用
       } else {
         amount -= commission + tax; // 卖出时扣除费用
       }
-      
+
       return amount.toFixed(2);
-      
+
     case TransactionType.DIVIDEND:
       const dividend = Number(transactionData.unitDividend || 0);
       const holdingShares = Number(transactionData.shares || 0); // 这里应该是持股数
       return (dividend * holdingShares).toFixed(2);
-      
+
     case TransactionType.MERGE:
     case TransactionType.SPLIT:
     default:
@@ -193,7 +164,7 @@ function calculateTransactionAmount(transactionData: any): string {
 // 格式化交易描述
 function formatTransactionDescription(transaction: any): string {
   const type = transaction.type as TransactionType;
-  
+
   switch (type) {
     case TransactionType.BUY:
       return `买入 ${transaction.shares} 股，价格 ¥${transaction.price}`;

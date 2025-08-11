@@ -1,15 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { MoreVertical, Edit, Trash2, ArrowUpRight, ArrowDownRight, RefreshCw, Scissors, Gift } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
+import { MoreVertical, Edit, Trash2, ArrowUpRight, ArrowDownRight, RefreshCw, Scissors, Gift } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +31,7 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     if (!portfolioId || portfolioId === "undefined") {
       setIsLoading(false);
       return;
@@ -37,15 +43,15 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
       if (symbol) {
         url += `&symbol=${symbol}`;
       }
-      
+
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error("获取交易记录失败");
       }
       const result = await response.json();
-      
+
       if (result.success) {
-        setTransactions(result.data || []);
+        setTransactions(result.data ?? []);
       }
     } catch (error) {
       console.error("Error fetching transactions:", error);
@@ -57,13 +63,13 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [portfolioId, symbol, toast]);
 
   useEffect(() => {
     if (portfolioId && portfolioId !== "undefined") {
       fetchTransactions();
     }
-  }, [portfolioId, symbol]);
+  }, [portfolioId, symbol, fetchTransactions]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("zh-CN", {
@@ -134,7 +140,7 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
         <CardContent>
           <div className="flex h-32 flex-col items-center justify-center space-y-2">
             <div className="text-muted-foreground">还没有交易记录</div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               {symbol ? `没有找到 ${symbol} 的交易记录` : "开始您的第一笔交易"}
             </div>
           </div>
@@ -148,7 +154,7 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
       <CardHeader>
         <CardTitle>
           交易记录 ({transactions.length})
-          {symbol && <span className="text-sm font-normal text-muted-foreground ml-2">- {symbol}</span>}
+          {symbol && <span className="text-muted-foreground ml-2 text-sm font-normal">- {symbol}</span>}
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
@@ -172,57 +178,56 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
                 <TableCell>
                   <div className="flex flex-col space-y-1">
                     <div className="font-medium">{transaction.name}</div>
-                    <div className="text-sm text-muted-foreground">{transaction.symbol}</div>
+                    <div className="text-muted-foreground text-sm">{transaction.symbol}</div>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     {getTypeIcon(transaction.type)}
-                    <Badge variant={getTypeBadgeVariant(transaction.type)}>
-                      {transaction.typeName}
-                    </Badge>
+                    <Badge variant={getTypeBadgeVariant(transaction.type)}>{transaction.typeName}</Badge>
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
                   {transaction.price !== undefined && transaction.price > 0 ? (
-                    <div className="font-mono">
-                      {formatCurrency(transaction.price)}
-                    </div>
+                    <div className="font-mono">{formatCurrency(transaction.price)}</div>
                   ) : (
                     <div className="text-muted-foreground">-</div>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
                   {transaction.shares !== undefined && transaction.shares > 0 ? (
-                    <div className="font-mono">
-                      {formatShares(transaction.shares)}
-                    </div>
+                    <div className="font-mono">{formatShares(transaction.shares)}</div>
                   ) : (
                     <div className="text-muted-foreground">-</div>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className={cn(
-                    "font-mono",
-                    transaction.type === TransactionType.BUY ? "text-red-600" : 
-                    transaction.type === TransactionType.SELL ? "text-green-600" : 
-                    transaction.type === TransactionType.DIVIDEND ? "text-green-600" : ""
-                  )}>
-                    {transaction.type === TransactionType.BUY ? "-" : 
-                     transaction.type === TransactionType.SELL || transaction.type === TransactionType.DIVIDEND ? "+" : ""}
+                  <div
+                    className={cn(
+                      "font-mono",
+                      transaction.type === TransactionType.BUY
+                        ? "text-red-600"
+                        : transaction.type === TransactionType.SELL
+                          ? "text-green-600"
+                          : transaction.type === TransactionType.DIVIDEND
+                            ? "text-green-600"
+                            : "",
+                    )}
+                  >
+                    {transaction.type === TransactionType.BUY
+                      ? "-"
+                      : transaction.type === TransactionType.SELL || transaction.type === TransactionType.DIVIDEND
+                        ? "+"
+                        : ""}
                     {formatCurrency(Math.abs(transaction.amount))}
                   </div>
                 </TableCell>
                 <TableCell>
-                  <div className="text-sm max-w-40">
-                    {transaction.description}
-                  </div>
+                  <div className="max-w-40 text-sm">{transaction.description}</div>
                 </TableCell>
                 <TableCell>
                   {transaction.comment && (
-                    <div className="text-sm text-muted-foreground max-w-32 truncate">
-                      {transaction.comment}
-                    </div>
+                    <div className="text-muted-foreground max-w-32 truncate text-sm">{transaction.comment}</div>
                   )}
                 </TableCell>
                 <TableCell>
@@ -239,11 +244,11 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>
-                        <Edit className="size-4 mr-2" />
+                        <Edit className="mr-2 size-4" />
                         修改
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600">
-                        <Trash2 className="size-4 mr-2" />
+                        <Trash2 className="mr-2 size-4" />
                         删除
                       </DropdownMenuItem>
                     </DropdownMenuContent>

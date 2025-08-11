@@ -8,7 +8,12 @@ import { zhCN } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -37,7 +42,7 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
         throw new Error("获取转账记录失败");
       }
       const result = await response.json();
-      
+
       if (result.success) {
         setTransfers(result.data || []);
       }
@@ -103,7 +108,7 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
         <CardContent>
           <div className="flex h-32 flex-col items-center justify-center space-y-2">
             <div className="text-muted-foreground">还没有转账记录</div>
-            <div className="text-sm text-muted-foreground">添加转入或转出记录来管理资金</div>
+            <div className="text-muted-foreground text-sm">添加转入或转出记录来管理资金</div>
           </div>
         </CardContent>
       </Card>
@@ -132,16 +137,16 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
                 <TableCell>
                   <div className="flex items-center space-x-2">
                     {getTypeIcon(transfer.type)}
-                    <Badge variant={getTypeBadgeVariant(transfer.type)}>
-                      {transfer.typeName}
-                    </Badge>
+                    <Badge variant={getTypeBadgeVariant(transfer.type)}>{transfer.typeName}</Badge>
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className={cn(
-                    "font-mono",
-                    transfer.type === TransferType.DEPOSIT ? "text-green-600" : "text-red-600"
-                  )}>
+                  <div
+                    className={cn(
+                      "font-mono",
+                      transfer.type === TransferType.DEPOSIT ? "text-green-600" : "text-red-600",
+                    )}
+                  >
                     {transfer.type === TransferType.DEPOSIT ? "+" : "-"}
                     {formatCurrency(transfer.amount)}
                   </div>
@@ -153,9 +158,7 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
                 </TableCell>
                 <TableCell>
                   {transfer.comment && (
-                    <div className="text-sm text-muted-foreground max-w-48 truncate">
-                      {transfer.comment}
-                    </div>
+                    <div className="text-muted-foreground max-w-48 truncate text-sm">{transfer.comment}</div>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
@@ -167,11 +170,11 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>
-                        <Edit className="size-4 mr-2" />
+                        <Edit className="mr-2 size-4" />
                         修改
                       </DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600">
-                        <Trash2 className="size-4 mr-2" />
+                        <Trash2 className="mr-2 size-4" />
                         删除
                       </DropdownMenuItem>
                     </DropdownMenuContent>

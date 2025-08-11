@@ -13,10 +13,7 @@ export async function GET(request: Request) {
     const includeHistorical = searchParams.get("includeHistorical") === "true";
 
     if (!portfolioId) {
-      return NextResponse.json(
-        { error: "portfolioId 参数不能为空" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "portfolioId 参数不能为空" }, { status: 400 });
     }
 
     const user = await getCurrentUser();
@@ -28,25 +25,17 @@ export async function GET(request: Request) {
     // 验证组合所有权
     const portfolioIdInt = parseInt(portfolioId);
     if (isNaN(portfolioIdInt)) {
-      return NextResponse.json(
-        { error: "portfolioId 必须是有效的数字" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "portfolioId 必须是有效的数字" }, { status: 400 });
     }
 
     const portfolio = await db
       .select()
       .from(portfolios)
-      .where(
-        and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id))
-      )
+      .where(and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, user.id)))
       .limit(1);
 
     if (portfolio.length === 0) {
-      return NextResponse.json(
-        { error: "Portfolio not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
     }
 
     // 获取所有有交易记录的股票代码
@@ -74,9 +63,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Error fetching holdings:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

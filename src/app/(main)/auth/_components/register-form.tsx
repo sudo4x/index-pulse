@@ -55,7 +55,7 @@ export function RegisterForm() {
         }, 2000);
       } else {
         toast("注册失败", {
-          description: result.error || "请稍后重试",
+          description: result.error ?? "请稍后重试",
         });
       }
     } catch (error) {

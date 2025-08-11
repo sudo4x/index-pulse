@@ -9,7 +9,14 @@ import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,7 +81,7 @@ export function TransferDialog({ isOpen, onClose, portfolioId, editingTransfer }
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         toast({
           title: "成功",
@@ -102,7 +109,7 @@ export function TransferDialog({ isOpen, onClose, portfolioId, editingTransfer }
           <DialogTitle>银证转账</DialogTitle>
           <DialogDescription>记录资金转入或转出信息。</DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             {/* 转账类型 */}
@@ -165,10 +172,7 @@ export function TransferDialog({ isOpen, onClose, portfolioId, editingTransfer }
                       <FormControl>
                         <Button
                           variant="outline"
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
+                          className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
                         >
                           {field.value ? (
                             format(field.value, "yyyy年MM月dd日", { locale: zhCN })
@@ -180,12 +184,7 @@ export function TransferDialog({ isOpen, onClose, portfolioId, editingTransfer }
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        locale={zhCN}
-                      />
+                      <Calendar mode="single" selected={field.value} onSelect={field.onChange} locale={zhCN} />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
