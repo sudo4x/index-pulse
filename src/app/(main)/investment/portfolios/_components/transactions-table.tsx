@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { TransactionDetail } from "@/types/investment";
@@ -76,9 +76,6 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>交易记录</CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="flex h-32 items-center justify-center">
             <div className="text-muted-foreground">加载中...</div>
@@ -91,9 +88,6 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
   if (transactions.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>交易记录</CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="flex h-32 flex-col items-center justify-center space-y-2">
             <div className="text-muted-foreground">还没有交易记录</div>
@@ -108,12 +102,6 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>
-          交易记录 ({transactions.length})
-          {symbol && <span className="text-muted-foreground ml-2 text-sm font-normal">- {symbol}</span>}
-        </CardTitle>
-      </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader>

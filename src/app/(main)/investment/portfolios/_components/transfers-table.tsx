@@ -8,7 +8,7 @@ import { MoreVertical, Edit, Trash2, ArrowDownLeft, ArrowUpRight } from "lucide-
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -89,9 +89,6 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>转账记录</CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="flex h-32 items-center justify-center">
             <div className="text-muted-foreground">加载中...</div>
@@ -104,9 +101,6 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
   if (transfers.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>转账记录</CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="flex h-32 flex-col items-center justify-center space-y-2">
             <div className="text-muted-foreground">还没有转账记录</div>
@@ -119,9 +113,6 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>转账记录 ({transfers.length})</CardTitle>
-      </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader>

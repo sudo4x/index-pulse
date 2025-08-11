@@ -6,7 +6,7 @@ import { MoreVertical, History, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -192,9 +192,6 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
   if (isLoading) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>持仓</CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="flex h-32 items-center justify-center">
             <div className="text-muted-foreground">加载中...</div>
@@ -207,9 +204,6 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
   if (holdings.length === 0) {
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>持仓</CardTitle>
-        </CardHeader>
         <CardContent>
           <div className="flex h-32 flex-col items-center justify-center space-y-2">
             <div className="text-muted-foreground">还没有持仓记录</div>
@@ -224,9 +218,6 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>持仓 ({holdings.length})</CardTitle>
-      </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader>
