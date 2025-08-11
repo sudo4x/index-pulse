@@ -663,7 +663,7 @@ export function TransactionDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[400px] max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-h-[90vh] w-[428px] overflow-y-auto p-0">
         <DialogTitle className="sr-only">添加持仓品种</DialogTitle>
         <Card className="border-0 shadow-none">
           <CardHeader className="pb-4">
