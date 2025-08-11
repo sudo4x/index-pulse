@@ -64,7 +64,9 @@ export async function PUT(request: Request, { params }: { params: Promise<Params
 
     const { name, sortOrder } = await request.json();
 
-    const updateData: { name?: string; description?: string; sortOrder?: number; updatedAt: Date } = { updatedAt: new Date() };
+    const updateData: { name?: string; description?: string; sortOrder?: number; updatedAt: Date } = {
+      updatedAt: new Date(),
+    };
 
     if (name !== undefined) {
       if (typeof name !== "string" || name.trim().length === 0) {

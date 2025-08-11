@@ -62,11 +62,11 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
       <TableCell>{transaction.symbol}</TableCell>
       <TableCell>{transaction.name}</TableCell>
       <TableCell>{transaction.typeName}</TableCell>
-      <TableCell className="text-right">{transaction.shares ?? '-'}</TableCell>
+      <TableCell className="text-right">{transaction.shares ?? "-"}</TableCell>
       <TableCell className="text-right">¥{Number(transaction.amount).toFixed(2)}</TableCell>
       <TableCell>{transaction.description}</TableCell>
-      <TableCell>{transaction.comment ?? '-'}</TableCell>
-      <TableCell>{new Date(transaction.transactionDate).toLocaleDateString('zh-CN')}</TableCell>
+      <TableCell>{transaction.comment ?? "-"}</TableCell>
+      <TableCell>{new Date(transaction.transactionDate).toLocaleDateString("zh-CN")}</TableCell>
       <TableCell className="text-right">
         <div>操作</div>
       </TableCell>
@@ -77,7 +77,7 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
     return (
       <Card>
         <CardHeader>
-          <CardTitle>交易记录1</CardTitle>
+          <CardTitle>交易记录</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex h-32 items-center justify-center">

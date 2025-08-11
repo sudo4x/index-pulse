@@ -1,15 +1,4 @@
-import {
-  pgTable,
-  uuid,
-  varchar,
-  timestamp,
-  decimal,
-  integer,
-  text,
-  boolean,
-  index,
-  serial,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, decimal, integer, text, boolean, index, serial } from "drizzle-orm/pg-core";
 
 // 用户表 - 使用自增 ID，同时存储 Supabase auth.users 的 UUID
 export const users = pgTable("users", {

@@ -202,6 +202,22 @@ function calculateTransactionAmount(transactionData: {
   return "0.00";
 }
 
+// 格式化股息描述
+function formatDividendDescription(
+  unitDividend?: string | number | null,
+  unitIncreaseShares?: string | number | null,
+): string {
+  let desc = "";
+  if (unitDividend && Number(unitDividend) > 0) {
+    desc += `每股股息 ¥${unitDividend}`;
+  }
+  if (unitIncreaseShares && Number(unitIncreaseShares) > 0) {
+    if (desc) desc += "，";
+    desc += `每股转增 ${unitIncreaseShares} 股`;
+  }
+  return desc || "除权除息";
+}
+
 // 格式化交易描述
 function formatTransactionDescription(transaction: {
   type: TransactionType;
@@ -222,17 +238,8 @@ function formatTransactionDescription(transaction: {
       return `${transaction.unitShares} 股合为 1 股`;
     case TransactionType.SPLIT:
       return `1 股拆为 ${transaction.unitShares} 股`;
-    case TransactionType.DIVIDEND: {
-      let desc = "";
-      if (transaction.unitDividend && Number(transaction.unitDividend) > 0) {
-        desc += `每股股息 ¥${transaction.unitDividend}`;
-      }
-      if (transaction.unitIncreaseShares && Number(transaction.unitIncreaseShares) > 0) {
-        if (desc) desc += "，";
-        desc += `每股转增 ${transaction.unitIncreaseShares} 股`;
-      }
-      return desc || "除权除息";
-    }
+    case TransactionType.DIVIDEND:
+      return formatDividendDescription(transaction.unitDividend, transaction.unitIncreaseShares);
     default:
       return "未知交易类型";
   }
