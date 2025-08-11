@@ -10,7 +10,14 @@ import { zhCN } from "date-fns/locale";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,11 +85,15 @@ const dividendSchema = baseTransactionSchema.extend({
   taxType: z.enum(["amount", "rate"]).default("amount"),
 });
 
-export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, editingTransaction }: TransactionDialogProps) {
+export function TransactionDialog({
+  isOpen,
+  onClose,
+  portfolioId,
+  defaultType,
+  editingTransaction,
+}: TransactionDialogProps) {
   const [transactionType, setTransactionType] = useState<TransactionType>(
-    defaultType === "buy" ? TransactionType.BUY :
-    defaultType === "sell" ? TransactionType.SELL :
-    TransactionType.BUY
+    defaultType === "buy" ? TransactionType.BUY : defaultType === "sell" ? TransactionType.SELL : TransactionType.BUY,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stockCode, setStockCode] = useState("");
@@ -96,34 +107,34 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
   // 生成标准格式股票代码
   const generateStandardSymbol = (code: string): string => {
     const upperCode = code.toUpperCase();
-    
+
     if (upperCode.length !== 6) return upperCode;
-    
+
     // 沪市个股: 60/688开头
     if (upperCode.startsWith("60") || upperCode.startsWith("688")) {
       return `SH${upperCode}`;
     }
-    
+
     // 深市个股: 00/002/30开头
     if (upperCode.startsWith("00") || upperCode.startsWith("002") || upperCode.startsWith("30")) {
       return `SZ${upperCode}`;
     }
-    
+
     // 沪市ETF: 51/588开头
     if (upperCode.startsWith("51") || upperCode.startsWith("588")) {
       return `SH${upperCode}`;
     }
-    
+
     // 深市ETF: 15/16开头
     if (upperCode.startsWith("15") || upperCode.startsWith("16")) {
       return `SZ${upperCode}`;
     }
-    
+
     // 指数: 000开头(沪深)，399开头(深市) - 无后缀
     if (upperCode.startsWith("000") || upperCode.startsWith("399")) {
       return upperCode;
     }
-    
+
     // 默认当作深圳股票
     return `SZ${upperCode}`;
   };
@@ -140,7 +151,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
     try {
       const standardSymbol = generateStandardSymbol(code);
       const response = await fetch(`/api/stock-prices?symbols=${standardSymbol}`);
-      
+
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data.length > 0) {
@@ -163,7 +174,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
   // 处理股票代码输入
   const handleStockCodeChange = (value: string) => {
     setStockCode(value);
-    
+
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
@@ -213,23 +224,29 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
       type: transactionType.toString(),
       transactionDate: new Date(),
       comment: "",
-      ...(transactionType === TransactionType.BUY || transactionType === TransactionType.SELL ? {
-        shares: 0,
-        price: 0,
-        commission: 0,
-        tax: 0,
-        commissionType: "amount" as const,
-        taxType: "amount" as const,
-      } : {}),
-      ...(transactionType === TransactionType.MERGE || transactionType === TransactionType.SPLIT ? {
-        unitShares: 0,
-      } : {}),
-      ...(transactionType === TransactionType.DIVIDEND ? {
-        unitDividend: 0,
-        unitIncreaseShares: 0,
-        tax: 0,
-        taxType: "amount" as const,
-      } : {}),
+      ...(transactionType === TransactionType.BUY || transactionType === TransactionType.SELL
+        ? {
+            shares: 0,
+            price: 0,
+            commission: 0,
+            tax: 0,
+            commissionType: "amount" as const,
+            taxType: "amount" as const,
+          }
+        : {}),
+      ...(transactionType === TransactionType.MERGE || transactionType === TransactionType.SPLIT
+        ? {
+            unitShares: 0,
+          }
+        : {}),
+      ...(transactionType === TransactionType.DIVIDEND
+        ? {
+            unitDividend: 0,
+            unitIncreaseShares: 0,
+            tax: 0,
+            taxType: "amount" as const,
+          }
+        : {}),
     },
   });
 
@@ -241,23 +258,29 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
       type: transactionType.toString(),
       transactionDate: form.getValues("transactionDate"),
       comment: form.getValues("comment"),
-      ...(transactionType === TransactionType.BUY || transactionType === TransactionType.SELL ? {
-        shares: 0,
-        price: 0,
-        commission: 0,
-        tax: 0,
-        commissionType: "amount" as const,
-        taxType: "amount" as const,
-      } : {}),
-      ...(transactionType === TransactionType.MERGE || transactionType === TransactionType.SPLIT ? {
-        unitShares: 0,
-      } : {}),
-      ...(transactionType === TransactionType.DIVIDEND ? {
-        unitDividend: 0,
-        unitIncreaseShares: 0,
-        tax: 0,
-        taxType: "amount" as const,
-      } : {}),
+      ...(transactionType === TransactionType.BUY || transactionType === TransactionType.SELL
+        ? {
+            shares: 0,
+            price: 0,
+            commission: 0,
+            tax: 0,
+            commissionType: "amount" as const,
+            taxType: "amount" as const,
+          }
+        : {}),
+      ...(transactionType === TransactionType.MERGE || transactionType === TransactionType.SPLIT
+        ? {
+            unitShares: 0,
+          }
+        : {}),
+      ...(transactionType === TransactionType.DIVIDEND
+        ? {
+            unitDividend: 0,
+            unitIncreaseShares: 0,
+            tax: 0,
+            taxType: "amount" as const,
+          }
+        : {}),
     });
   }, [transactionType]);
 
@@ -284,7 +307,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         toast({
           title: "成功",
@@ -312,8 +335,10 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
         return (
           <>
             {/* 买入价/卖出价 */}
-            <div className="grid grid-cols-[80px_1fr] gap-4 items-center">
-              <Label className="text-sm font-medium">{transactionType === TransactionType.BUY ? "买入价" : "卖出价"}</Label>
+            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
+              <Label className="text-sm font-medium">
+                {transactionType === TransactionType.BUY ? "买入价" : "卖出价"}
+              </Label>
               <FormField
                 control={form.control}
                 name="price"
@@ -326,7 +351,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                         placeholder="122.22"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full"
+                        className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
                     </FormControl>
                     <FormMessage />
@@ -336,8 +361,10 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
             </div>
 
             {/* 买入量/卖出量 */}
-            <div className="grid grid-cols-[80px_1fr] gap-4 items-center">
-              <Label className="text-sm font-medium">{transactionType === TransactionType.BUY ? "买入量" : "卖出量"}</Label>
+            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
+              <Label className="text-sm font-medium">
+                {transactionType === TransactionType.BUY ? "买入量" : "卖出量"}
+              </Label>
               <FormField
                 control={form.control}
                 name="shares"
@@ -349,7 +376,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                         placeholder="数量"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full"
+                        className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
                     </FormControl>
                     <FormMessage />
@@ -359,7 +386,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
             </div>
 
             {/* 佣金 - 3列布局 */}
-            <div className="grid grid-cols-[80px_1fr_80px] gap-4 items-center">
+            <div className="grid grid-cols-[80px_1fr_80px] items-center gap-4">
               <Label className="text-sm font-medium">佣金</Label>
               <FormField
                 control={form.control}
@@ -373,7 +400,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                         placeholder="1"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full"
+                        className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
                     </FormControl>
                     <FormMessage />
@@ -403,7 +430,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
             </div>
 
             {/* 税费 - 3列布局 */}
-            <div className="grid grid-cols-[80px_1fr_80px] gap-4 items-center">
+            <div className="grid grid-cols-[80px_1fr_80px] items-center gap-4">
               <Label className="text-sm font-medium">税费</Label>
               <FormField
                 control={form.control}
@@ -417,7 +444,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                         placeholder="0"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full"
+                        className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
                     </FormControl>
                     <FormMessage />
@@ -450,7 +477,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
 
       case TransactionType.MERGE:
         return (
-          <div className="grid grid-cols-[80px_1fr] gap-4 items-center">
+          <div className="grid grid-cols-[80px_1fr] items-center gap-4">
             <Label className="text-sm font-medium">合股比例</Label>
             <FormField
               control={form.control}
@@ -463,7 +490,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                       placeholder="10（10股合为1股）"
                       {...field}
                       onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     />
                   </FormControl>
                   <FormMessage />
@@ -475,7 +502,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
 
       case TransactionType.SPLIT:
         return (
-          <div className="grid grid-cols-[80px_1fr] gap-4 items-center">
+          <div className="grid grid-cols-[80px_1fr] items-center gap-4">
             <Label className="text-sm font-medium">拆股比例</Label>
             <FormField
               control={form.control}
@@ -488,7 +515,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                       placeholder="2（1股拆为2股）"
                       {...field}
                       onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                     />
                   </FormControl>
                   <FormMessage />
@@ -501,7 +528,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
       case TransactionType.DIVIDEND:
         return (
           <>
-            <div className="grid grid-cols-[80px_1fr] gap-4 items-center">
+            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
               <Label className="text-sm font-medium">每股股息</Label>
               <FormField
                 control={form.control}
@@ -515,7 +542,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                         placeholder="0.00"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full"
+                        className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
                     </FormControl>
                     <FormMessage />
@@ -524,7 +551,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
               />
             </div>
 
-            <div className="grid grid-cols-[80px_1fr] gap-4 items-center">
+            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
               <Label className="text-sm font-medium">每股转增</Label>
               <FormField
                 control={form.control}
@@ -538,7 +565,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                         placeholder="0.00"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full"
+                        className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
                     </FormControl>
                     <FormMessage />
@@ -546,8 +573,8 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                 )}
               />
             </div>
-            
-            <div className="grid grid-cols-[80px_1fr] gap-4 items-center">
+
+            <div className="grid grid-cols-[80px_1fr] items-center gap-4">
               <Label className="text-sm font-medium">股权登记日</Label>
               <FormField
                 control={form.control}
@@ -561,7 +588,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                             variant="outline"
                             className={cn(
                               "w-full justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground"
+                              !field.value && "text-muted-foreground",
                             )}
                           >
                             {field.value ? (
@@ -573,12 +600,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            locale={zhCN}
-                          />
+                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} locale={zhCN} />
                         </PopoverContent>
                       </Popover>
                     </FormControl>
@@ -589,7 +611,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
             </div>
 
             {/* 税费 - 3列布局 */}
-            <div className="grid grid-cols-[80px_1fr_80px] gap-4 items-center">
+            <div className="grid grid-cols-[80px_1fr_80px] items-center gap-4">
               <Label className="text-sm font-medium">税费</Label>
               <FormField
                 control={form.control}
@@ -603,7 +625,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                         placeholder="0.00"
                         {...field}
                         onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full"
+                        className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                       />
                     </FormControl>
                     <FormMessage />
@@ -641,7 +663,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="w-[400px] max-h-[90vh] overflow-y-auto p-0">
         <DialogTitle className="sr-only">添加持仓品种</DialogTitle>
         <Card className="border-0 shadow-none">
           <CardHeader className="pb-4">
@@ -651,8 +673,8 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                 {/* 股票搜索 */}
-                <div className="grid grid-cols-[80px_1fr] gap-4 items-start">
-                  <Label className="text-sm font-medium pt-2">股票</Label>
+                <div className="grid grid-cols-[80px_1fr] items-start gap-4">
+                  <Label className="pt-2 text-sm font-medium">股票</Label>
                   <div className="space-y-2">
                     <div className="relative">
                       <Input
@@ -661,26 +683,30 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                         onChange={(e) => handleStockCodeChange(e.target.value)}
                         className="w-full"
                       />
-                      
+
                       {/* 搜索结果下拉 */}
                       {showSearchResults && (
-                        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border rounded-md shadow-lg">
+                        <div className="absolute top-full right-0 left-0 z-50 mt-1 rounded-md border bg-white shadow-lg">
                           {isSearching ? (
-                            <div className="p-3 text-center text-muted-foreground">搜索中...</div>
+                            <div className="text-muted-foreground p-3 text-center">搜索中...</div>
                           ) : stockSearchResults.length > 0 ? (
                             <div className="max-h-48 overflow-y-auto">
                               {stockSearchResults.map((stock) => (
                                 <div
                                   key={stock.symbol}
-                                  className="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0"
+                                  className="cursor-pointer border-b p-3 last:border-b-0 hover:bg-gray-50"
                                   onClick={() => selectStock(stock)}
                                 >
-                                  <div className="font-medium">{stock.name}({stock.symbol})</div>
-                                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                                    <span>最新 <span className="text-green-600">{stock.currentPrice}</span></span>
-                                    <span className={cn(
-                                      parseFloat(stock.change) >= 0 ? "text-red-500" : "text-green-500"
-                                    )}>
+                                  <div className="font-medium">
+                                    {stock.name}({stock.symbol})
+                                  </div>
+                                  <div className="text-muted-foreground flex items-center space-x-4 text-sm">
+                                    <span>
+                                      最新 <span className="text-green-600">{stock.currentPrice}</span>
+                                    </span>
+                                    <span
+                                      className={cn(parseFloat(stock.change) >= 0 ? "text-red-500" : "text-green-500")}
+                                    >
                                       {stock.change}({stock.changePercent}%)
                                     </span>
                                   </div>
@@ -688,21 +714,23 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                               ))}
                             </div>
                           ) : (
-                            <div className="p-3 text-center text-muted-foreground">未找到匹配的股票</div>
+                            <div className="text-muted-foreground p-3 text-center">未找到匹配的股票</div>
                           )}
                         </div>
                       )}
                     </div>
-                    
+
                     {/* 已选股票显示 - 显示价格和涨跌信息 */}
                     {selectedStock && form.watch("symbol") && (
-                      <div className="flex items-center justify-between p-2 bg-blue-50 rounded-md">
+                      <div className="flex items-center justify-between rounded-md bg-blue-50 p-2">
                         <div className="flex items-center space-x-4 text-sm">
                           <span className="font-medium">{selectedStock.name}</span>
                           <span className="text-green-600">最新 {selectedStock.currentPrice}</span>
-                          <span className={cn(
-                            parseFloat(selectedStock.change || "0") >= 0 ? "text-red-500" : "text-green-500"
-                          )}>
+                          <span
+                            className={cn(
+                              parseFloat(selectedStock.change || "0") >= 0 ? "text-red-500" : "text-green-500",
+                            )}
+                          >
                             {selectedStock.change}({selectedStock.changePercent}%)
                           </span>
                         </div>
@@ -727,11 +755,11 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                 </div>
 
                 {/* 交易类型 */}
-                <div className="grid grid-cols-[80px_1fr] gap-4 items-center">
+                <div className="grid grid-cols-[80px_1fr] items-center gap-4">
                   <Label className="text-sm font-medium">交易类型</Label>
                   <div className="w-full">
-                    <Select 
-                      value={transactionType.toString()} 
+                    <Select
+                      value={transactionType.toString()}
                       onValueChange={(value) => setTransactionType(Number(value) as TransactionType)}
                     >
                       <SelectTrigger className="w-full">
@@ -749,7 +777,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                 </div>
 
                 {/* 委托日期 */}
-                <div className="grid grid-cols-[80px_1fr] gap-4 items-center">
+                <div className="grid grid-cols-[80px_1fr] items-center gap-4">
                   <Label className="text-sm font-medium">委托日期</Label>
                   <FormField
                     control={form.control}
@@ -763,7 +791,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                                 variant="outline"
                                 className={cn(
                                   "w-full justify-start text-left font-normal",
-                                  !field.value && "text-muted-foreground"
+                                  !field.value && "text-muted-foreground",
                                 )}
                               >
                                 {field.value ? (
@@ -775,12 +803,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType, e
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                mode="single"
-                                selected={field.value}
-                                onSelect={field.onChange}
-                                locale={zhCN}
-                              />
+                              <Calendar mode="single" selected={field.value} onSelect={field.onChange} locale={zhCN} />
                             </PopoverContent>
                           </Popover>
                         </FormControl>
