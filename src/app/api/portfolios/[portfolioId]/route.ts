@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+
+import { eq, and } from "drizzle-orm";
+
+import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { portfolios } from "@/lib/db/schema";
-import { getCurrentUser } from "@/lib/auth/get-user";
-import { eq, and } from "drizzle-orm";
 
 interface Params {
   portfolioId: string;
@@ -62,7 +64,7 @@ export async function PUT(request: Request, { params }: { params: Promise<Params
 
     const { name, sortOrder } = await request.json();
 
-    const updateData: any = { updatedAt: new Date() };
+    const updateData: { name?: string; description?: string; sortOrder?: number; updatedAt: Date } = { updatedAt: new Date() };
 
     if (name !== undefined) {
       if (typeof name !== "string" || name.trim().length === 0) {

@@ -4,7 +4,6 @@ import { TrendingUp, TrendingDown, DollarSign, PieChart, Wallet, Target } from "
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-
 import { PortfolioOverview } from "@/types/investment";
 
 interface OverviewCardsProps {

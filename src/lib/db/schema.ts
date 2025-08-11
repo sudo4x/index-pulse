@@ -7,7 +7,6 @@ import {
   integer,
   text,
   boolean,
-  primaryKey,
   index,
   serial,
 } from "drizzle-orm/pg-core";

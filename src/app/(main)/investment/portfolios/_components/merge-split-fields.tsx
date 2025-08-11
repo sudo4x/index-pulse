@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TransactionType } from "@/types/investment";
 
+import { MergeSplitForm } from "./transaction-form-types";
+
 interface MergeSplitFieldsProps {
   transactionType: TransactionType;
-  form: any; // Form control from react-hook-form // eslint-disable-line @typescript-eslint/no-explicit-any
+  form: MergeSplitForm;
 }
 
 export function MergeSplitFields({ transactionType, form }: MergeSplitFieldsProps) {
@@ -37,4 +39,3 @@ export function MergeSplitFields({ transactionType, form }: MergeSplitFieldsProp
     </div>
   );
 }
-

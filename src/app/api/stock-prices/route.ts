@@ -1,7 +1,21 @@
 import { NextResponse } from "next/server";
+
+import { inArray, gte } from "drizzle-orm";
+
 import { db } from "@/lib/db";
 import { stockPrices } from "@/lib/db/schema";
-import { inArray, gte } from "drizzle-orm";
+
+type StockPriceData = {
+  symbol: string;
+  name: string;
+  currentPrice: string;
+  change: string;
+  changePercent: string;
+  volume: string | null;
+  turnover: string | null;
+  marketValue: string | null;
+  lastUpdated: Date;
+};
 
 // 获取股票实时行情
 export async function GET(request: Request) {
@@ -29,39 +43,11 @@ export async function GET(request: Request) {
     const cachedSymbols = cachedPrices.map((p) => p.symbol);
     const needUpdateSymbols = symbolList.filter((symbol) => !cachedSymbols.includes(symbol));
 
-    let allPrices = [...cachedPrices];
+    const allPrices = [...cachedPrices];
 
     // 如果有需要更新的股票，从外部接口获取
     if (needUpdateSymbols.length > 0) {
-      try {
-        const freshPrices = await fetchStockPricesFromExternal(needUpdateSymbols);
-
-        // 更新数据库缓存
-        if (freshPrices.length > 0) {
-          for (const price of freshPrices) {
-            await db
-              .insert(stockPrices)
-              .values(price)
-              .onConflictDoUpdate({
-                target: stockPrices.symbol,
-                set: {
-                  name: price.name,
-                  currentPrice: price.currentPrice,
-                  change: price.change,
-                  changePercent: price.changePercent,
-                  volume: price.volume,
-                  turnover: price.turnover,
-                  marketValue: price.marketValue,
-                  lastUpdated: new Date(),
-                },
-              });
-          }
-          allPrices.push(...freshPrices);
-        }
-      } catch (error) {
-        console.error("Error fetching fresh stock prices:", error);
-        // 如果获取外部数据失败，返回缓存的数据（如果有的话）
-      }
+      await updateStockPricesFromExternal(needUpdateSymbols, allPrices);
     }
 
     return NextResponse.json({
@@ -71,6 +57,43 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error in stock prices API:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// 更新股票价格数据
+async function updateStockPricesFromExternal(symbols: string[], allPrices: StockPriceData[]) {
+  try {
+    const freshPrices = await fetchStockPricesFromExternal(symbols);
+
+    if (freshPrices.length > 0) {
+      await updateStockPricesInDatabase(freshPrices);
+      allPrices.push(...freshPrices);
+    }
+  } catch (error) {
+    console.error("Error fetching fresh stock prices:", error);
+    // 如果获取外部数据失败，返回缓存的数据（如果有的话）
+  }
+}
+
+// 更新数据库中的股票价格
+async function updateStockPricesInDatabase(prices: StockPriceData[]) {
+  for (const price of prices) {
+    await db
+      .insert(stockPrices)
+      .values(price)
+      .onConflictDoUpdate({
+        target: stockPrices.symbol,
+        set: {
+          name: price.name,
+          currentPrice: price.currentPrice,
+          change: price.change,
+          changePercent: price.changePercent,
+          volume: price.volume,
+          turnover: price.turnover,
+          marketValue: price.marketValue,
+          lastUpdated: new Date(),
+        },
+      });
   }
 }
 
@@ -120,28 +143,15 @@ function formatSymbolForTencent(symbol: string): string {
 
 // 根据代码规则自动识别市场
 function autoDetectMarket(code: string): string {
-  // 沪市个股: 60/688开头
-  if (code.startsWith("60") || code.startsWith("688")) {
+  if (isShangHaiCode(code)) {
     return `s_sh${code}`;
   }
 
-  // 深市个股: 00/002/30开头
-  if (code.startsWith("00") || code.startsWith("002") || code.startsWith("30")) {
+  if (isShenZhenCode(code)) {
     return `s_sz${code}`;
   }
 
-  // 沪市ETF: 51/588开头
-  if (code.startsWith("51") || code.startsWith("588")) {
-    return `s_sh${code}`;
-  }
-
-  // 深市ETF: 15/16开头
-  if (code.startsWith("15") || code.startsWith("16")) {
-    return `s_sz${code}`;
-  }
-
-  // 指数: 000开头(沪深)，399开头(深市)
-  if (code.startsWith("000") || code.startsWith("399")) {
+  if (isIndexCode(code)) {
     return `s_${code}`;
   }
 
@@ -149,42 +159,81 @@ function autoDetectMarket(code: string): string {
   return `s_sz${code}`;
 }
 
-// 根据代码生成标准格式
-export function generateStandardSymbol(code: string): string {
-  const upperCode = code.toUpperCase();
+// 检查是否为沪市股票或ETF代码
+function isShangHaiCode(code: string): boolean {
+  return code.startsWith("60") || code.startsWith("688") || code.startsWith("51") || code.startsWith("588");
+}
 
-  // 如果已经是标准格式，直接返回
-  if (upperCode.includes(".") || upperCode.length > 6) {
-    return upperCode;
+// 检查是否为深市股票或ETF代码
+function isShenZhenCode(code: string): boolean {
+  return (
+    code.startsWith("00") ||
+    code.startsWith("002") ||
+    code.startsWith("30") ||
+    code.startsWith("15") ||
+    code.startsWith("16")
+  );
+}
+
+// 检查是否为指数代码
+function isIndexCode(code: string): boolean {
+  return code.startsWith("000") || code.startsWith("399");
+}
+
+// 检查数据行是否有效
+function isValidDataLine(line: string): boolean {
+  return Boolean(line.trim()) && line.includes("=");
+}
+
+// 提取数据行中的变量名和值
+function extractLineData(line: string): { varName: string; dataStr: string } | null {
+  const match = line.match(/v_([^=]+)="([^"]+)"/);
+  if (!match) return null;
+
+  const [, varName, dataStr] = match;
+  return { varName, dataStr };
+}
+
+// 检查数据部分是否足够
+function hasEnoughDataParts(parts: string[]): boolean {
+  return parts.length >= 6;
+}
+
+// 构建股票数据对象
+function buildStockDataObject(varName: string, parts: string[]) {
+  const symbol = extractOriginalSymbol(varName);
+
+  return {
+    symbol,
+    name: parts[1] || "",
+    currentPrice: parts[3] || "0",
+    change: parts[4] || "0",
+    changePercent: parts[5] || "0",
+    volume: parts[6] || "0",
+    turnover: parts[7] || "0",
+    marketValue: parts[9] || "0",
+    lastUpdated: new Date(),
+  };
+}
+
+// 解析单行数据
+function parseStockDataLine(line: string) {
+  if (!isValidDataLine(line)) return null;
+
+  try {
+    const lineData = extractLineData(line);
+    if (!lineData) return null;
+
+    const { varName, dataStr } = lineData;
+    const parts = dataStr.split("~");
+
+    if (!hasEnoughDataParts(parts)) return null;
+
+    return buildStockDataObject(varName, parts);
+  } catch (error) {
+    console.error("Error parsing stock data line:", line, error);
+    return null;
   }
-
-  // 沪市个股: 60/688开头
-  if (upperCode.startsWith("60") || upperCode.startsWith("688")) {
-    return `SH${upperCode}`;
-  }
-
-  // 深市个股: 00/002/30开头
-  if (upperCode.startsWith("00") || upperCode.startsWith("002") || upperCode.startsWith("30")) {
-    return `SZ${upperCode}`;
-  }
-
-  // 沪市ETF: 51/588开头
-  if (upperCode.startsWith("51") || upperCode.startsWith("588")) {
-    return `SH${upperCode}`;
-  }
-
-  // 深市ETF: 15/16开头
-  if (upperCode.startsWith("15") || upperCode.startsWith("16")) {
-    return `SZ${upperCode}`;
-  }
-
-  // 指数: 000开头(沪深)，399开头(深市) - 无后缀
-  if (upperCode.startsWith("000") || upperCode.startsWith("399")) {
-    return upperCode;
-  }
-
-  // 默认当作深圳股票
-  return `SZ${upperCode}`;
 }
 
 // 解析腾讯财经接口返回的数据
@@ -193,36 +242,9 @@ function parseStockDataFromTencent(text: string) {
   const lines = text.split("\n");
 
   for (const line of lines) {
-    if (!line.trim() || !line.includes("=")) continue;
-
-    try {
-      // 提取变量名和值
-      const match = line.match(/v_([^=]+)="([^"]+)"/);
-      if (!match) continue;
-
-      const [, varName, dataStr] = match;
-      const parts = dataStr.split("~");
-
-      if (parts.length < 6) continue;
-
-      // 从变量名提取原始股票代码
-      const symbol = extractOriginalSymbol(varName);
-
-      const stockData = {
-        symbol,
-        name: parts[1] || "",
-        currentPrice: parts[3] || "0",
-        change: parts[4] || "0",
-        changePercent: parts[5] || "0",
-        volume: parts[6] || "0",
-        turnover: parts[7] || "0",
-        marketValue: parts[9] || "0",
-        lastUpdated: new Date(),
-      };
-
+    const stockData = parseStockDataLine(line);
+    if (stockData) {
       results.push(stockData);
-    } catch (error) {
-      console.error("Error parsing stock data line:", line, error);
     }
   }
 

@@ -1,23 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { MoreVertical, Edit, Trash2, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
+import { MoreVertical, Edit, Trash2, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
 import { TransferDetail, TransferType } from "@/types/investment";
 
 interface TransfersTableProps {
@@ -44,7 +44,7 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
       const result = await response.json();
 
       if (result.success) {
-        setTransfers(result.data || []);
+        setTransfers(result.data ?? []);
       }
     } catch (error) {
       console.error("Error fetching transfers:", error);
@@ -58,11 +58,13 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
     }
   };
 
+  const memoizedFetchTransfers = useCallback(fetchTransfers, [portfolioId]);
+
   useEffect(() => {
     if (portfolioId && portfolioId !== "undefined") {
-      fetchTransfers();
+      memoizedFetchTransfers();
     }
-  }, [portfolioId]);
+  }, [portfolioId, memoizedFetchTransfers]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("zh-CN", {

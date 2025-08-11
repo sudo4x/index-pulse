@@ -7,7 +7,6 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
 import { cn } from "@/lib/utils";
 
 export interface StockSearchResult {
@@ -31,34 +30,42 @@ export function StockSearch({ onStockSelect, className }: StockSearchProps) {
   const [selectedStock, setSelectedStock] = useState<StockSearchResult | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 检查是否为沪市股票或ETF代码
+  const isShangHaiCode = (code: string): boolean => {
+    return code.startsWith("60") || code.startsWith("688") || code.startsWith("51") || code.startsWith("588");
+  };
+
+  // 检查是否为深市股票或ETF代码
+  const isShenZhenCode = (code: string): boolean => {
+    return (
+      code.startsWith("00") ||
+      code.startsWith("002") ||
+      code.startsWith("30") ||
+      code.startsWith("15") ||
+      code.startsWith("16")
+    );
+  };
+
+  // 检查是否为指数代码
+  const isIndexCode = (code: string): boolean => {
+    return code.startsWith("000") || code.startsWith("399");
+  };
+
   // 生成标准格式股票代码
   const generateStandardSymbol = (code: string): string => {
     const upperCode = code.toUpperCase();
 
     if (upperCode.length !== 6) return upperCode;
 
-    // 沪市个股: 60/688开头
-    if (upperCode.startsWith("60") || upperCode.startsWith("688")) {
+    if (isShangHaiCode(upperCode)) {
       return `SH${upperCode}`;
     }
 
-    // 深市个股: 00/002/30开头
-    if (upperCode.startsWith("00") || upperCode.startsWith("002") || upperCode.startsWith("30")) {
+    if (isShenZhenCode(upperCode)) {
       return `SZ${upperCode}`;
     }
 
-    // 沪市ETF: 51/588开头
-    if (upperCode.startsWith("51") || upperCode.startsWith("588")) {
-      return `SH${upperCode}`;
-    }
-
-    // 深市ETF: 15/16开头
-    if (upperCode.startsWith("15") || upperCode.startsWith("16")) {
-      return `SZ${upperCode}`;
-    }
-
-    // 指数: 000开头(沪深)，399开头(深市) - 无后缀
-    if (upperCode.startsWith("000") || upperCode.startsWith("399")) {
+    if (isIndexCode(upperCode)) {
       return upperCode;
     }
 

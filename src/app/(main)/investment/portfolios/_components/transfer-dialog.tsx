@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
+
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
+import { CalendarIcon } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
@@ -19,21 +21,24 @@ import {
 } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
 import { TransferType, TransferTypeNames } from "@/types/investment";
 
 interface TransferDialogProps {
   isOpen: boolean;
   onClose: () => void;
   portfolioId: string;
-  editingTransfer?: any; // For editing existing transfers
+  editingTransfer?: {
+    id: string;
+    type: string;
+    amount: number;
+    transferDate: string;
+    comment?: string;
+  }; // For editing existing transfers
 }
 
 const transferSchema = z.object({
@@ -45,14 +50,14 @@ const transferSchema = z.object({
   comment: z.string().optional(),
 });
 
-export function TransferDialog({ isOpen, onClose, portfolioId, editingTransfer }: TransferDialogProps) {
+export function TransferDialog({ isOpen, onClose, portfolioId }: TransferDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof transferSchema>>({
     resolver: zodResolver(transferSchema),
     defaultValues: {
-      type: TransferType.DEPOSIT.toString(),
+      type: TransferType.DEPOSIT.toString() as "1" | "2",
       amount: 0,
       transferDate: new Date(),
       comment: "",

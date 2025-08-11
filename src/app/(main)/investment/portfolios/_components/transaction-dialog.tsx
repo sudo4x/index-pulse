@@ -3,26 +3,26 @@
 import { useState, useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { TransactionType, TransactionTypeNames } from "@/types/investment";
 
 import { StockSearch, StockSearchResult } from "./stock-search";
+import { TransactionForm, TransactionFormData } from "./transaction-form-types";
 import { getTransactionSchema, getTransactionDefaultValues } from "./transaction-schemas";
 import { TransactionTypeFields } from "./transaction-type-fields";
 
@@ -41,11 +41,10 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<any>({
-    // eslint-disable-line @typescript-eslint/no-explicit-any
+  const form = useForm<TransactionFormData>({
     resolver: zodResolver(getTransactionSchema(transactionType)),
     defaultValues: getTransactionDefaultValues(transactionType),
-  });
+  }) as TransactionForm;
 
   // Reset form when transaction type changes
   useEffect(() => {
@@ -65,8 +64,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
     form.setValue("price", parseFloat(stock.currentPrice) || 0);
   };
 
-  const handleSubmit = async (data: any) => {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
+  const handleSubmit = async (data: TransactionFormData) => {
     setIsSubmitting(true);
     try {
       const payload = {

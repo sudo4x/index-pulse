@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+
+import { eq, and, desc } from "drizzle-orm";
+
+import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { transactions, portfolios } from "@/lib/db/schema";
-import { getCurrentUser } from "@/lib/auth/get-user";
-import { eq, and, desc } from "drizzle-orm";
 import { TransactionType, TransactionTypeNames } from "@/types/investment";
 
 // 获取交易记录
@@ -18,7 +20,22 @@ export async function GET(request: Request) {
     const portfolioId = searchParams.get("portfolioId");
     const symbol = searchParams.get("symbol");
 
-    let query = db
+    // 构建查询条件
+    const conditions = [eq(portfolios.userId, user.id)];
+
+    if (portfolioId) {
+      const portfolioIdInt = parseInt(portfolioId);
+      if (isNaN(portfolioIdInt)) {
+        return NextResponse.json({ error: "portfolioId 必须是有效的数字" }, { status: 400 });
+      }
+      conditions.push(eq(transactions.portfolioId, portfolioIdInt));
+    }
+
+    if (symbol) {
+      conditions.push(eq(transactions.symbol, symbol.toUpperCase()));
+    }
+
+    const query = db
       .select({
         id: transactions.id,
         portfolioId: transactions.portfolioId,
@@ -42,19 +59,7 @@ export async function GET(request: Request) {
       })
       .from(transactions)
       .innerJoin(portfolios, eq(transactions.portfolioId, portfolios.id))
-      .where(eq(portfolios.userId, user.id));
-
-    if (portfolioId) {
-      const portfolioIdInt = parseInt(portfolioId);
-      if (isNaN(portfolioIdInt)) {
-        return NextResponse.json({ error: "portfolioId 必须是有效的数字" }, { status: 400 });
-      }
-      query = query.where(and(eq(portfolios.userId, user.id), eq(transactions.portfolioId, portfolioIdInt)));
-    }
-
-    if (symbol) {
-      query = query.where(and(eq(portfolios.userId, user.id), eq(transactions.symbol, symbol.toUpperCase())));
-    }
+      .where(and(...conditions));
 
     const results = await query.orderBy(desc(transactions.transactionDate), desc(transactions.createdAt));
 
@@ -127,43 +132,86 @@ export async function POST(request: Request) {
   }
 }
 
+// 计算买入卖出交易金额
+function calculateTradeAmount(
+  shares: number,
+  price: number,
+  commission: number,
+  tax: number,
+  type: TransactionType,
+): string {
+  const baseAmount = shares * price;
+  const fees = commission + tax;
+
+  const amount =
+    type === TransactionType.BUY
+      ? baseAmount + fees // 买入时加上费用
+      : baseAmount - fees; // 卖出时扣除费用
+
+  return amount.toFixed(2);
+}
+
+// 计算股息金额
+function calculateDividendAmount(unitDividend: number, holdingShares: number): string {
+  return (unitDividend * holdingShares).toFixed(2);
+}
+
+// 提取交易数值参数
+function extractTransactionParams(transactionData: {
+  shares?: string | number;
+  price?: string | number;
+  commission?: string | number;
+  tax?: string | number;
+  unitDividend?: string | number;
+}) {
+  return {
+    shares: Number(transactionData.shares ?? 0),
+    price: Number(transactionData.price ?? 0),
+    commission: Number(transactionData.commission ?? 0),
+    tax: Number(transactionData.tax ?? 0),
+    unitDividend: Number(transactionData.unitDividend ?? 0),
+  };
+}
+
+// 检查是否为买入或卖出交易
+function isTradeTransaction(type: TransactionType): boolean {
+  return type === TransactionType.BUY || type === TransactionType.SELL;
+}
+
 // 计算交易金额
-function calculateTransactionAmount(transactionData: any): string {
-  const type = transactionData.type as TransactionType;
+function calculateTransactionAmount(transactionData: {
+  type: TransactionType;
+  shares?: string | number;
+  price?: string | number;
+  commission?: string | number;
+  tax?: string | number;
+  unitDividend?: string | number;
+}): string {
+  const type = transactionData.type;
+  const params = extractTransactionParams(transactionData);
 
-  switch (type) {
-    case TransactionType.BUY:
-    case TransactionType.SELL:
-      const shares = Number(transactionData.shares || 0);
-      const price = Number(transactionData.price || 0);
-      const commission = Number(transactionData.commission || 0);
-      const tax = Number(transactionData.tax || 0);
-
-      let amount = shares * price;
-
-      if (type === TransactionType.BUY) {
-        amount += commission + tax; // 买入时加上费用
-      } else {
-        amount -= commission + tax; // 卖出时扣除费用
-      }
-
-      return amount.toFixed(2);
-
-    case TransactionType.DIVIDEND:
-      const dividend = Number(transactionData.unitDividend || 0);
-      const holdingShares = Number(transactionData.shares || 0); // 这里应该是持股数
-      return (dividend * holdingShares).toFixed(2);
-
-    case TransactionType.MERGE:
-    case TransactionType.SPLIT:
-    default:
-      return "0.00";
+  if (isTradeTransaction(type)) {
+    return calculateTradeAmount(params.shares, params.price, params.commission, params.tax, type);
   }
+
+  if (type === TransactionType.DIVIDEND) {
+    return calculateDividendAmount(params.unitDividend, params.shares);
+  }
+
+  // MERGE, SPLIT, 或其他类型默认为 0
+  return "0.00";
 }
 
 // 格式化交易描述
-function formatTransactionDescription(transaction: any): string {
-  const type = transaction.type as TransactionType;
+function formatTransactionDescription(transaction: {
+  type: TransactionType;
+  shares: string | number | null;
+  price: string | number | null;
+  unitShares?: string | number | null;
+  unitDividend?: string | number | null;
+  unitIncreaseShares?: string | number | null;
+}): string {
+  const type = transaction.type;
 
   switch (type) {
     case TransactionType.BUY:
@@ -174,16 +222,17 @@ function formatTransactionDescription(transaction: any): string {
       return `${transaction.unitShares} 股合为 1 股`;
     case TransactionType.SPLIT:
       return `1 股拆为 ${transaction.unitShares} 股`;
-    case TransactionType.DIVIDEND:
+    case TransactionType.DIVIDEND: {
       let desc = "";
-      if (transaction.unitDividend > 0) {
+      if (transaction.unitDividend && Number(transaction.unitDividend) > 0) {
         desc += `每股股息 ¥${transaction.unitDividend}`;
       }
-      if (transaction.unitIncreaseShares > 0) {
+      if (transaction.unitIncreaseShares && Number(transaction.unitIncreaseShares) > 0) {
         if (desc) desc += "，";
         desc += `每股转增 ${transaction.unitIncreaseShares} 股`;
       }
       return desc || "除权除息";
+    }
     default:
       return "未知交易类型";
   }

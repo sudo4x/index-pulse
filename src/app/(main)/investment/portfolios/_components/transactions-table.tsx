@@ -2,24 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-import { format } from "date-fns";
-import { zhCN } from "date-fns/locale";
-import { MoreVertical, Edit, Trash2, ArrowUpRight, ArrowDownRight, RefreshCw, Scissors, Gift } from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-
-import { TransactionDetail, TransactionType } from "@/types/investment";
+import { TransactionDetail } from "@/types/investment";
 
 interface TransactionsTableProps {
   portfolioId: string;
@@ -71,56 +57,27 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
     }
   }, [portfolioId, symbol, fetchTransactions]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("zh-CN", {
-      style: "currency",
-      currency: "CNY",
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const formatShares = (shares: number) => {
-    return shares.toLocaleString("zh-CN");
-  };
-
-  const getTypeIcon = (type: TransactionType) => {
-    switch (type) {
-      case TransactionType.BUY:
-        return <ArrowUpRight className="size-4 text-green-600" />;
-      case TransactionType.SELL:
-        return <ArrowDownRight className="size-4 text-red-600" />;
-      case TransactionType.MERGE:
-        return <RefreshCw className="size-4 text-blue-600" />;
-      case TransactionType.SPLIT:
-        return <Scissors className="size-4 text-blue-600" />;
-      case TransactionType.DIVIDEND:
-        return <Gift className="size-4 text-purple-600" />;
-      default:
-        return null;
-    }
-  };
-
-  const getTypeBadgeVariant = (type: TransactionType) => {
-    switch (type) {
-      case TransactionType.BUY:
-        return "default";
-      case TransactionType.SELL:
-        return "destructive";
-      case TransactionType.MERGE:
-      case TransactionType.SPLIT:
-        return "secondary";
-      case TransactionType.DIVIDEND:
-        return "outline";
-      default:
-        return "secondary";
-    }
-  };
+  const renderTransactionRow = (transaction: TransactionDetail) => (
+    <TableRow key={transaction.id}>
+      <TableCell>{transaction.symbol}</TableCell>
+      <TableCell>{transaction.name}</TableCell>
+      <TableCell>{transaction.typeName}</TableCell>
+      <TableCell className="text-right">{transaction.shares ?? '-'}</TableCell>
+      <TableCell className="text-right">¥{Number(transaction.amount).toFixed(2)}</TableCell>
+      <TableCell>{transaction.description}</TableCell>
+      <TableCell>{transaction.comment ?? '-'}</TableCell>
+      <TableCell>{new Date(transaction.transactionDate).toLocaleDateString('zh-CN')}</TableCell>
+      <TableCell className="text-right">
+        <div>操作</div>
+      </TableCell>
+    </TableRow>
+  );
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>交易记录</CardTitle>
+          <CardTitle>交易记录1</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex h-32 items-center justify-center">
@@ -172,91 +129,7 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody>
-            {transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell>
-                  <div className="flex flex-col space-y-1">
-                    <div className="font-medium">{transaction.name}</div>
-                    <div className="text-muted-foreground text-sm">{transaction.symbol}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    {getTypeIcon(transaction.type)}
-                    <Badge variant={getTypeBadgeVariant(transaction.type)}>{transaction.typeName}</Badge>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  {transaction.price !== undefined && transaction.price > 0 ? (
-                    <div className="font-mono">{formatCurrency(transaction.price)}</div>
-                  ) : (
-                    <div className="text-muted-foreground">-</div>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  {transaction.shares !== undefined && transaction.shares > 0 ? (
-                    <div className="font-mono">{formatShares(transaction.shares)}</div>
-                  ) : (
-                    <div className="text-muted-foreground">-</div>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div
-                    className={cn(
-                      "font-mono",
-                      transaction.type === TransactionType.BUY
-                        ? "text-red-600"
-                        : transaction.type === TransactionType.SELL
-                          ? "text-green-600"
-                          : transaction.type === TransactionType.DIVIDEND
-                            ? "text-green-600"
-                            : "",
-                    )}
-                  >
-                    {transaction.type === TransactionType.BUY
-                      ? "-"
-                      : transaction.type === TransactionType.SELL || transaction.type === TransactionType.DIVIDEND
-                        ? "+"
-                        : ""}
-                    {formatCurrency(Math.abs(transaction.amount))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="max-w-40 text-sm">{transaction.description}</div>
-                </TableCell>
-                <TableCell>
-                  {transaction.comment && (
-                    <div className="text-muted-foreground max-w-32 truncate text-sm">{transaction.comment}</div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    {format(new Date(transaction.transactionDate), "yyyy-MM-dd", { locale: zhCN })}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="size-8 p-0">
-                        <MoreVertical className="size-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Edit className="mr-2 size-4" />
-                        修改
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
-                        <Trash2 className="mr-2 size-4" />
-                        删除
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
+          <TableBody>{transactions.map(renderTransactionRow)}</TableBody>
         </Table>
       </CardContent>
     </Card>

@@ -1,4 +1,5 @@
 import { eq, and } from "drizzle-orm";
+
 import { db } from "@/lib/db";
 import { transactions, transfers, holdings, stockPrices } from "@/lib/db/schema";
 import { TransactionType, TransferType, HoldingDetail, PortfolioOverview } from "@/types/investment";
@@ -131,7 +132,7 @@ export class PortfolioCalculator {
       dayFloatAmount,
       dayFloatRate,
       isActive: totalShares > 0,
-      openTime: openTime?.toISOString() || "",
+      openTime: openTime?.toISOString() ?? "",
       liquidationTime: liquidationTime?.toISOString(),
     };
   }

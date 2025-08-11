@@ -11,11 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 import { cn } from "@/lib/utils";
 
+import { DividendForm } from "./transaction-form-types";
+
 interface DividendFieldsProps {
-  form: any; // Form control from react-hook-form // eslint-disable-line @typescript-eslint/no-explicit-any
+  form: DividendForm;
 }
 
 export function DividendFields({ form }: DividendFieldsProps) {

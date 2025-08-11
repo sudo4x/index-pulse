@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+
 import { syncAuthUser } from "@/lib/auth/sync-user";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     // 登录成功时，确保用户数据已同步
-    if (data.user && data.user.email) {
+    if (data.user?.email) {
       try {
         await syncAuthUser({
           id: data.user.id,

@@ -16,7 +16,6 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
 import { HoldingDetail } from "@/types/investment";
 
 interface HoldingsTableProps {
@@ -95,89 +94,98 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
     return shares.toLocaleString("zh-CN");
   };
 
+  const renderStockNameCell = (holding: HoldingDetail) => (
+    <TableCell>
+      <div className="flex flex-col space-y-1">
+        <div className="font-medium">{holding.name}</div>
+        <div className="text-muted-foreground text-sm">{holding.symbol}</div>
+        {!holding.isActive && (
+          <Badge variant="secondary" className="w-fit text-xs">
+            已清仓
+          </Badge>
+        )}
+      </div>
+    </TableCell>
+  );
+
+  const renderPriceChangeCell = (holding: HoldingDetail) => (
+    <TableCell className="text-right">
+      <div className="flex flex-col items-end space-y-1">
+        <div className={cn("font-mono", holding.change >= 0 ? "text-green-600" : "text-red-600")}>
+          {holding.change >= 0 ? "+" : ""}
+          {holding.change.toFixed(2)}
+        </div>
+        <div className={cn("font-mono text-sm", holding.changePercent >= 0 ? "text-green-600" : "text-red-600")}>
+          {holding.changePercent >= 0 ? "+" : ""}
+          {formatPercent(holding.changePercent)}
+        </div>
+      </div>
+    </TableCell>
+  );
+
+  const renderCostCell = (holding: HoldingDetail) => (
+    <TableCell className="text-right">
+      <div className="flex flex-col items-end space-y-1">
+        <div className="font-mono text-sm">{formatCurrency(holding.dilutedCost)}</div>
+        <div className="text-muted-foreground font-mono text-sm">{formatCurrency(holding.holdCost)}</div>
+      </div>
+    </TableCell>
+  );
+
+  const renderProfitLossCell = (amount: number, rate: number) => (
+    <TableCell className="text-right">
+      <div className="flex flex-col items-end space-y-1">
+        <div className={cn("font-mono", amount >= 0 ? "text-green-600" : "text-red-600")}>
+          {amount >= 0 ? "+" : ""}
+          {formatCurrency(amount)}
+        </div>
+        <div className={cn("font-mono text-sm", rate >= 0 ? "text-green-600" : "text-red-600")}>
+          {rate >= 0 ? "+" : ""}
+          {formatPercent(rate)}
+        </div>
+      </div>
+    </TableCell>
+  );
+
+  const renderActionsCell = (holding: HoldingDetail) => (
+    <TableCell className="text-right">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => console.log("交易记录", holding.symbol)}>
+            <History className="mr-2 h-4 w-4" />
+            交易记录
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => console.log("删除持仓", holding.symbol)} className="text-red-600">
+            <Trash2 className="mr-2 h-4 w-4" />
+            删除持仓
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </TableCell>
+  );
+
   const renderHoldingRow = (holding: HoldingDetail) => (
     <TableRow key={holding.id}>
-      <TableCell>
-        <div className="flex flex-col space-y-1">
-          <div className="font-medium">{holding.name}</div>
-          <div className="text-muted-foreground text-sm">{holding.symbol}</div>
-          {!holding.isActive && (
-            <Badge variant="secondary" className="w-fit text-xs">
-              已清仓
-            </Badge>
-          )}
-        </div>
-      </TableCell>
+      {renderStockNameCell(holding)}
       <TableCell className="text-right">
         <div className="font-mono">{formatCurrency(holding.currentPrice)}</div>
       </TableCell>
-      <TableCell className="text-right">
-        <div className="flex flex-col items-end space-y-1">
-          <div className={cn("font-mono", holding.change >= 0 ? "text-green-600" : "text-red-600")}>
-            {holding.change >= 0 ? "+" : ""}
-            {holding.change.toFixed(2)}
-          </div>
-          <div className={cn("font-mono text-sm", holding.changePercent >= 0 ? "text-green-600" : "text-red-600")}>
-            {holding.changePercent >= 0 ? "+" : ""}
-            {formatPercent(holding.changePercent)}
-          </div>
-        </div>
-      </TableCell>
+      {renderPriceChangeCell(holding)}
       <TableCell className="text-right">
         <div className="font-mono">{formatCurrency(holding.marketValue)}</div>
       </TableCell>
       <TableCell className="text-right">
         <div className="font-mono">{formatShares(holding.shares)}</div>
       </TableCell>
-      <TableCell className="text-right">
-        <div className="flex flex-col items-end space-y-1">
-          <div className="font-mono text-sm">{formatCurrency(holding.dilutedCost)}</div>
-          <div className="text-muted-foreground font-mono text-sm">{formatCurrency(holding.holdCost)}</div>
-        </div>
-      </TableCell>
-      <TableCell className="text-right">
-        <div className="flex flex-col items-end space-y-1">
-          <div className={cn("font-mono", holding.floatAmount >= 0 ? "text-green-600" : "text-red-600")}>
-            {holding.floatAmount >= 0 ? "+" : ""}
-            {formatCurrency(holding.floatAmount)}
-          </div>
-          <div className={cn("font-mono text-sm", holding.floatRate >= 0 ? "text-green-600" : "text-red-600")}>
-            {holding.floatRate >= 0 ? "+" : ""}
-            {formatPercent(holding.floatRate)}
-          </div>
-        </div>
-      </TableCell>
-      <TableCell className="text-right">
-        <div className="flex flex-col items-end space-y-1">
-          <div className={cn("font-mono", holding.accumAmount >= 0 ? "text-green-600" : "text-red-600")}>
-            {holding.accumAmount >= 0 ? "+" : ""}
-            {formatCurrency(holding.accumAmount)}
-          </div>
-          <div className={cn("font-mono text-sm", holding.accumRate >= 0 ? "text-green-600" : "text-red-600")}>
-            {holding.accumRate >= 0 ? "+" : ""}
-            {formatPercent(holding.accumRate)}
-          </div>
-        </div>
-      </TableCell>
-      <TableCell className="text-right">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => console.log("交易记录", holding.symbol)}>
-              <History className="mr-2 h-4 w-4" />
-              交易记录
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => console.log("删除持仓", holding.symbol)} className="text-red-600">
-              <Trash2 className="mr-2 h-4 w-4" />
-              删除持仓
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
+      {renderCostCell(holding)}
+      {renderProfitLossCell(holding.floatAmount, holding.floatRate)}
+      {renderProfitLossCell(holding.accumAmount, holding.accumRate)}
+      {renderActionsCell(holding)}
     </TableRow>
   );
 

@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import { toast } from "sonner";
 
 type ToasterToast = {
@@ -7,25 +8,28 @@ type ToasterToast = {
   variant?: "default" | "destructive";
 };
 
-const TOAST_LIMIT = 1;
+const showErrorToast = (title?: string, description?: string) => {
+  toast.error(title ?? description ?? "发生错误", {
+    description: title && description ? description : undefined,
+  });
+};
+
+const showSuccessToast = (title?: string, description?: string) => {
+  toast.success(title ?? description ?? "操作成功", {
+    description: title && description ? description : undefined,
+  });
+};
 
 export const useToast = () => {
-  const [toasts, setToasts] = React.useState<ToasterToast[]>([]);
-
-  const toastFn = React.useCallback(({ title, description, variant = "default", ...props }: ToasterToast) => {
+  const toastFn = React.useCallback(({ title, description, variant = "default" }: ToasterToast) => {
     if (variant === "destructive") {
-      toast.error(title || description || "发生错误", {
-        description: title && description ? description : undefined,
-      });
+      showErrorToast(title, description);
     } else {
-      toast.success(title || description || "操作成功", {
-        description: title && description ? description : undefined,
-      });
+      showSuccessToast(title, description);
     }
   }, []);
 
   return {
     toast: toastFn,
-    toasts,
   };
 };

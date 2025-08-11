@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+
+import { eq, and, desc } from "drizzle-orm";
+
+import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { transfers, portfolios } from "@/lib/db/schema";
-import { getCurrentUser } from "@/lib/auth/get-user";
-import { eq, and, desc } from "drizzle-orm";
 import { TransferType, TransferTypeNames } from "@/types/investment";
 
 // 获取转账记录
@@ -17,19 +19,22 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const portfolioId = searchParams.get("portfolioId");
 
-    let query = db
-      .select()
-      .from(transfers)
-      .innerJoin(portfolios, eq(transfers.portfolioId, portfolios.id))
-      .where(eq(portfolios.userId, user.id));
+    // 构建查询条件
+    const conditions = [eq(portfolios.userId, user.id)];
 
     if (portfolioId) {
       const portfolioIdInt = parseInt(portfolioId);
       if (isNaN(portfolioIdInt)) {
         return NextResponse.json({ error: "portfolioId 必须是有效的数字" }, { status: 400 });
       }
-      query = query.where(and(eq(portfolios.userId, user.id), eq(transfers.portfolioId, portfolioIdInt)));
+      conditions.push(eq(transfers.portfolioId, portfolioIdInt));
     }
+
+    const query = db
+      .select()
+      .from(transfers)
+      .innerJoin(portfolios, eq(transfers.portfolioId, portfolios.id))
+      .where(and(...conditions));
 
     const results = await query.orderBy(desc(transfers.transferDate), desc(transfers.createdAt));
 

@@ -4,12 +4,13 @@ import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 import { TransactionType } from "@/types/investment";
+
+import { BuySellForm } from "./transaction-form-types";
 
 interface BuySellFieldsProps {
   transactionType: TransactionType;
-  form: any; // Form control from react-hook-form // eslint-disable-line @typescript-eslint/no-explicit-any
+  form: BuySellForm;
 }
 
 export function BuySellFields({ transactionType, form }: BuySellFieldsProps) {

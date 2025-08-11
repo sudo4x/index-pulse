@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
 import { Plus, Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -17,9 +16,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-
 import { PortfolioOverview } from "@/types/investment";
+
 import { PortfolioTabs } from "./_components/portfolio-tabs";
 
 export default function PortfoliosPage() {
@@ -46,20 +46,22 @@ export default function PortfoliosPage() {
 
       if (result.success) {
         // 将数据库字段 id 映射为 portfolioId
-        const mappedData = result.data.map((portfolio: any) => ({
-          portfolioId: portfolio.id.toString(),
-          name: portfolio.name,
-          totalAssets: 0,
-          marketValue: 0,
-          cash: 0,
-          principal: 0,
-          floatAmount: 0,
-          floatRate: 0,
-          accumAmount: 0,
-          accumRate: 0,
-          dayFloatAmount: 0,
-          dayFloatRate: 0,
-        }));
+        const mappedData = result.data.map(
+          (portfolio: { id: number; name: string; description?: string; createdAt: string }) => ({
+            portfolioId: portfolio.id.toString(),
+            name: portfolio.name,
+            totalAssets: 0,
+            marketValue: 0,
+            cash: 0,
+            principal: 0,
+            floatAmount: 0,
+            floatRate: 0,
+            accumAmount: 0,
+            accumRate: 0,
+            dayFloatAmount: 0,
+            dayFloatRate: 0,
+          }),
+        );
         setPortfolios(mappedData);
         if (mappedData.length > 0 && !activePortfolioId) {
           const firstPortfolioId = mappedData[0].portfolioId;
@@ -206,7 +208,7 @@ export default function PortfoliosPage() {
         </div>
       </div>
 
-      <Tabs value={activePortfolioId || undefined} onValueChange={handlePortfolioChange}>
+      <Tabs value={activePortfolioId ?? undefined} onValueChange={handlePortfolioChange}>
         <div className="flex items-center justify-between">
           <TabsList>
             {portfolios.map((portfolio) => (
