@@ -30,10 +30,10 @@ export function BuySellFields({ transactionType, form, sharesInputRef }: BuySell
               <FormControl>
                 <Input
                   type="number"
-                  step="0.01"
-                  placeholder="122.22"
+                  step="0.001"
+                  placeholder="122.123"
                   {...field}
-                  value={field.value ?? ""}
+                  value={field.value ? Number(field.value).toFixed(3) : ""}
                   onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
@@ -55,6 +55,7 @@ export function BuySellFields({ transactionType, form, sharesInputRef }: BuySell
               <FormControl>
                 <Input
                   type="number"
+                  step="1"
                   placeholder="数量"
                   {...field}
                   ref={(e) => {
@@ -63,8 +64,8 @@ export function BuySellFields({ transactionType, form, sharesInputRef }: BuySell
                       (sharesInputRef as React.MutableRefObject<HTMLInputElement | null>).current = e;
                     }
                   }}
-                  value={field.value ?? ""}
-                  onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                  value={field.value ? Math.floor(Number(field.value)).toString() : ""}
+                  onChange={(e) => field.onChange(Math.floor(Number(e.target.value)) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
               </FormControl>

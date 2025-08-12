@@ -22,9 +22,16 @@ interface StockSearchProps {
   defaultSymbol?: string;
   defaultName?: string;
   className?: string;
+  disableAutoFetch?: boolean; // 禁用自动获取实时价格
 }
 
-export function StockSearch({ onStockSelect, defaultSymbol, defaultName, className }: StockSearchProps) {
+export function StockSearch({
+  onStockSelect,
+  defaultSymbol,
+  defaultName,
+  className,
+  disableAutoFetch,
+}: StockSearchProps) {
   const [stockCode, setStockCode] = useState("");
   const [stockSearchResults, setStockSearchResults] = useState<StockSearchResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -64,6 +71,12 @@ export function StockSearch({ onStockSelect, defaultSymbol, defaultName, classNa
       };
       setSelectedStock(basicStock);
 
+      // 如果禁用自动获取，只触发基础信息的选择事件
+      if (disableAutoFetch) {
+        onStockSelect(basicStock);
+        return;
+      }
+
       // 尝试获取实时价格
       fetchStockPrice(defaultSymbol).then((priceData) => {
         if (priceData) {
@@ -82,7 +95,7 @@ export function StockSearch({ onStockSelect, defaultSymbol, defaultName, classNa
         }
       });
     }
-  }, [defaultSymbol, defaultName, onStockSelect]);
+  }, [defaultSymbol, defaultName, onStockSelect, disableAutoFetch]);
 
   // 检查是否为沪市股票或ETF代码
   const isShangHaiCode = (code: string): boolean => {
