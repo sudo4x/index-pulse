@@ -205,6 +205,16 @@ export function PortfolioManagementDialog({
         throw new Error("保存排序失败");
       }
 
+      // 更新父组件的portfolios状态以匹配新的排序
+      const updatedPortfolios = portfolios
+        .map((portfolio) => {
+          const item = items.find((item) => item.id === portfolio.portfolioId);
+          return item ? { ...portfolio, sortOrder: item.sortOrder } : portfolio;
+        })
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+
+      onPortfoliosChange(updatedPortfolios);
+
       toast({
         title: "成功",
         description: "组合排序已保存",

@@ -32,6 +32,7 @@ export const TransferTypeNames: Record<TransferType, string> = {
 export interface PortfolioOverview {
   portfolioId: string;
   name: string;
+  sortOrder?: number; // 排序顺序
   totalAssets: number; // 总资产
   marketValue: number; // 总市值
   cash: number; // 现金

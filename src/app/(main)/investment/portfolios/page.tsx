@@ -49,9 +49,10 @@ export default function PortfoliosPage() {
       if (result.success) {
         // 将数据库字段 id 映射为 portfolioId
         const mappedData = result.data.map(
-          (portfolio: { id: number; name: string; description?: string; createdAt: string }) => ({
+          (portfolio: { id: number; name: string; sortOrder?: number; description?: string; createdAt: string }) => ({
             portfolioId: portfolio.id.toString(),
             name: portfolio.name,
+            sortOrder: portfolio.sortOrder ?? 0,
             totalAssets: 0,
             marketValue: 0,
             cash: 0,
@@ -112,6 +113,7 @@ export default function PortfoliosPage() {
         const newPortfolio = {
           portfolioId: result.data.id.toString(),
           name: result.data.name,
+          sortOrder: result.data.sortOrder ?? 0,
           totalAssets: 0,
           marketValue: 0,
           cash: 0,
