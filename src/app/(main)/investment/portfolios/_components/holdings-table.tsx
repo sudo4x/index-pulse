@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { HoldingDetail } from "@/types/investment";
@@ -202,13 +202,16 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
 
       {/* 交易记录列表对话框 */}
       <Dialog open={isTransactionListOpen} onOpenChange={setIsTransactionListOpen}>
-        <DialogContent className="max-h-[80vh] max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>{selectedSymbol} 交易记录</DialogTitle>
-          </DialogHeader>
-          <div className="overflow-y-auto">
-            <TransactionsTable portfolioId={portfolioId} symbol={selectedSymbol} />
-          </div>
+        <DialogContent className="max-h-[85vh] w-full max-w-[90vw] overflow-y-auto p-0">
+          <DialogTitle className="sr-only">{selectedSymbol} 交易记录</DialogTitle>
+          <Card className="border-0 shadow-none">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-xl">{selectedSymbol} 交易记录</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TransactionsTable portfolioId={portfolioId} symbol={selectedSymbol} />
+            </CardContent>
+          </Card>
         </DialogContent>
       </Dialog>
 
