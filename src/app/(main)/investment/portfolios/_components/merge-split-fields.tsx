@@ -28,6 +28,7 @@ export function MergeSplitFields({ transactionType, form }: MergeSplitFieldsProp
                 type="number"
                 placeholder={transactionType === TransactionType.MERGE ? "10（10股合为1股）" : "2（1股拆为2股）"}
                 {...field}
+                value={field.value || ""}
                 onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                 className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />

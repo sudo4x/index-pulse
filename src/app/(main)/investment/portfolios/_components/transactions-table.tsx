@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
@@ -59,16 +60,37 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
 
   const renderTransactionRow = (transaction: TransactionDetail) => (
     <TableRow key={transaction.id}>
-      <TableCell>{transaction.symbol}</TableCell>
-      <TableCell>{transaction.name}</TableCell>
+      <TableCell>
+        <div>
+          <div className="font-medium">{transaction.name}</div>
+          <div className="text-muted-foreground text-sm">{transaction.symbol}</div>
+        </div>
+      </TableCell>
       <TableCell>{transaction.typeName}</TableCell>
       <TableCell className="text-right">{transaction.shares ?? "-"}</TableCell>
       <TableCell className="text-right">¥{Number(transaction.amount).toFixed(2)}</TableCell>
       <TableCell>{transaction.description}</TableCell>
       <TableCell>{transaction.comment ?? "-"}</TableCell>
       <TableCell>{new Date(transaction.transactionDate).toLocaleDateString("zh-CN")}</TableCell>
-      <TableCell className="text-right">
-        <div>操作</div>
+      <TableCell className="text-center">
+        <div className="flex items-center justify-center space-x-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs"
+            onClick={() => console.log("编辑交易", transaction.id)}
+          >
+            编辑
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs text-red-600 hover:text-red-700"
+            onClick={() => console.log("删除交易", transaction.id)}
+          >
+            删除
+          </Button>
+        </div>
       </TableCell>
     </TableRow>
   );
@@ -101,24 +123,25 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
   }
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>名称</TableHead>
-              <TableHead>类型</TableHead>
-              <TableHead className="text-right">成交价</TableHead>
-              <TableHead className="text-right">数量</TableHead>
-              <TableHead className="text-right">金额</TableHead>
-              <TableHead>说明</TableHead>
-              <TableHead>备注</TableHead>
-              <TableHead>日期</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>{transactions.map(renderTransactionRow)}</TableBody>
-        </Table>
+    <Card className="shadow-xs">
+      <CardContent className="flex size-full flex-col gap-4">
+        <div className="overflow-hidden rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>名称/代码</TableHead>
+                <TableHead>类型</TableHead>
+                <TableHead className="text-right">数量</TableHead>
+                <TableHead className="text-right">金额</TableHead>
+                <TableHead>说明</TableHead>
+                <TableHead>备注</TableHead>
+                <TableHead>日期</TableHead>
+                <TableHead className="text-center">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>{transactions.map(renderTransactionRow)}</TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

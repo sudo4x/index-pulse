@@ -26,6 +26,7 @@ export function PortfolioTabs({ portfolioId, portfolioName }: PortfolioTabsProps
   const [showHistoricalHoldings, setShowHistoricalHoldings] = useState(false);
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
   const [overviewData, setOverviewData] = useState<Partial<PortfolioOverview>>({});
+  const [activeTab, setActiveTab] = useState("holdings");
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const createFinancialData = (data: Partial<PortfolioOverview>) => ({
@@ -141,7 +142,7 @@ export function PortfolioTabs({ portfolioId, portfolioName }: PortfolioTabsProps
       <OverviewCards portfolio={currentPortfolio} />
 
       {/* 详细信息 Tab */}
-      <Tabs defaultValue="holdings" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="holdings">持仓</TabsTrigger>
@@ -150,7 +151,7 @@ export function PortfolioTabs({ portfolioId, portfolioName }: PortfolioTabsProps
           </TabsList>
 
           <div className="flex items-center space-x-4">
-            {renderHistoricalCheckbox()}
+            {activeTab === "holdings" && renderHistoricalCheckbox()}
             {renderActionButtons()}
           </div>
         </div>

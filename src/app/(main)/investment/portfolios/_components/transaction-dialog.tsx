@@ -39,6 +39,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
     defaultType === "buy" ? TransactionType.BUY : defaultType === "sell" ? TransactionType.SELL : TransactionType.BUY,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<TransactionFormData>({
@@ -57,6 +58,14 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
       comment: currentValues.comment,
     });
   }, [transactionType, form]);
+
+  // Reset transaction type when dialog opens with defaultType
+  useEffect(() => {
+    if (isOpen && defaultType) {
+      const newType = defaultType === "buy" ? TransactionType.BUY : TransactionType.SELL;
+      setTransactionType(newType);
+    }
+  }, [isOpen, defaultType]);
 
   const handleStockSelect = (stock: StockSearchResult) => {
     form.setValue("symbol", stock.symbol);
@@ -129,6 +138,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
                     <Select
                       value={transactionType.toString()}
                       onValueChange={(value) => setTransactionType(Number(value) as TransactionType)}
+                      disabled={defaultType !== undefined}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue />
@@ -153,7 +163,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <Popover>
+                          <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
@@ -171,7 +181,15 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={field.value} onSelect={field.onChange} locale={zhCN} />
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={(date) => {
+                                  field.onChange(date);
+                                  setIsDatePickerOpen(false);
+                                }}
+                                locale={zhCN}
+                              />
                             </PopoverContent>
                           </Popover>
                         </FormControl>

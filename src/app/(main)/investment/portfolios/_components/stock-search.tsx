@@ -113,13 +113,14 @@ export function StockSearch({ onStockSelect, className }: StockSearchProps) {
       clearTimeout(searchTimeoutRef.current);
     }
 
+    // 先清空之前的搜索结果
+    setStockSearchResults([]);
+    setShowSearchResults(false);
+
     if (value.length === 6) {
       searchTimeoutRef.current = setTimeout(() => {
         searchStock(value);
       }, 300);
-    } else {
-      setShowSearchResults(false);
-      setStockSearchResults([]);
     }
   };
 

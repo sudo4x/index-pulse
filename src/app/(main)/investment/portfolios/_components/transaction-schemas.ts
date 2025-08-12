@@ -74,7 +74,9 @@ export function getTransactionDefaultValues(transactionType: TransactionType) {
         shares: 0,
         price: 0,
         commission: 0,
+        commissionRate: 0,
         tax: 0,
+        taxRate: 0,
         commissionType: "amount" as const,
         taxType: "amount" as const,
       };
@@ -89,7 +91,9 @@ export function getTransactionDefaultValues(transactionType: TransactionType) {
         ...baseDefaults,
         unitDividend: 0,
         unitIncreaseShares: 0,
+        recordDate: undefined as Date | undefined,
         tax: 0,
+        taxRate: 0,
         taxType: "amount" as const,
       };
     default:

@@ -30,6 +30,7 @@ export function BuySellFields({ transactionType, form }: BuySellFieldsProps) {
                   step="0.01"
                   placeholder="122.22"
                   {...field}
+                  value={field.value ?? ""}
                   onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
@@ -53,6 +54,7 @@ export function BuySellFields({ transactionType, form }: BuySellFieldsProps) {
                   type="number"
                   placeholder="数量"
                   {...field}
+                  value={field.value ?? ""}
                   onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
@@ -77,6 +79,7 @@ export function BuySellFields({ transactionType, form }: BuySellFieldsProps) {
                   step="0.01"
                   placeholder="1"
                   {...field}
+                  value={field.value ?? ""}
                   onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
@@ -121,6 +124,7 @@ export function BuySellFields({ transactionType, form }: BuySellFieldsProps) {
                   step="0.01"
                   placeholder="0"
                   {...field}
+                  value={field.value ?? ""}
                   onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />

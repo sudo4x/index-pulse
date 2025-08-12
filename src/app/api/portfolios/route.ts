@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, asc } from "drizzle-orm";
 
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
@@ -19,7 +19,7 @@ export async function GET() {
       .select()
       .from(portfolios)
       .where(eq(portfolios.userId, user.id))
-      .orderBy(desc(portfolios.sortOrder), desc(portfolios.createdAt));
+      .orderBy(asc(portfolios.sortOrder), desc(portfolios.createdAt));
 
     return NextResponse.json({
       success: true,

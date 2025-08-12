@@ -35,6 +35,7 @@ export function DividendFields({ form }: DividendFieldsProps) {
                   step="0.01"
                   placeholder="0.00"
                   {...field}
+                  value={field.value ?? ""}
                   onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
@@ -58,6 +59,7 @@ export function DividendFields({ form }: DividendFieldsProps) {
                   step="0.01"
                   placeholder="0.00"
                   {...field}
+                  value={field.value ?? ""}
                   onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
@@ -114,6 +116,7 @@ export function DividendFields({ form }: DividendFieldsProps) {
                   step="0.01"
                   placeholder="0.00"
                   {...field}
+                  value={field.value ?? ""}
                   onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />

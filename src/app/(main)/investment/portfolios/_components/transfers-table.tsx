@@ -4,17 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
-import { MoreVertical, Edit, Trash2, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { Edit, Trash2, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -58,7 +52,7 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
     }
   };
 
-  const memoizedFetchTransfers = useCallback(fetchTransfers, [portfolioId]);
+  const memoizedFetchTransfers = useCallback(fetchTransfers, [portfolioId, toast]);
 
   useEffect(() => {
     if (portfolioId && portfolioId !== "undefined") {
@@ -112,71 +106,76 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
   }
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>操作</TableHead>
-              <TableHead className="text-right">金额</TableHead>
-              <TableHead>日期</TableHead>
-              <TableHead>备注</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transfers.map((transfer) => (
-              <TableRow key={transfer.id}>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    {getTypeIcon(transfer.type)}
-                    <Badge variant={getTypeBadgeVariant(transfer.type)}>{transfer.typeName}</Badge>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div
-                    className={cn(
-                      "font-mono",
-                      transfer.type === TransferType.DEPOSIT ? "text-green-600" : "text-red-600",
-                    )}
-                  >
-                    {transfer.type === TransferType.DEPOSIT ? "+" : "-"}
-                    {formatCurrency(transfer.amount)}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    {format(new Date(transfer.transferDate), "yyyy-MM-dd", { locale: zhCN })}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {transfer.comment && (
-                    <div className="text-muted-foreground max-w-48 truncate text-sm">{transfer.comment}</div>
-                  )}
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="size-8 p-0">
-                        <MoreVertical className="size-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Edit className="mr-2 size-4" />
-                        修改
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
-                        <Trash2 className="mr-2 size-4" />
-                        删除
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+    <Card className="shadow-xs">
+      <CardContent className="flex size-full flex-col gap-4">
+        <div className="overflow-hidden rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>操作</TableHead>
+                <TableHead className="text-right">金额</TableHead>
+                <TableHead>日期</TableHead>
+                <TableHead>备注</TableHead>
+                <TableHead className="text-center">操作</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {transfers.map((transfer) => (
+                <TableRow key={transfer.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      {getTypeIcon(transfer.type)}
+                      <Badge variant={getTypeBadgeVariant(transfer.type)}>{transfer.typeName}</Badge>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div
+                      className={cn(
+                        "font-mono",
+                        transfer.type === TransferType.DEPOSIT ? "text-green-600" : "text-red-600",
+                      )}
+                    >
+                      {transfer.type === TransferType.DEPOSIT ? "+" : "-"}
+                      {formatCurrency(transfer.amount)}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {format(new Date(transfer.transferDate), "yyyy-MM-dd", { locale: zhCN })}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {transfer.comment && (
+                      <div className="text-muted-foreground max-w-48 truncate text-sm">{transfer.comment}</div>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center space-x-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-xs"
+                        onClick={() => console.log("编辑转账", transfer.id)}
+                      >
+                        <Edit className="mr-1 h-3 w-3" />
+                        编辑
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-2 text-xs text-red-600 hover:text-red-700"
+                        onClick={() => console.log("删除转账", transfer.id)}
+                      >
+                        <Trash2 className="mr-1 h-3 w-3" />
+                        删除
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );

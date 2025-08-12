@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { PortfolioOverview } from "@/types/investment";
 
+import { PortfolioManagementDialog } from "./_components/portfolio-management-dialog";
 import { PortfolioTabs } from "./_components/portfolio-tabs";
 
 export default function PortfoliosPage() {
@@ -28,6 +29,7 @@ export default function PortfoliosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [newPortfolioName, setNewPortfolioName] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
   const { toast } = useToast();
 
   // 处理组合切换
@@ -252,7 +254,7 @@ export default function PortfoliosPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={() => setIsManagementDialogOpen(true)}>
               <Settings className="mr-2 size-4" />
               管理组合
             </Button>
@@ -265,6 +267,14 @@ export default function PortfoliosPage() {
           </TabsContent>
         ))}
       </Tabs>
+
+      {/* 组合管理对话框 */}
+      <PortfolioManagementDialog
+        isOpen={isManagementDialogOpen}
+        onClose={() => setIsManagementDialogOpen(false)}
+        portfolios={portfolios}
+        onPortfoliosChange={setPortfolios}
+      />
     </div>
   );
 }

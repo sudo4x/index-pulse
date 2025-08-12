@@ -2,17 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
-import { MoreVertical, History, Trash2 } from "lucide-react";
+import { History, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -148,24 +142,27 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
   );
 
   const renderActionsCell = (holding: HoldingDetail) => (
-    <TableCell className="text-right">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <MoreVertical className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => console.log("交易记录", holding.symbol)}>
-            <History className="mr-2 h-4 w-4" />
-            交易记录
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => console.log("删除持仓", holding.symbol)} className="text-red-600">
-            <Trash2 className="mr-2 h-4 w-4" />
-            删除持仓
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <TableCell className="text-center">
+      <div className="flex items-center justify-center space-x-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs"
+          onClick={() => console.log("交易记录", holding.symbol)}
+        >
+          <History className="mr-1 h-3 w-3" />
+          交易
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs text-red-600 hover:text-red-700"
+          onClick={() => console.log("删除持仓", holding.symbol)}
+        >
+          <Trash2 className="mr-1 h-3 w-3" />
+          删除
+        </Button>
+      </div>
     </TableCell>
   );
 
@@ -217,24 +214,26 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
   }
 
   return (
-    <Card>
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>名称/代码</TableHead>
-              <TableHead className="text-right">现价</TableHead>
-              <TableHead className="text-right">涨跌</TableHead>
-              <TableHead className="text-right">市值</TableHead>
-              <TableHead className="text-right">持仓</TableHead>
-              <TableHead className="text-right">摊薄/成本</TableHead>
-              <TableHead className="text-right">浮动盈亏</TableHead>
-              <TableHead className="text-right">累计盈亏</TableHead>
-              <TableHead className="text-right">操作</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>{holdings.map(renderHoldingRow)}</TableBody>
-        </Table>
+    <Card className="shadow-xs">
+      <CardContent className="flex size-full flex-col gap-4">
+        <div className="overflow-hidden rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>名称/代码</TableHead>
+                <TableHead className="text-right">现价</TableHead>
+                <TableHead className="text-right">涨跌</TableHead>
+                <TableHead className="text-right">市值</TableHead>
+                <TableHead className="text-right">持仓</TableHead>
+                <TableHead className="text-right">摊薄/成本</TableHead>
+                <TableHead className="text-right">浮动盈亏</TableHead>
+                <TableHead className="text-right">累计盈亏</TableHead>
+                <TableHead className="text-center">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>{holdings.map(renderHoldingRow)}</TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
