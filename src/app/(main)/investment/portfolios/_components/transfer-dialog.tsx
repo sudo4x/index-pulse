@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
@@ -28,11 +28,12 @@ interface TransferDialogProps {
   portfolioId: string;
   editingTransfer?: {
     id: string;
-    type: string;
+    type: TransferType;
     amount: number;
     transferDate: string;
     comment?: string;
   }; // For editing existing transfers
+  onSuccess?: () => void;
 }
 
 const transferSchema = z.object({
@@ -44,7 +45,7 @@ const transferSchema = z.object({
   comment: z.string().optional(),
 });
 
-export function TransferDialog({ isOpen, onClose, portfolioId }: TransferDialogProps) {
+export function TransferDialog({ isOpen, onClose, portfolioId, editingTransfer, onSuccess }: TransferDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -58,6 +59,25 @@ export function TransferDialog({ isOpen, onClose, portfolioId }: TransferDialogP
     },
   });
 
+  // Reset form when dialog opens with editingTransfer
+  useEffect(() => {
+    if (isOpen && editingTransfer) {
+      form.reset({
+        type: editingTransfer.type.toString() as "1" | "2",
+        amount: editingTransfer.amount,
+        transferDate: new Date(editingTransfer.transferDate),
+        comment: editingTransfer.comment ?? "",
+      });
+    } else if (isOpen && !editingTransfer) {
+      form.reset({
+        type: TransferType.DEPOSIT.toString() as "1" | "2",
+        amount: 0,
+        transferDate: new Date(),
+        comment: "",
+      });
+    }
+  }, [isOpen, editingTransfer, form]);
+
   const handleSubmit = async (data: z.infer<typeof transferSchema>) => {
     setIsSubmitting(true);
     try {
@@ -67,8 +87,12 @@ export function TransferDialog({ isOpen, onClose, portfolioId }: TransferDialogP
         type: Number(data.type),
       };
 
-      const response = await fetch("/api/transfers", {
-        method: "POST",
+      const isEditing = !!editingTransfer;
+      const url = isEditing ? `/api/transfers/${editingTransfer.id}` : "/api/transfers";
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -76,7 +100,7 @@ export function TransferDialog({ isOpen, onClose, portfolioId }: TransferDialogP
       });
 
       if (!response.ok) {
-        throw new Error("提交转账记录失败");
+        throw new Error(isEditing ? "更新转账记录失败" : "提交转账记录失败");
       }
 
       const result = await response.json();
@@ -84,10 +108,11 @@ export function TransferDialog({ isOpen, onClose, portfolioId }: TransferDialogP
       if (result.success) {
         toast({
           title: "成功",
-          description: "转账记录已保存",
+          description: isEditing ? "转账记录已更新" : "转账记录已保存",
         });
         onClose();
         form.reset();
+        onSuccess?.();
       }
     } catch (error) {
       console.error("Error submitting transfer:", error);
@@ -104,10 +129,10 @@ export function TransferDialog({ isOpen, onClose, portfolioId }: TransferDialogP
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto p-0">
-        <DialogTitle className="sr-only">银证转账</DialogTitle>
+        <DialogTitle className="sr-only">{editingTransfer ? "编辑转账记录" : "银证转账"}</DialogTitle>
         <Card className="border-0 shadow-none">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl">银证转账</CardTitle>
+            <CardTitle className="text-xl">{editingTransfer ? "编辑转账记录" : "银证转账"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Form {...form}>

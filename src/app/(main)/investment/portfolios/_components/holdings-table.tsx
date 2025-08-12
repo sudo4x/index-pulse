@@ -2,15 +2,16 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
-import { History, Trash2 } from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import { HoldingDetail } from "@/types/investment";
+
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
+import { createHoldingRowHelpers } from "./holdings-table-helpers";
+import { TransactionDialog } from "./transaction-dialog";
+import { TransactionsTable } from "./transactions-table";
 
 interface HoldingsTableProps {
   portfolioId: string;
@@ -20,6 +21,13 @@ interface HoldingsTableProps {
 export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProps) {
   const [holdings, setHoldings] = useState<HoldingDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
+  const [isTransactionListOpen, setIsTransactionListOpen] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState<string>("");
+  const [selectedHolding, setSelectedHolding] = useState<HoldingDetail | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingHolding, setDeletingHolding] = useState<HoldingDetail | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -72,119 +80,61 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
     };
   }, [portfolioId, showHistorical, fetchHoldings]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("zh-CN", {
-      style: "currency",
-      currency: "CNY",
-      minimumFractionDigits: 2,
-    }).format(value);
+  const handleDeleteHolding = async () => {
+    if (!deletingHolding) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/holdings/${portfolioId}/${deletingHolding.symbol}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("删除持仓品种失败");
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        toast({
+          title: "成功",
+          description: result.message,
+        });
+        fetchHoldings(); // 重新获取数据
+        setIsDeleteDialogOpen(false);
+        setDeletingHolding(null);
+      }
+    } catch (error) {
+      console.error("Error deleting holding:", error);
+      toast({
+        title: "错误",
+        description: "删除持仓品种失败，请重试",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
-  const formatPercent = (value: number) => {
-    return `${(value * 100).toFixed(2)}%`;
+  const handleShowTransactions = (symbol: string) => {
+    setSelectedSymbol(symbol);
+    setIsTransactionListOpen(true);
   };
 
-  const formatShares = (shares: number) => {
-    return shares.toLocaleString("zh-CN");
+  const handleAddClick = (holding: HoldingDetail) => {
+    setSelectedHolding(holding);
+    setIsTransactionDialogOpen(true);
   };
 
-  const renderStockNameCell = (holding: HoldingDetail) => (
-    <TableCell>
-      <div className="flex flex-col space-y-1">
-        <div className="font-medium">{holding.name}</div>
-        <div className="text-muted-foreground text-sm">{holding.symbol}</div>
-        {!holding.isActive && (
-          <Badge variant="secondary" className="w-fit text-xs">
-            已清仓
-          </Badge>
-        )}
-      </div>
-    </TableCell>
-  );
+  const handleDeleteClick = (holding: HoldingDetail) => {
+    setDeletingHolding(holding);
+    setIsDeleteDialogOpen(true);
+  };
 
-  const renderPriceChangeCell = (holding: HoldingDetail) => (
-    <TableCell className="text-right">
-      <div className="flex flex-col items-end space-y-1">
-        <div className={cn("font-mono", holding.change >= 0 ? "text-green-600" : "text-red-600")}>
-          {holding.change >= 0 ? "+" : ""}
-          {holding.change.toFixed(2)}
-        </div>
-        <div className={cn("font-mono text-sm", holding.changePercent >= 0 ? "text-green-600" : "text-red-600")}>
-          {holding.changePercent >= 0 ? "+" : ""}
-          {formatPercent(holding.changePercent)}
-        </div>
-      </div>
-    </TableCell>
-  );
-
-  const renderCostCell = (holding: HoldingDetail) => (
-    <TableCell className="text-right">
-      <div className="flex flex-col items-end space-y-1">
-        <div className="font-mono text-sm">{formatCurrency(holding.dilutedCost)}</div>
-        <div className="text-muted-foreground font-mono text-sm">{formatCurrency(holding.holdCost)}</div>
-      </div>
-    </TableCell>
-  );
-
-  const renderProfitLossCell = (amount: number, rate: number) => (
-    <TableCell className="text-right">
-      <div className="flex flex-col items-end space-y-1">
-        <div className={cn("font-mono", amount >= 0 ? "text-green-600" : "text-red-600")}>
-          {amount >= 0 ? "+" : ""}
-          {formatCurrency(amount)}
-        </div>
-        <div className={cn("font-mono text-sm", rate >= 0 ? "text-green-600" : "text-red-600")}>
-          {rate >= 0 ? "+" : ""}
-          {formatPercent(rate)}
-        </div>
-      </div>
-    </TableCell>
-  );
-
-  const renderActionsCell = (holding: HoldingDetail) => (
-    <TableCell className="text-center">
-      <div className="flex items-center justify-center space-x-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-xs"
-          onClick={() => console.log("交易记录", holding.symbol)}
-        >
-          <History className="mr-1 h-3 w-3" />
-          交易
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-xs text-red-600 hover:text-red-700"
-          onClick={() => console.log("删除持仓", holding.symbol)}
-        >
-          <Trash2 className="mr-1 h-3 w-3" />
-          删除
-        </Button>
-      </div>
-    </TableCell>
-  );
-
-  const renderHoldingRow = (holding: HoldingDetail) => (
-    <TableRow key={holding.id}>
-      {renderStockNameCell(holding)}
-      <TableCell className="text-right">
-        <div className="font-mono">{formatCurrency(holding.currentPrice)}</div>
-      </TableCell>
-      {renderPriceChangeCell(holding)}
-      <TableCell className="text-right">
-        <div className="font-mono">{formatCurrency(holding.marketValue)}</div>
-      </TableCell>
-      <TableCell className="text-right">
-        <div className="font-mono">{formatShares(holding.shares)}</div>
-      </TableCell>
-      {renderCostCell(holding)}
-      {renderProfitLossCell(holding.floatAmount, holding.floatRate)}
-      {renderProfitLossCell(holding.accumAmount, holding.accumRate)}
-      {renderActionsCell(holding)}
-    </TableRow>
-  );
+  const { renderHoldingRow } = createHoldingRowHelpers({
+    handleAddClick,
+    handleShowTransactions,
+    handleDeleteClick,
+  });
 
   if (isLoading) {
     return (
@@ -214,27 +164,66 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
   }
 
   return (
-    <Card className="shadow-xs">
-      <CardContent className="flex size-full flex-col gap-4">
-        <div className="overflow-hidden rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>名称/代码</TableHead>
-                <TableHead className="text-right">现价</TableHead>
-                <TableHead className="text-right">涨跌</TableHead>
-                <TableHead className="text-right">市值</TableHead>
-                <TableHead className="text-right">持仓</TableHead>
-                <TableHead className="text-right">摊薄/成本</TableHead>
-                <TableHead className="text-right">浮动盈亏</TableHead>
-                <TableHead className="text-right">累计盈亏</TableHead>
-                <TableHead className="text-center">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>{holdings.map(renderHoldingRow)}</TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+    <>
+      <Card className="shadow-xs">
+        <CardContent className="flex size-full flex-col gap-4">
+          <div className="overflow-hidden rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>名称/代码</TableHead>
+                  <TableHead className="text-right">现价</TableHead>
+                  <TableHead className="text-right">涨跌</TableHead>
+                  <TableHead className="text-right">市值</TableHead>
+                  <TableHead className="text-right">持仓</TableHead>
+                  <TableHead className="text-right">摊薄/成本</TableHead>
+                  <TableHead className="text-right">浮动盈亏</TableHead>
+                  <TableHead className="text-right">累计盈亏</TableHead>
+                  <TableHead className="text-center">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>{holdings.map(renderHoldingRow)}</TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 添加交易对话框 */}
+      <TransactionDialog
+        isOpen={isTransactionDialogOpen}
+        onClose={() => {
+          setIsTransactionDialogOpen(false);
+          setSelectedHolding(null);
+        }}
+        portfolioId={portfolioId}
+        selectedHolding={selectedHolding}
+        onSuccess={fetchHoldings}
+      />
+
+      {/* 交易记录列表对话框 */}
+      <Dialog open={isTransactionListOpen} onOpenChange={setIsTransactionListOpen}>
+        <DialogContent className="max-h-[80vh] max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{selectedSymbol} 交易记录</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto">
+            <TransactionsTable portfolioId={portfolioId} symbol={selectedSymbol} />
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 确认删除对话框 */}
+      <ConfirmDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setDeletingHolding(null);
+        }}
+        onConfirm={handleDeleteHolding}
+        title="删除持仓品种"
+        description={`确定要删除品种 ${deletingHolding?.name} (${deletingHolding?.symbol}) 吗？此操作将同时删除该品种的所有交易记录，且无法撤销。`}
+        isLoading={isDeleting}
+      />
+    </>
   );
 }

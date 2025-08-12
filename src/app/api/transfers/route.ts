@@ -4,6 +4,7 @@ import { eq, and, desc } from "drizzle-orm";
 
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
+import { parseDecimalFields } from "@/lib/db/decimal-utils";
 import { transfers, portfolios } from "@/lib/db/schema";
 import { TransferType, TransferTypeNames } from "@/types/investment";
 
@@ -39,10 +40,13 @@ export async function GET(request: Request) {
     const results = await query.orderBy(desc(transfers.transferDate), desc(transfers.createdAt));
 
     // 格式化返回数据
-    const formattedResults = results.map((result) => ({
-      ...result.transfers,
-      typeName: TransferTypeNames[result.transfers.type as TransferType] || "未知",
-    }));
+    const formattedResults = results.map((result) => {
+      const transfer = parseDecimalFields(result.transfers, ["amount"]);
+      return {
+        ...transfer,
+        typeName: TransferTypeNames[transfer.type as TransferType] || "未知",
+      };
+    });
 
     return NextResponse.json({
       success: true,

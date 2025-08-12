@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 import { X } from "lucide-react";
 
@@ -19,16 +19,41 @@ export interface StockSearchResult {
 
 interface StockSearchProps {
   onStockSelect: (stock: StockSearchResult) => void;
+  defaultSymbol?: string;
+  defaultName?: string;
   className?: string;
 }
 
-export function StockSearch({ onStockSelect, className }: StockSearchProps) {
+export function StockSearch({ onStockSelect, defaultSymbol, defaultName, className }: StockSearchProps) {
   const [stockCode, setStockCode] = useState("");
   const [stockSearchResults, setStockSearchResults] = useState<StockSearchResult[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedStock, setSelectedStock] = useState<StockSearchResult | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 处理默认值
+  useEffect(() => {
+    if (defaultSymbol && defaultName) {
+      const displayValue = `${defaultSymbol}(${defaultName})`;
+      setStockCode(displayValue);
+      setSelectedStock({
+        symbol: defaultSymbol,
+        name: defaultName,
+        currentPrice: "0.00",
+        change: "0.00",
+        changePercent: "0.00",
+      });
+      // 触发选择事件，让父组件知道已选择了股票
+      onStockSelect({
+        symbol: defaultSymbol,
+        name: defaultName,
+        currentPrice: "0.00",
+        change: "0.00",
+        changePercent: "0.00",
+      });
+    }
+  }, [defaultSymbol, defaultName, onStockSelect]);
 
   // 检查是否为沪市股票或ETF代码
   const isShangHaiCode = (code: string): boolean => {

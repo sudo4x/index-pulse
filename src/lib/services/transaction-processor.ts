@@ -61,9 +61,9 @@ export class TransactionProcessor {
   private static processTransaction(
     transaction: {
       type: TransactionType;
-      unitShares?: number | string;
-      unitDividend?: number | string;
-      unitIncreaseShares?: number | string;
+      unitShares?: number | string | null;
+      unitDividend?: number | string | null;
+      unitIncreaseShares?: number | string | null;
     },
     shares: number,
     amount: number,
@@ -100,14 +100,20 @@ export class TransactionProcessor {
     return result;
   }
 
-  private static processMergeTransaction(result: TransactionData, transaction: { unitShares?: number | string }) {
+  private static processMergeTransaction(
+    result: TransactionData,
+    transaction: { unitShares?: number | string | null },
+  ) {
     const mergeRatio = parseFloat(String(transaction.unitShares)) || 1;
     result.totalShares = result.totalShares / mergeRatio;
     result.buyShares = result.buyShares / mergeRatio;
     return result;
   }
 
-  private static processSplitTransaction(result: TransactionData, transaction: { unitShares?: number | string }) {
+  private static processSplitTransaction(
+    result: TransactionData,
+    transaction: { unitShares?: number | string | null },
+  ) {
     const splitRatio = parseFloat(String(transaction.unitShares)) || 1;
     result.totalShares = result.totalShares * splitRatio;
     result.buyShares = result.buyShares * splitRatio;
@@ -116,7 +122,7 @@ export class TransactionProcessor {
 
   private static processDividendTransaction(
     result: TransactionData,
-    transaction: { unitDividend?: number | string; unitIncreaseShares?: number | string },
+    transaction: { unitDividend?: number | string | null; unitIncreaseShares?: number | string | null },
   ) {
     const dividend = parseFloat(String(transaction.unitDividend)) || 0;
     const increaseShares = parseFloat(String(transaction.unitIncreaseShares)) || 0;

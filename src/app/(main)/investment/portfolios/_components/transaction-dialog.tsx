@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
@@ -19,12 +19,47 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { TransactionType, TransactionTypeNames } from "@/types/investment";
+import { TransactionType, TransactionTypeNames, HoldingDetail } from "@/types/investment";
 
 import { StockSearch, StockSearchResult } from "./stock-search";
 import { TransactionForm, TransactionFormData } from "./transaction-form-types";
 import { getTransactionSchema, getTransactionDefaultValues } from "./transaction-schemas";
 import { TransactionTypeFields } from "./transaction-type-fields";
+
+// Helper functions to create form data from transaction
+const createBasicFormData = (transaction: any) => ({
+  symbol: transaction.symbol ?? "",
+  name: transaction.name ?? "",
+  transactionDate: transaction.transactionDate ? new Date(transaction.transactionDate) : new Date(),
+  comment: transaction.comment ?? "",
+});
+
+const createTransactionAmounts = (transaction: any) => ({
+  shares: transaction.shares ?? 0,
+  price: transaction.price ?? 0,
+  commission: transaction.commission ?? 0,
+  tax: transaction.tax ?? 0,
+});
+
+const createUnitData = (transaction: any) => ({
+  unitShares: transaction.unitShares ?? 0,
+  unitDividend: transaction.unitDividend ?? 0,
+  unitIncreaseShares: transaction.unitIncreaseShares ?? 0,
+  recordDate: transaction.recordDate ? new Date(transaction.recordDate) : null,
+});
+
+const createFormDataFromTransaction = (transaction: any) => ({
+  ...createBasicFormData(transaction),
+  ...createTransactionAmounts(transaction),
+  ...createUnitData(transaction),
+});
+
+// Helper function to get dialog title
+const getDialogTitle = (editingTransaction: any, selectedHolding: HoldingDetail | null | undefined) => {
+  if (editingTransaction) return "编辑交易记录";
+  if (selectedHolding) return `${selectedHolding.name} - 添加交易`;
+  return "添加持仓品种";
+};
 
 interface TransactionDialogProps {
   isOpen: boolean;
@@ -32,9 +67,19 @@ interface TransactionDialogProps {
   portfolioId: string;
   defaultType?: "buy" | "sell";
   editingTransaction?: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  selectedHolding?: HoldingDetail | null;
+  onSuccess?: () => void;
 }
 
-export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }: TransactionDialogProps) {
+export function TransactionDialog({
+  isOpen,
+  onClose,
+  portfolioId,
+  defaultType,
+  editingTransaction,
+  selectedHolding,
+  onSuccess,
+}: TransactionDialogProps) {
   const [transactionType, setTransactionType] = useState<TransactionType>(
     defaultType === "buy" ? TransactionType.BUY : defaultType === "sell" ? TransactionType.SELL : TransactionType.BUY,
   );
@@ -59,13 +104,44 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
     });
   }, [transactionType, form]);
 
-  // Reset transaction type when dialog opens with defaultType
+  // Initialize form data for editing transaction
+  const initializeEditingTransaction = useCallback(() => {
+    if (!editingTransaction) return;
+
+    setTransactionType(editingTransaction.type);
+    const formData = createFormDataFromTransaction(editingTransaction);
+    form.reset(formData);
+  }, [editingTransaction, form]);
+
+  // Initialize form data for default type
+  const initializeDefaultType = useCallback(() => {
+    if (!defaultType) return;
+
+    const newType = defaultType === "buy" ? TransactionType.BUY : TransactionType.SELL;
+    setTransactionType(newType);
+  }, [defaultType]);
+
+  // Initialize form data for selected holding
+  const initializeSelectedHolding = useCallback(() => {
+    if (!selectedHolding) return;
+
+    form.setValue("symbol", selectedHolding.symbol);
+    form.setValue("name", selectedHolding.name);
+    form.setValue("price", selectedHolding.currentPrice);
+  }, [selectedHolding, form]);
+
+  // Reset transaction type when dialog opens
   useEffect(() => {
-    if (isOpen && defaultType) {
-      const newType = defaultType === "buy" ? TransactionType.BUY : TransactionType.SELL;
-      setTransactionType(newType);
+    if (isOpen) {
+      if (editingTransaction) {
+        initializeEditingTransaction();
+      } else if (defaultType) {
+        initializeDefaultType();
+      } else if (selectedHolding) {
+        initializeSelectedHolding();
+      }
     }
-  }, [isOpen, defaultType]);
+  }, [isOpen, initializeEditingTransaction, initializeDefaultType, initializeSelectedHolding]);
 
   const handleStockSelect = (stock: StockSearchResult) => {
     form.setValue("symbol", stock.symbol);
@@ -83,8 +159,12 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
         symbol: data.symbol.toUpperCase(),
       };
 
-      const response = await fetch("/api/transactions", {
-        method: "POST",
+      const isEditing = !!editingTransaction;
+      const url = isEditing ? `/api/transactions/${editingTransaction.id}` : "/api/transactions";
+      const method = isEditing ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
         },
@@ -92,7 +172,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
       });
 
       if (!response.ok) {
-        throw new Error("提交交易记录失败");
+        throw new Error(isEditing ? "更新交易记录失败" : "提交交易记录失败");
       }
 
       const result = await response.json();
@@ -100,10 +180,11 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
       if (result.success) {
         toast({
           title: "成功",
-          description: "交易记录已保存",
+          description: isEditing ? "交易记录已更新" : "交易记录已保存",
         });
         onClose();
         form.reset();
+        onSuccess?.();
       }
     } catch (error) {
       console.error("Error submitting transaction:", error);
@@ -120,16 +201,20 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto p-0">
-        <DialogTitle className="sr-only">添加持仓品种</DialogTitle>
+        <DialogTitle className="sr-only">{getDialogTitle(editingTransaction, selectedHolding)}</DialogTitle>
         <Card className="border-0 shadow-none">
           <CardHeader className="pb-4">
-            <CardTitle className="text-xl">添加持仓品种</CardTitle>
+            <CardTitle className="text-xl">{getDialogTitle(editingTransaction, selectedHolding)}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                 {/* 股票搜索 */}
-                <StockSearch onStockSelect={handleStockSelect} />
+                <StockSearch
+                  onStockSelect={handleStockSelect}
+                  defaultSymbol={selectedHolding?.symbol}
+                  defaultName={selectedHolding?.name}
+                />
 
                 {/* 交易类型 */}
                 <div className="grid grid-cols-[80px_1fr] items-center gap-4">
@@ -138,7 +223,7 @@ export function TransactionDialog({ isOpen, onClose, portfolioId, defaultType }:
                     <Select
                       value={transactionType.toString()}
                       onValueChange={(value) => setTransactionType(Number(value) as TransactionType)}
-                      disabled={defaultType !== undefined}
+                      disabled={defaultType !== undefined || !!editingTransaction}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue />

@@ -46,10 +46,10 @@ export interface TransactionData {
 
 export interface TransactionRecord {
   type: TransactionType;
-  shares: number | string;
+  shares: number | string | null;
   amount: number | string;
   transactionDate: Date;
-  unitShares?: number | string;
-  unitDividend?: number | string;
-  unitIncreaseShares?: number | string;
+  unitShares?: number | string | null;
+  unitDividend?: number | string | null;
+  unitIncreaseShares?: number | string | null;
 }

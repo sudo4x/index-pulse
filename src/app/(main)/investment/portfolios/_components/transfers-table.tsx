@@ -6,13 +6,15 @@ import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { Edit, Trash2, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { TransferDetail, TransferType } from "@/types/investment";
+
+import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
+import { TransferDialog } from "./transfer-dialog";
 
 interface TransfersTableProps {
   portfolioId: string;
@@ -21,6 +23,11 @@ interface TransfersTableProps {
 export function TransfersTable({ portfolioId }: TransfersTableProps) {
   const [transfers, setTransfers] = useState<TransferDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingTransfer, setEditingTransfer] = useState<TransferDetail | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingTransfer, setDeletingTransfer] = useState<TransferDetail | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
 
   const fetchTransfers = async () => {
@@ -60,12 +67,54 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
     }
   }, [portfolioId, memoizedFetchTransfers]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("zh-CN", {
-      style: "currency",
-      currency: "CNY",
-      minimumFractionDigits: 2,
-    }).format(value);
+  const handleEditTransfer = (transfer: TransferDetail) => {
+    setEditingTransfer(transfer);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteTransfer = async () => {
+    if (!deletingTransfer) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/transfers/${deletingTransfer.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("删除转账记录失败");
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        toast({
+          title: "成功",
+          description: "转账记录删除成功",
+        });
+        memoizedFetchTransfers(); // 重新获取数据
+        setIsDeleteDialogOpen(false);
+        setDeletingTransfer(null);
+      }
+    } catch (error) {
+      console.error("Error deleting transfer:", error);
+      toast({
+        title: "错误",
+        description: "删除转账记录失败，请重试",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteClick = (transfer: TransferDetail) => {
+    setDeletingTransfer(transfer);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const formatCurrency = (value: number | string) => {
+    const numValue = typeof value === "string" ? parseFloat(value) : value;
+    return `¥${(numValue || 0).toFixed(2)}`;
   };
 
   const getTypeIcon = (type: TransferType) => {
@@ -74,10 +123,6 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
     ) : (
       <ArrowUpRight className="size-4 text-red-600" />
     );
-  };
-
-  const getTypeBadgeVariant = (type: TransferType) => {
-    return type === TransferType.DEPOSIT ? "default" : "destructive";
   };
 
   if (isLoading) {
@@ -106,77 +151,113 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
   }
 
   return (
-    <Card className="shadow-xs">
-      <CardContent className="flex size-full flex-col gap-4">
-        <div className="overflow-hidden rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>操作</TableHead>
-                <TableHead className="text-right">金额</TableHead>
-                <TableHead>日期</TableHead>
-                <TableHead>备注</TableHead>
-                <TableHead className="text-center">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {transfers.map((transfer) => (
-                <TableRow key={transfer.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      {getTypeIcon(transfer.type)}
-                      <Badge variant={getTypeBadgeVariant(transfer.type)}>{transfer.typeName}</Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div
-                      className={cn(
-                        "font-mono",
-                        transfer.type === TransferType.DEPOSIT ? "text-green-600" : "text-red-600",
-                      )}
-                    >
-                      {transfer.type === TransferType.DEPOSIT ? "+" : "-"}
-                      {formatCurrency(transfer.amount)}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      {format(new Date(transfer.transferDate), "yyyy-MM-dd", { locale: zhCN })}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {transfer.comment && (
-                      <div className="text-muted-foreground max-w-48 truncate text-sm">{transfer.comment}</div>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <div className="flex items-center justify-center space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2 text-xs"
-                        onClick={() => console.log("编辑转账", transfer.id)}
-                      >
-                        <Edit className="mr-1 h-3 w-3" />
-                        编辑
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 px-2 text-xs text-red-600 hover:text-red-700"
-                        onClick={() => console.log("删除转账", transfer.id)}
-                      >
-                        <Trash2 className="mr-1 h-3 w-3" />
-                        删除
-                      </Button>
-                    </div>
-                  </TableCell>
+    <>
+      <Card className="shadow-xs">
+        <CardContent className="flex size-full flex-col gap-4">
+          <div className="overflow-hidden rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>资金方向</TableHead>
+                  <TableHead>金额</TableHead>
+                  <TableHead>日期</TableHead>
+                  <TableHead>备注</TableHead>
+                  <TableHead>操作</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+              </TableHeader>
+              <TableBody>
+                {transfers.map((transfer) => (
+                  <TableRow key={transfer.id}>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        {getTypeIcon(transfer.type)}
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-1 text-xs font-medium",
+                            transfer.type === TransferType.DEPOSIT
+                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
+                          )}
+                        >
+                          {transfer.typeName}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div
+                        className={cn(
+                          "font-mono",
+                          transfer.type === TransferType.DEPOSIT ? "text-green-600" : "text-red-600",
+                        )}
+                      >
+                        {transfer.type === TransferType.DEPOSIT ? "+" : "-"}
+                        {formatCurrency(transfer.amount)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {format(new Date(transfer.transferDate), "yyyy-MM-dd", { locale: zhCN })}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {transfer.comment && (
+                        <div className="text-muted-foreground max-w-48 truncate text-sm">{transfer.comment}</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-xs"
+                          onClick={() => handleEditTransfer(transfer)}
+                        >
+                          <Edit className="mr-1 h-3 w-3" />
+                          编辑
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-xs text-red-600 hover:text-red-700"
+                          onClick={() => handleDeleteClick(transfer)}
+                        >
+                          <Trash2 className="mr-1 h-3 w-3" />
+                          删除
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 编辑转账对话框 */}
+      <TransferDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setEditingTransfer(null);
+        }}
+        portfolioId={portfolioId}
+        editingTransfer={editingTransfer ?? undefined}
+        onSuccess={memoizedFetchTransfers}
+      />
+
+      {/* 确认删除对话框 */}
+      <ConfirmDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setDeletingTransfer(null);
+        }}
+        onConfirm={handleDeleteTransfer}
+        title="删除转账记录"
+        description={`确定要删除这条转账记录吗？此操作无法撤销。`}
+        isLoading={isDeleting}
+      />
+    </>
   );
 }
