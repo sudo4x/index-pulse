@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { TransactionType, TransactionTypeNames, HoldingDetail } from "@/types/investment";
 
 import { StockSearch } from "./stock-search";
@@ -99,18 +98,8 @@ export function TransactionDialog(props: TransactionDialogProps) {
                         <FormControl>
                           <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                             <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "w-full justify-start text-left font-normal",
-                                  !field.value && "text-muted-foreground",
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, "yyyy年MM月dd日", { locale: zhCN })
-                                ) : (
-                                  <span>请选择日期</span>
-                                )}
+                              <Button variant="outline" className="w-full justify-start text-left font-normal">
+                                {format(field.value, "yyyy年MM月dd日", { locale: zhCN })}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </PopoverTrigger>

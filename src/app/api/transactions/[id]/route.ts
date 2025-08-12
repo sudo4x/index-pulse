@@ -211,15 +211,19 @@ function formatTransactionDescription(transaction: {
 }): string {
   const type = transaction.type;
 
+  const shares = Math.floor(Number(transaction.shares ?? 0));
+  const price = Number(transaction.price ?? 0).toFixed(3);
+  const unitShares = Math.floor(Number(transaction.unitShares ?? 0));
+
   switch (type) {
     case TransactionType.BUY:
-      return `买入 ${transaction.shares} 股，价格 ¥${transaction.price}`;
+      return `买入 ${shares} 股，价格 ¥${price}`;
     case TransactionType.SELL:
-      return `卖出 ${transaction.shares} 股，价格 ¥${transaction.price}`;
+      return `卖出 ${shares} 股，价格 ¥${price}`;
     case TransactionType.MERGE:
-      return `${transaction.unitShares} 股合为 1 股`;
+      return `${unitShares} 股合为 1 股`;
     case TransactionType.SPLIT:
-      return `1 股拆为 ${transaction.unitShares} 股`;
+      return `1 股拆为 ${unitShares} 股`;
     case TransactionType.DIVIDEND:
       return formatDividendDescription(transaction.unitDividend, transaction.unitIncreaseShares);
     default:
