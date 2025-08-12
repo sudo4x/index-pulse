@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
@@ -86,6 +86,7 @@ export function TransactionDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const { toast } = useToast();
+  const sharesInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<TransactionFormData>({
     resolver: zodResolver(getTransactionSchema(transactionType)),
@@ -147,6 +148,16 @@ export function TransactionDialog({
     form.setValue("symbol", stock.symbol);
     form.setValue("name", stock.name);
     form.setValue("price", parseFloat(stock.currentPrice) || 0);
+
+    // 延迟设置焦点到股数字段，确保表单字段已经渲染
+    setTimeout(() => {
+      if (
+        sharesInputRef.current &&
+        (transactionType === TransactionType.BUY || transactionType === TransactionType.SELL)
+      ) {
+        sharesInputRef.current.focus();
+      }
+    }, 100);
   };
 
   const handleSubmit = async (data: TransactionFormData) => {
@@ -285,7 +296,7 @@ export function TransactionDialog({
                 </div>
 
                 {/* 交易详情 */}
-                <TransactionTypeFields transactionType={transactionType} form={form} />
+                <TransactionTypeFields transactionType={transactionType} form={form} sharesInputRef={sharesInputRef} />
 
                 {/* 备注 - 上下布局 */}
                 <div className="space-y-2">

@@ -1,5 +1,7 @@
 "use client";
 
+import { RefObject } from "react";
+
 import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,9 +13,10 @@ import { BuySellForm } from "./transaction-form-types";
 interface BuySellFieldsProps {
   transactionType: TransactionType;
   form: BuySellForm;
+  sharesInputRef?: RefObject<HTMLInputElement>;
 }
 
-export function BuySellFields({ transactionType, form }: BuySellFieldsProps) {
+export function BuySellFields({ transactionType, form, sharesInputRef }: BuySellFieldsProps) {
   return (
     <>
       {/* 买入价/卖出价 */}
@@ -54,6 +57,12 @@ export function BuySellFields({ transactionType, form }: BuySellFieldsProps) {
                   type="number"
                   placeholder="数量"
                   {...field}
+                  ref={(e) => {
+                    field.ref(e);
+                    if (sharesInputRef && e) {
+                      (sharesInputRef as React.MutableRefObject<HTMLInputElement | null>).current = e;
+                    }
+                  }}
                   value={field.value ?? ""}
                   onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"

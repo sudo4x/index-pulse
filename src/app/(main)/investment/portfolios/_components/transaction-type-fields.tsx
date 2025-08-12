@@ -1,5 +1,7 @@
 "use client";
 
+import { RefObject } from "react";
+
 import { TransactionType } from "@/types/investment";
 
 import { BuySellFields } from "./buy-sell-fields";
@@ -10,13 +12,16 @@ import { TransactionForm, BuySellForm, MergeSplitForm, DividendForm } from "./tr
 interface TransactionTypeFieldsProps {
   transactionType: TransactionType;
   form: TransactionForm;
+  sharesInputRef?: RefObject<HTMLInputElement>;
 }
 
-export function TransactionTypeFields({ transactionType, form }: TransactionTypeFieldsProps) {
+export function TransactionTypeFields({ transactionType, form, sharesInputRef }: TransactionTypeFieldsProps) {
   switch (transactionType) {
     case TransactionType.BUY:
     case TransactionType.SELL:
-      return <BuySellFields transactionType={transactionType} form={form as BuySellForm} />;
+      return (
+        <BuySellFields transactionType={transactionType} form={form as BuySellForm} sharesInputRef={sharesInputRef} />
+      );
 
     case TransactionType.MERGE:
     case TransactionType.SPLIT:

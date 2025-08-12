@@ -32,25 +32,54 @@ export function StockSearch({ onStockSelect, defaultSymbol, defaultName, classNa
   const [selectedStock, setSelectedStock] = useState<StockSearchResult | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 处理默认值
+  // 获取单个股票的实时价格
+  const fetchStockPrice = async (symbol: string) => {
+    try {
+      const response = await fetch(`/api/stock-prices?symbols=${symbol}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data.length > 0) {
+          return result.data[0];
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching stock price:", error);
+    }
+    return null;
+  };
+
+  // 处理默认值并获取实时价格
   useEffect(() => {
     if (defaultSymbol && defaultName) {
       const displayValue = `${defaultSymbol}(${defaultName})`;
       setStockCode(displayValue);
-      setSelectedStock({
+
+      // 先设置基础信息
+      const basicStock = {
         symbol: defaultSymbol,
         name: defaultName,
         currentPrice: "0.00",
         change: "0.00",
         changePercent: "0.00",
-      });
-      // 触发选择事件，让父组件知道已选择了股票
-      onStockSelect({
-        symbol: defaultSymbol,
-        name: defaultName,
-        currentPrice: "0.00",
-        change: "0.00",
-        changePercent: "0.00",
+      };
+      setSelectedStock(basicStock);
+
+      // 尝试获取实时价格
+      fetchStockPrice(defaultSymbol).then((priceData) => {
+        if (priceData) {
+          const updatedStock = {
+            symbol: defaultSymbol,
+            name: defaultName,
+            currentPrice: priceData.currentPrice,
+            change: priceData.change,
+            changePercent: priceData.changePercent,
+          };
+          setSelectedStock(updatedStock);
+          onStockSelect(updatedStock);
+        } else {
+          // 如果获取价格失败，仍然触发选择事件
+          onStockSelect(basicStock);
+        }
       });
     }
   }, [defaultSymbol, defaultName, onStockSelect]);
