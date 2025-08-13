@@ -62,8 +62,9 @@ export class TransactionProcessor {
     transaction: {
       type: TransactionType;
       unitShares?: number | string | null;
-      unitDividend?: number | string | null;
-      unitIncreaseShares?: number | string | null;
+      per10SharesTransfer?: number | string | null;
+      per10SharesBonus?: number | string | null;
+      per10SharesDividend?: number | string | null;
     },
     shares: number,
     amount: number,
@@ -122,19 +123,35 @@ export class TransactionProcessor {
 
   private static processDividendTransaction(
     result: TransactionData,
-    transaction: { unitDividend?: number | string | null; unitIncreaseShares?: number | string | null },
+    transaction: {
+      per10SharesTransfer?: number | string | null;
+      per10SharesBonus?: number | string | null;
+      per10SharesDividend?: number | string | null;
+    },
   ) {
-    const dividend = parseFloat(String(transaction.unitDividend)) || 0;
-    const increaseShares = parseFloat(String(transaction.unitIncreaseShares)) || 0;
+    const transfer = parseFloat(String(transaction.per10SharesTransfer)) || 0;
+    const bonus = parseFloat(String(transaction.per10SharesBonus)) || 0;
+    const dividend = parseFloat(String(transaction.per10SharesDividend)) || 0;
 
+    // 每10股红利计算
     if (dividend > 0) {
-      result.totalDividend += dividend * result.totalShares;
+      result.totalDividend += (dividend / 10) * result.totalShares;
     }
 
-    if (increaseShares > 0) {
-      result.totalShares += increaseShares * result.totalShares;
-      result.buyShares += increaseShares * result.buyShares;
+    // 每10股转增计算
+    if (transfer > 0) {
+      const transferShares = (transfer / 10) * result.totalShares;
+      result.totalShares += transferShares;
+      result.buyShares += transferShares;
     }
+
+    // 每10股送股计算
+    if (bonus > 0) {
+      const bonusShares = (bonus / 10) * result.totalShares;
+      result.totalShares += bonusShares;
+      result.buyShares += bonusShares;
+    }
+
     return result;
   }
 }

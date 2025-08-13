@@ -51,9 +51,9 @@ export async function GET(request: Request) {
         tax: transactions.tax,
         taxRate: transactions.taxRate,
         unitShares: transactions.unitShares,
-        unitDividend: transactions.unitDividend,
-        unitIncreaseShares: transactions.unitIncreaseShares,
-        recordDate: transactions.recordDate,
+        per10SharesTransfer: transactions.per10SharesTransfer,
+        per10SharesBonus: transactions.per10SharesBonus,
+        per10SharesDividend: transactions.per10SharesDividend,
         comment: transactions.comment,
         createdAt: transactions.createdAt,
       })
@@ -111,8 +111,8 @@ export async function POST(request: Request) {
         ...transactionData,
         amount: calculatedAmount,
         symbol: transactionData.symbol.toUpperCase(),
+        name: transactionData.name.replace(/\s+/g, ""), // 处理名称中的空白字符
         transactionDate: new Date(transactionData.transactionDate),
-        recordDate: transactionData.recordDate ? new Date(transactionData.recordDate) : null,
       })
       .returning();
 
@@ -152,8 +152,8 @@ function calculateTradeAmount(
 }
 
 // 计算股息金额
-function calculateDividendAmount(unitDividend: number, holdingShares: number): string {
-  return (unitDividend * holdingShares).toFixed(2);
+function calculateDividendAmount(per10SharesDividend: number, holdingShares: number): string {
+  return ((per10SharesDividend / 10) * holdingShares).toFixed(2);
 }
 
 // 提取交易数值参数
@@ -162,14 +162,14 @@ function extractTransactionParams(transactionData: {
   price?: string | number;
   commission?: string | number;
   tax?: string | number;
-  unitDividend?: string | number;
+  per10SharesDividend?: string | number;
 }) {
   return {
     shares: Number(transactionData.shares ?? 0),
     price: Number(transactionData.price ?? 0),
     commission: Number(transactionData.commission ?? 0),
     tax: Number(transactionData.tax ?? 0),
-    unitDividend: Number(transactionData.unitDividend ?? 0),
+    per10SharesDividend: Number(transactionData.per10SharesDividend ?? 0),
   };
 }
 
@@ -185,7 +185,7 @@ function calculateTransactionAmount(transactionData: {
   price?: string | number;
   commission?: string | number;
   tax?: string | number;
-  unitDividend?: string | number;
+  per10SharesDividend?: string | number;
 }): string {
   const type = transactionData.type;
   const params = extractTransactionParams(transactionData);
@@ -195,7 +195,7 @@ function calculateTransactionAmount(transactionData: {
   }
 
   if (type === TransactionType.DIVIDEND) {
-    return calculateDividendAmount(params.unitDividend, params.shares);
+    return calculateDividendAmount(params.per10SharesDividend, params.shares);
   }
 
   // MERGE, SPLIT, 或其他类型默认为 0
@@ -204,16 +204,21 @@ function calculateTransactionAmount(transactionData: {
 
 // 格式化股息描述
 function formatDividendDescription(
-  unitDividend?: string | number | null,
-  unitIncreaseShares?: string | number | null,
+  per10SharesTransfer?: string | number | null,
+  per10SharesBonus?: string | number | null,
+  per10SharesDividend?: string | number | null,
 ): string {
   let desc = "";
-  if (unitDividend && Number(unitDividend) > 0) {
-    desc += `每股股息 ¥${unitDividend}`;
+  if (per10SharesDividend && Number(per10SharesDividend) > 0) {
+    desc += `每10股红利 ¥${per10SharesDividend}`;
   }
-  if (unitIncreaseShares && Number(unitIncreaseShares) > 0) {
+  if (per10SharesTransfer && Number(per10SharesTransfer) > 0) {
     if (desc) desc += "，";
-    desc += `每股转增 ${unitIncreaseShares} 股`;
+    desc += `每10股转增 ${per10SharesTransfer} 股`;
+  }
+  if (per10SharesBonus && Number(per10SharesBonus) > 0) {
+    if (desc) desc += "，";
+    desc += `每10股送股 ${per10SharesBonus} 股`;
   }
   return desc || "除权除息";
 }
@@ -224,8 +229,9 @@ function formatTransactionDescription(transaction: {
   shares: string | number | null;
   price: string | number | null;
   unitShares?: string | number | null;
-  unitDividend?: string | number | null;
-  unitIncreaseShares?: string | number | null;
+  per10SharesTransfer?: string | number | null;
+  per10SharesBonus?: string | number | null;
+  per10SharesDividend?: string | number | null;
 }): string {
   const type = transaction.type;
 
@@ -243,7 +249,11 @@ function formatTransactionDescription(transaction: {
     case TransactionType.SPLIT:
       return `1 股拆为 ${unitShares} 股`;
     case TransactionType.DIVIDEND:
-      return formatDividendDescription(transaction.unitDividend, transaction.unitIncreaseShares);
+      return formatDividendDescription(
+        transaction.per10SharesTransfer,
+        transaction.per10SharesBonus,
+        transaction.per10SharesDividend,
+      );
     default:
       return "未知交易类型";
   }

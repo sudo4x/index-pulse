@@ -14,6 +14,8 @@ type StockPriceData = {
   volume: string | null;
   turnover: string | null;
   marketValue: string | null;
+  limitUp: string; // 涨停价
+  limitDown: string; // 跌停价
   lastUpdated: Date;
 };
 
@@ -43,7 +45,25 @@ export async function GET(request: Request) {
     const cachedSymbols = cachedPrices.map((p) => p.symbol);
     const needUpdateSymbols = symbolList.filter((symbol) => !cachedSymbols.includes(symbol));
 
-    const allPrices = [...cachedPrices];
+    // 为缓存的价格数据添加涨停跌停价格
+    const allPrices: StockPriceData[] = cachedPrices.map((price) => {
+      const { limitUp, limitDown } = calculateLimitPrices(
+        price.symbol,
+        price.currentPrice.toString(),
+        price.changePercent.toString(),
+      );
+      return {
+        ...price,
+        currentPrice: price.currentPrice.toString(),
+        change: price.change.toString(),
+        changePercent: price.changePercent.toString(),
+        volume: price.volume?.toString() ?? null,
+        turnover: price.turnover?.toString() ?? null,
+        marketValue: price.marketValue?.toString() ?? null,
+        limitUp,
+        limitDown,
+      };
+    });
 
     // 如果有需要更新的股票，从外部接口获取
     if (needUpdateSymbols.length > 0) {
@@ -80,7 +100,17 @@ async function updateStockPricesInDatabase(prices: StockPriceData[]) {
   for (const price of prices) {
     await db
       .insert(stockPrices)
-      .values(price)
+      .values({
+        symbol: price.symbol,
+        name: price.name,
+        currentPrice: price.currentPrice,
+        change: price.change,
+        changePercent: price.changePercent,
+        volume: price.volume,
+        turnover: price.turnover,
+        marketValue: price.marketValue,
+        lastUpdated: new Date(),
+      })
       .onConflictDoUpdate({
         target: stockPrices.symbol,
         set: {
@@ -180,6 +210,64 @@ function isIndexCode(code: string): boolean {
   return code.startsWith("000") || code.startsWith("399");
 }
 
+// 计算涨跌停价格
+function calculateLimitPrices(symbol: string, currentPrice: string, changePercent: string) {
+  const price = parseFloat(currentPrice);
+  const changePercentNum = parseFloat(changePercent);
+
+  if (isNaN(price) || price <= 0) {
+    return { limitUp: "0.000", limitDown: "0.000" };
+  }
+
+  // 获取涨跌幅限制百分比
+  const limitPercent = getLimitPercent(symbol);
+
+  // 计算昨日收盘价（基于当前价格和涨跌幅反推）
+  const yesterdayPrice = price / (1 + changePercentNum / 100);
+
+  // 计算涨停价和跌停价
+  const limitUp = yesterdayPrice * (1 + limitPercent / 100);
+  const limitDown = yesterdayPrice * (1 - limitPercent / 100);
+
+  return {
+    limitUp: limitUp.toFixed(3),
+    limitDown: limitDown.toFixed(3),
+  };
+}
+
+// 获取股票涨跌幅限制百分比
+function getLimitPercent(symbol: string): number {
+  const code = symbol.replace(/^(SH|SZ|HK|US)/, "");
+
+  // 沪市主板（60开头）
+  if (code.startsWith("60")) {
+    return 10;
+  }
+
+  // 深市主板（00开头）
+  if (code.startsWith("00")) {
+    return 10;
+  }
+
+  // 深交所创业板（300开头）
+  if (code.startsWith("300")) {
+    return 20;
+  }
+
+  // 上交所科创板（688开头）
+  if (code.startsWith("688")) {
+    return 20;
+  }
+
+  // 北交所（8开头）
+  if (code.startsWith("8")) {
+    return 30;
+  }
+
+  // 默认10%（其他情况）
+  return 10;
+}
+
 // 检查数据行是否有效
 function isValidDataLine(line: string): boolean {
   return Boolean(line.trim()) && line.includes("=");
@@ -202,16 +290,23 @@ function hasEnoughDataParts(parts: string[]): boolean {
 // 构建股票数据对象
 function buildStockDataObject(varName: string, parts: string[]) {
   const symbol = extractOriginalSymbol(varName);
+  const currentPrice = parts[3] || "0";
+  const changePercent = parts[5] || "0";
+
+  // 计算涨跌停价格
+  const { limitUp, limitDown } = calculateLimitPrices(symbol, currentPrice, changePercent);
 
   return {
     symbol,
-    name: parts[1] || "",
-    currentPrice: parts[3] || "0",
+    name: (parts[1] || "").replace(/\s+/g, ""), // 处理名称中的空白字符
+    currentPrice,
     change: parts[4] || "0",
-    changePercent: parts[5] || "0",
+    changePercent,
     volume: parts[6] || "0",
     turnover: parts[7] || "0",
     marketValue: parts[9] || "0",
+    limitUp,
+    limitDown,
     lastUpdated: new Date(),
   };
 }

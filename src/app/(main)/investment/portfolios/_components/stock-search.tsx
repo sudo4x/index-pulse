@@ -15,6 +15,8 @@ export interface StockSearchResult {
   currentPrice: string;
   change: string;
   changePercent: string;
+  limitUp?: string;
+  limitDown?: string;
 }
 
 interface StockSearchProps {
@@ -68,6 +70,8 @@ export function StockSearch({
         currentPrice: "0.00",
         change: "0.00",
         changePercent: "0.00",
+        limitUp: "0.000",
+        limitDown: "0.000",
       };
       setSelectedStock(basicStock);
 
@@ -86,6 +90,8 @@ export function StockSearch({
             currentPrice: priceData.currentPrice,
             change: priceData.change,
             changePercent: priceData.changePercent,
+            limitUp: priceData.limitUp,
+            limitDown: priceData.limitDown,
           };
           setSelectedStock(updatedStock);
           onStockSelect(updatedStock);
@@ -234,14 +240,22 @@ export function StockSearch({
                       onClick={() => selectStock(stock)}
                     >
                       <div className="font-medium">
-                        {stock.name}({stock.symbol})
+                        {stock.symbol}({stock.name})
                       </div>
-                      <div className="text-muted-foreground flex items-center space-x-4 text-sm">
+                      <div className="text-muted-foreground text-sm">
                         <span>
-                          最新 <span className="text-green-600">{stock.currentPrice}</span>
-                        </span>
-                        <span className={cn(parseFloat(stock.change) >= 0 ? "text-red-500" : "text-green-500")}>
-                          {stock.change}({stock.changePercent}%)
+                          最新 <span className="text-green-600">{parseFloat(stock.currentPrice).toFixed(3)}</span>
+                          <span className={cn(parseFloat(stock.change) >= 0 ? "text-red-500" : "text-green-500")}>
+                            ({parseFloat(stock.changePercent).toFixed(2)}%)
+                          </span>
+                          {stock.limitUp && stock.limitDown && (
+                            <>
+                              {" 涨停 "}
+                              <span className="text-red-500">{parseFloat(stock.limitUp).toFixed(3)}</span>
+                              {" 跌停 "}
+                              <span className="text-green-500">{parseFloat(stock.limitDown).toFixed(3)}</span>
+                            </>
+                          )}
                         </span>
                       </div>
                     </div>
@@ -257,12 +271,25 @@ export function StockSearch({
         {/* 已选股票显示 - 显示价格和涨跌信息 */}
         {selectedStock && (
           <div className="flex items-center justify-between rounded-md bg-blue-50 p-2">
-            <div className="flex items-center space-x-4 text-sm">
-              <span className="font-medium">{selectedStock.name}</span>
-              <span className="text-green-600">最新 {selectedStock.currentPrice}</span>
-              <span className={cn(parseFloat(selectedStock.change || "0") >= 0 ? "text-red-500" : "text-green-500")}>
-                {selectedStock.change}({selectedStock.changePercent}%)
-              </span>
+            <div className="text-sm">
+              <div className="text-muted-foreground">
+                <span>
+                  最新 <span className="text-green-600">{parseFloat(selectedStock.currentPrice).toFixed(3)}</span>
+                  <span
+                    className={cn(parseFloat(selectedStock.change || "0") >= 0 ? "text-red-500" : "text-green-500")}
+                  >
+                    ({parseFloat(selectedStock.changePercent || "0").toFixed(2)}%)
+                  </span>
+                  {selectedStock.limitUp && selectedStock.limitDown && (
+                    <>
+                      {" 涨停 "}
+                      <span className="text-red-500">{parseFloat(selectedStock.limitUp).toFixed(3)}</span>
+                      {" 跌停 "}
+                      <span className="text-green-500">{parseFloat(selectedStock.limitDown).toFixed(3)}</span>
+                    </>
+                  )}
+                </span>
+              </div>
             </div>
             <Button type="button" variant="ghost" size="sm" onClick={clearSelection}>
               <X className="h-4 w-4" />

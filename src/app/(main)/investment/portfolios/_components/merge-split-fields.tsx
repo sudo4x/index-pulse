@@ -16,7 +16,7 @@ export function MergeSplitFields({ transactionType, form }: MergeSplitFieldsProp
   return (
     <div className="grid grid-cols-[80px_1fr] items-center gap-4">
       <Label className="text-sm font-medium">
-        {transactionType === TransactionType.MERGE ? "合股比例" : "拆股比例"}
+        {transactionType === TransactionType.MERGE ? "多股合一" : "每股拆为"}
       </Label>
       <FormField
         control={form.control}
@@ -26,7 +26,7 @@ export function MergeSplitFields({ transactionType, form }: MergeSplitFieldsProp
             <FormControl>
               <Input
                 type="number"
-                placeholder={transactionType === TransactionType.MERGE ? "10（10股合为1股）" : "2（1股拆为2股）"}
+                placeholder={transactionType === TransactionType.MERGE ? "多少股合为1股" : "每1股拆为多少股"}
                 {...field}
                 value={field.value || ""}
                 onChange={(e) => field.onChange(Number(e.target.value) || 0)}

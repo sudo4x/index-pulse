@@ -77,9 +77,9 @@ export const transactions = pgTable(
     // 合股拆股相关字段
     unitShares: decimal("unit_shares", { precision: 18, scale: 6 }), // 合股：多少股合为1股 / 拆股：1股拆为多少股
     // 除权除息相关字段
-    unitDividend: decimal("unit_dividend", { precision: 18, scale: 6 }), // 每股股息
-    unitIncreaseShares: decimal("unit_increase_shares", { precision: 18, scale: 6 }), // 每股转增/送股数量
-    recordDate: timestamp("record_date"), // 股权登记日
+    per10SharesTransfer: decimal("per_10_shares_transfer", { precision: 18, scale: 6 }), // 每10股转增
+    per10SharesBonus: decimal("per_10_shares_bonus", { precision: 18, scale: 6 }), // 每10股送股
+    per10SharesDividend: decimal("per_10_shares_dividend", { precision: 18, scale: 6 }), // 每10股红利
     comment: text("comment"), // 备注
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

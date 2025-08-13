@@ -28,9 +28,9 @@ export interface MergeSplitFormData extends BaseTransactionFormData {
 
 // 股息分红表单数据
 export interface DividendFormData extends BaseTransactionFormData {
-  unitDividend?: number;
-  unitIncreaseShares?: number;
-  recordDate?: Date;
+  per10SharesTransfer?: number;
+  per10SharesBonus?: number;
+  per10SharesDividend?: number;
   tax?: number;
   taxRate?: number;
   taxType: "amount" | "rate";

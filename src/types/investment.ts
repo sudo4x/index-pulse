@@ -84,9 +84,9 @@ export interface TransactionDetail {
   tax?: number;
   taxRate?: number;
   unitShares?: number; // 合股拆股相关
-  unitDividend?: number; // 每股股息
-  unitIncreaseShares?: number; // 每股转增股数
-  recordDate?: string; // 股权登记日
+  per10SharesTransfer?: number; // 每10股转增
+  per10SharesBonus?: number; // 每10股送股
+  per10SharesDividend?: number; // 每10股红利
   comment?: string;
   description: string; // 描述信息
 }
@@ -131,9 +131,9 @@ export interface TransactionFormData {
   // 合股/拆股特有字段
   unitShares?: number;
   // 除权除息特有字段
-  unitDividend?: number;
-  unitIncreaseShares?: number;
-  recordDate?: string;
+  per10SharesTransfer?: number;
+  per10SharesBonus?: number;
+  per10SharesDividend?: number;
   // 通用字段
   comment?: string;
 }

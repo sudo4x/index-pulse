@@ -50,8 +50,8 @@ export async function PUT(request: Request, context: RouteContext) {
         ...transactionData,
         amount: calculatedAmount,
         symbol: transactionData.symbol.toUpperCase(),
+        name: transactionData.name.replace(/\s+/g, ""), // 处理名称中的空白字符
         transactionDate: new Date(transactionData.transactionDate),
-        recordDate: transactionData.recordDate ? new Date(transactionData.recordDate) : null,
       })
       .where(eq(transactions.id, transactionId))
       .returning();
@@ -134,8 +134,8 @@ function calculateTradeAmount(
 }
 
 // 计算股息金额
-function calculateDividendAmount(unitDividend: number, holdingShares: number): string {
-  return (unitDividend * holdingShares).toFixed(2);
+function calculateDividendAmount(per10SharesDividend: number, holdingShares: number): string {
+  return ((per10SharesDividend / 10) * holdingShares).toFixed(2);
 }
 
 // 提取交易数值参数
@@ -144,14 +144,14 @@ function extractTransactionParams(transactionData: {
   price?: string | number;
   commission?: string | number;
   tax?: string | number;
-  unitDividend?: string | number;
+  per10SharesDividend?: string | number;
 }) {
   return {
     shares: Number(transactionData.shares ?? 0),
     price: Number(transactionData.price ?? 0),
     commission: Number(transactionData.commission ?? 0),
     tax: Number(transactionData.tax ?? 0),
-    unitDividend: Number(transactionData.unitDividend ?? 0),
+    per10SharesDividend: Number(transactionData.per10SharesDividend ?? 0),
   };
 }
 
@@ -167,7 +167,7 @@ function calculateTransactionAmount(transactionData: {
   price?: string | number;
   commission?: string | number;
   tax?: string | number;
-  unitDividend?: string | number;
+  per10SharesDividend?: string | number;
 }): string {
   const type = transactionData.type;
   const params = extractTransactionParams(transactionData);
@@ -177,7 +177,7 @@ function calculateTransactionAmount(transactionData: {
   }
 
   if (type === TransactionType.DIVIDEND) {
-    return calculateDividendAmount(params.unitDividend, params.shares);
+    return calculateDividendAmount(params.per10SharesDividend, params.shares);
   }
 
   // MERGE, SPLIT, 或其他类型默认为 0
