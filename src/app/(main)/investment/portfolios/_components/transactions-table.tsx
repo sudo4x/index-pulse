@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import { Edit, Trash2 } from "lucide-react";
 
@@ -26,6 +26,7 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
   const [deletingTransaction, setDeletingTransaction] = useState<TransactionDetail | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchTransactions = useCallback(async () => {
     if (!portfolioId || portfolioId === "undefined") {
@@ -62,9 +63,21 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
   }, [portfolioId, symbol, toast]);
 
   useEffect(() => {
-    if (portfolioId && portfolioId !== "undefined") {
-      fetchTransactions();
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
+
+    if (portfolioId && portfolioId !== "undefined") {
+      timeoutRef.current = setTimeout(() => {
+        fetchTransactions();
+      }, 50); // 50ms 防抖
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [portfolioId, symbol, fetchTransactions]);
 
   const handleEditTransaction = (transaction: TransactionDetail) => {
