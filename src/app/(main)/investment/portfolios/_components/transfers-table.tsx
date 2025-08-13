@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import { format } from "date-fns";
 import { zhCN } from "date-fns/locale";
@@ -29,8 +29,9 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
   const [deletingTransfer, setDeletingTransfer] = useState<TransferDetail | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchTransfers = async () => {
+  const fetchTransfers = useCallback(async () => {
     if (!portfolioId || portfolioId === "undefined") {
       setIsLoading(false);
       return;
@@ -57,15 +58,25 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const memoizedFetchTransfers = useCallback(fetchTransfers, [portfolioId, toast]);
+  }, [portfolioId, toast]);
 
   useEffect(() => {
-    if (portfolioId && portfolioId !== "undefined") {
-      memoizedFetchTransfers();
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
     }
-  }, [portfolioId, memoizedFetchTransfers]);
+
+    if (portfolioId && portfolioId !== "undefined") {
+      timeoutRef.current = setTimeout(() => {
+        fetchTransfers();
+      }, 50); // 50ms 防抖
+    }
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [portfolioId, fetchTransfers]);
 
   const handleEditTransfer = (transfer: TransferDetail) => {
     setEditingTransfer(transfer);
@@ -91,7 +102,7 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
           title: "成功",
           description: "转账记录删除成功",
         });
-        memoizedFetchTransfers(); // 重新获取数据
+        fetchTransfers(); // 重新获取数据
         setIsDeleteDialogOpen(false);
         setDeletingTransfer(null);
       }
@@ -162,7 +173,7 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
                   <TableHead>金额</TableHead>
                   <TableHead>日期</TableHead>
                   <TableHead>备注</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead className="text-center">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -243,7 +254,7 @@ export function TransfersTable({ portfolioId }: TransfersTableProps) {
         }}
         portfolioId={portfolioId}
         editingTransfer={editingTransfer ?? undefined}
-        onSuccess={memoizedFetchTransfers}
+        onSuccess={fetchTransfers}
       />
 
       {/* 确认删除对话框 */}
