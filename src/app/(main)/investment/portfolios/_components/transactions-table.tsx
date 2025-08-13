@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Edit, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { TransactionDetail } from "@/types/investment";
@@ -177,46 +178,58 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
 
   if (isLoading) {
     return (
-      <div className="flex h-32 items-center justify-center">
-        <div className="text-muted-foreground">加载中...</div>
-      </div>
+      <Card>
+        <CardContent>
+          <div className="flex h-32 items-center justify-center">
+            <div className="text-muted-foreground">加载中...</div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (transactions.length === 0) {
     return (
-      <div className="flex h-32 flex-col items-center justify-center space-y-2">
-        <div className="text-muted-foreground">还没有交易记录</div>
-        <div className="text-muted-foreground text-sm">
-          {symbol ? `没有找到 ${symbol} 的交易记录` : "开始您的第一笔交易"}
-        </div>
-      </div>
+      <Card>
+        <CardContent>
+          <div className="flex h-32 flex-col items-center justify-center space-y-2">
+            <div className="text-muted-foreground">还没有交易记录</div>
+            <div className="text-muted-foreground text-sm">
+              {symbol ? `没有找到 ${symbol} 的交易记录` : "开始您的第一笔交易"}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <>
-      <div className="overflow-hidden rounded-md border">
-        <div className="w-full overflow-x-auto">
-          <div className="min-w-[900px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[140px]">名称/代码</TableHead>
-                  <TableHead className="w-[160px]">类型/日期</TableHead>
-                  <TableHead className="w-[100px] text-right">成交价</TableHead>
-                  <TableHead className="w-[90px] text-right">数量</TableHead>
-                  <TableHead className="w-[110px] text-right">金额</TableHead>
-                  <TableHead className="w-[160px]">说明</TableHead>
-                  <TableHead className="w-[140px]">备注</TableHead>
-                  <TableHead className="w-[140px] text-center">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>{transactions.map(renderTransactionRow)}</TableBody>
-            </Table>
+      <Card className="shadow-xs">
+        <CardContent className="flex size-full flex-col gap-4">
+          <div className="overflow-hidden rounded-md border">
+            <div className="w-full overflow-x-auto">
+              <div className="min-w-[900px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[140px]">名称/代码</TableHead>
+                      <TableHead className="w-[160px]">类型/日期</TableHead>
+                      <TableHead className="w-[100px] text-right">成交价</TableHead>
+                      <TableHead className="w-[90px] text-right">数量</TableHead>
+                      <TableHead className="w-[110px] text-right">金额</TableHead>
+                      <TableHead className="w-[160px]">说明</TableHead>
+                      <TableHead className="w-[140px]">备注</TableHead>
+                      <TableHead className="w-[140px] text-center">操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>{transactions.map(renderTransactionRow)}</TableBody>
+                </Table>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* 编辑交易对话框 */}
       <TransactionDialog
