@@ -255,3 +255,4 @@ npm run generate:presets  # 生成自定义主题预设文件
 - 严禁使用 commonjs 模块系统
 - 尽可能使用 TypeScript。只有在构建工具完全不支持 TypeScript 的时候，才使用 JavaScript
 - 数据结构尽可能全部定义成强类型。如果个别场景不得不使用 any 或未经结构化定义的 json，需要先停下来征求用户的同意
+- 新增或改动typescript代码时除非不得不适用否则一律用??代替||
