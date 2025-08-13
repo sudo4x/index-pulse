@@ -61,7 +61,6 @@ export function TransactionDialog(props: TransactionDialogProps) {
                   onStockSelect={handleStockSelect}
                   defaultSymbol={selectedHolding?.symbol ?? editingTransaction?.symbol}
                   defaultName={selectedHolding?.name ?? editingTransaction?.name}
-                  disableAutoFetch={!!editingTransaction}
                 />
 
                 {/* 交易类型 */}
