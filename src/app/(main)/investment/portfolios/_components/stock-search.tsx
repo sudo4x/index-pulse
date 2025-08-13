@@ -40,6 +40,7 @@ export function StockSearch({
   const [isSearching, setIsSearching] = useState(false);
   const [selectedStock, setSelectedStock] = useState<StockSearchResult | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initializedRef = useRef<string>(""); // 跟踪已初始化的股票代码
 
   // 获取单个股票的实时价格
   const fetchStockPrice = async (symbol: string) => {
@@ -81,27 +82,38 @@ export function StockSearch({
         return;
       }
 
-      // 尝试获取实时价格
-      fetchStockPrice(defaultSymbol).then((priceData) => {
-        if (priceData) {
-          const updatedStock = {
-            symbol: defaultSymbol,
-            name: defaultName,
-            currentPrice: priceData.currentPrice,
-            change: priceData.change,
-            changePercent: priceData.changePercent,
-            limitUp: priceData.limitUp,
-            limitDown: priceData.limitDown,
-          };
-          setSelectedStock(updatedStock);
-          onStockSelect(updatedStock);
-        } else {
-          // 如果获取价格失败，仍然触发选择事件
-          onStockSelect(basicStock);
-        }
-      });
+      // 只有当股票代码真正变化时才获取实时价格，避免重复请求
+      if (initializedRef.current !== defaultSymbol) {
+        initializedRef.current = defaultSymbol;
+        
+        // 尝试获取实时价格
+        fetchStockPrice(defaultSymbol).then((priceData) => {
+          if (priceData) {
+            const updatedStock = {
+              symbol: defaultSymbol,
+              name: defaultName,
+              currentPrice: priceData.currentPrice,
+              change: priceData.change,
+              changePercent: priceData.changePercent,
+              limitUp: priceData.limitUp,
+              limitDown: priceData.limitDown,
+            };
+            setSelectedStock(updatedStock);
+            onStockSelect(updatedStock);
+          } else {
+            // 如果获取价格失败，仍然触发选择事件
+            onStockSelect(basicStock);
+          }
+        });
+      } else {
+        // 如果是相同股票，只触发选择事件，不重新获取价格
+        onStockSelect(basicStock);
+      }
+    } else {
+      // 清空时重置初始化状态
+      initializedRef.current = "";
     }
-  }, [defaultSymbol, defaultName, onStockSelect, disableAutoFetch]);
+  }, [defaultSymbol, defaultName, disableAutoFetch, onStockSelect]);
 
   // 检查是否为沪市股票或ETF代码
   const isShangHaiCode = (code: string): boolean => {
