@@ -8,7 +8,7 @@ import { HoldingDetail } from "@/types/investment";
 
 interface HoldingTableHelpersProps {
   handleAddClick: (holding: HoldingDetail) => void;
-  handleShowTransactions: (symbol: string) => void;
+  handleShowTransactions: (holding: HoldingDetail) => void;
   handleDeleteClick: (holding: HoldingDetail) => void;
 }
 
@@ -84,12 +84,7 @@ export const createHoldingRowHelpers = ({
           <Plus className="mr-1 h-3 w-3" />
           添加
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-xs"
-          onClick={() => handleShowTransactions(holding.symbol)}
-        >
+        <Button variant="ghost" size="sm" className="h-8 px-2 text-xs" onClick={() => handleShowTransactions(holding)}>
           <History className="mr-1 h-3 w-3" />
           交易
         </Button>

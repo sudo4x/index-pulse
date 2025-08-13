@@ -85,7 +85,7 @@ export function StockSearch({
       // 只有当股票代码真正变化时才获取实时价格，避免重复请求
       if (initializedRef.current !== defaultSymbol) {
         initializedRef.current = defaultSymbol;
-        
+
         // 尝试获取实时价格
         fetchStockPrice(defaultSymbol).then((priceData) => {
           if (priceData) {

@@ -107,20 +107,23 @@ export function useTransactionDialog({
     initializeSelectedHolding,
   ]);
 
-  const handleStockSelect = useCallback((stock: StockSearchResult) => {
-    form.setValue("symbol", stock.symbol);
-    form.setValue("name", stock.name);
+  const handleStockSelect = useCallback(
+    (stock: StockSearchResult) => {
+      form.setValue("symbol", stock.symbol);
+      form.setValue("name", stock.name);
 
-    // 只有在非编辑模式下才更新价格
-    if (!editingTransaction) {
-      form.setValue("price", parseFloat(stock.currentPrice) || 0);
-    }
+      // 只有在非编辑模式下才更新价格
+      if (!editingTransaction) {
+        form.setValue("price", parseFloat(stock.currentPrice) || 0);
+      }
 
-    // 延迟设置焦点到股数字段，如果字段不存在则自然失败（无影响）
-    setTimeout(() => {
-      sharesInputRef.current?.focus();
-    }, 100);
-  }, [form, editingTransaction]);
+      // 延迟设置焦点到股数字段，如果字段不存在则自然失败（无影响）
+      setTimeout(() => {
+        sharesInputRef.current?.focus();
+      }, 100);
+    },
+    [form, editingTransaction],
+  );
 
   const handleSubmit = async (data: TransactionFormData) => {
     setIsSubmitting(true);

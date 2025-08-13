@@ -23,8 +23,9 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
   const [isLoading, setIsLoading] = useState(true);
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const [isTransactionListOpen, setIsTransactionListOpen] = useState(false);
-  const [selectedSymbol, setSelectedSymbol] = useState<string>("");
   const [selectedHolding, setSelectedHolding] = useState<HoldingDetail | null>(null);
+  const [selectedSymbol, setSelectedSymbol] = useState<string>("");
+  const [selectedStockName, setSelectedStockName] = useState<string>("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingHolding, setDeletingHolding] = useState<HoldingDetail | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -115,8 +116,9 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
     }
   };
 
-  const handleShowTransactions = (symbol: string) => {
-    setSelectedSymbol(symbol);
+  const handleShowTransactions = (holding: HoldingDetail) => {
+    setSelectedSymbol(holding.symbol);
+    setSelectedStockName(holding.name);
     setIsTransactionListOpen(true);
   };
 
@@ -201,12 +203,20 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
       />
 
       {/* 交易记录列表对话框 */}
-      <Dialog open={isTransactionListOpen} onOpenChange={setIsTransactionListOpen}>
+      <Dialog
+        open={isTransactionListOpen}
+        onOpenChange={(open) => {
+          setIsTransactionListOpen(open);
+          if (!open) {
+            setSelectedStockName("");
+          }
+        }}
+      >
         <DialogContent className="max-h-[85vh] w-full min-w-[70vw] overflow-y-auto p-0">
-          <DialogTitle className="sr-only">{selectedSymbol} 交易记录</DialogTitle>
+          <DialogTitle className="sr-only">{selectedStockName} 交易记录</DialogTitle>
           <Card className="border-0 shadow-none">
             <CardHeader className="pb-4">
-              <CardTitle className="text-xl">{selectedSymbol} 交易记录</CardTitle>
+              <CardTitle className="text-xl">{selectedStockName} 交易记录</CardTitle>
             </CardHeader>
             <CardContent>
               <TransactionsTable portfolioId={portfolioId} symbol={selectedSymbol} />
