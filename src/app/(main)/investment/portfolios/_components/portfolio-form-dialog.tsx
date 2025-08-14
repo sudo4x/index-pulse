@@ -23,8 +23,10 @@ interface PortfolioFormDialogProps {
   portfolioData?: {
     id: string;
     name: string;
-    commissionMinAmount?: number;
-    commissionRate?: number;
+    stockCommissionMinAmount?: number;
+    stockCommissionRate?: number;
+    etfCommissionMinAmount?: number;
+    etfCommissionRate?: number;
   };
   trigger?: React.ReactNode; // 自定义触发器
 }
@@ -45,10 +47,14 @@ export function PortfolioFormDialog({
   const {
     portfolioName,
     setPortfolioName,
-    commissionMinAmount,
-    setCommissionMinAmount,
-    commissionRate,
-    setCommissionRate,
+    stockCommissionMinAmount,
+    setStockCommissionMinAmount,
+    stockCommissionRate,
+    setStockCommissionRate,
+    etfCommissionMinAmount,
+    setEtfCommissionMinAmount,
+    etfCommissionRate,
+    setEtfCommissionRate,
     isLoading,
     setIsLoading,
     validateForm,
@@ -84,8 +90,10 @@ export function PortfolioFormDialog({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: portfolioName.trim(),
-        commissionMinAmount,
-        commissionRate,
+        stockCommissionMinAmount,
+        stockCommissionRate,
+        etfCommissionMinAmount,
+        etfCommissionRate,
       }),
     });
 
@@ -107,8 +115,10 @@ export function PortfolioFormDialog({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: portfolioName.trim(),
-        commissionMinAmount,
-        commissionRate,
+        stockCommissionMinAmount,
+        stockCommissionRate,
+        etfCommissionMinAmount,
+        etfCommissionRate,
       }),
     });
 
@@ -158,10 +168,14 @@ export function PortfolioFormDialog({
   const formProps = {
     portfolioName,
     setPortfolioName,
-    commissionMinAmount,
-    setCommissionMinAmount,
-    commissionRate,
-    setCommissionRate,
+    stockCommissionMinAmount,
+    setStockCommissionMinAmount,
+    stockCommissionRate,
+    setStockCommissionRate,
+    etfCommissionMinAmount,
+    setEtfCommissionMinAmount,
+    etfCommissionRate,
+    setEtfCommissionRate,
     isLoading,
     editMode,
     handleSubmit,

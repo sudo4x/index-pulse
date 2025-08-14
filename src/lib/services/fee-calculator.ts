@@ -1,3 +1,4 @@
+import { getStockType, StockType } from "@/lib/utils/stock-type-utils";
 import { TransactionType } from "@/types/investment";
 
 /**
@@ -6,6 +7,16 @@ import { TransactionType } from "@/types/investment";
 export interface StockInfo {
   isETF: boolean; // 是否为ETF
   exchange: "SH" | "SZ" | "HK" | "US"; // 交易所
+}
+
+/**
+ * 费用计算器配置
+ */
+export interface CommissionConfig {
+  stockCommissionRate: number; // 个股佣金费率
+  stockCommissionMinAmount: number; // 个股最低佣金
+  etfCommissionRate: number; // ETF佣金费率
+  etfCommissionMinAmount: number; // ETF最低佣金
 }
 
 /**
@@ -25,9 +36,47 @@ export interface FeeCalculationResult {
  */
 export class FeeCalculator {
   /**
-   * 计算交易费用
+   * 计算交易费用（新版本，支持个股和ETF分别配置）
    */
   static calculateFees(
+    symbol: string,
+    transactionType: TransactionType,
+    amount: number,
+    commissionConfig: CommissionConfig,
+  ): FeeCalculationResult {
+    const stockType = getStockType(symbol);
+    const stockInfo = this.getStockInfo(symbol);
+
+    // 根据股票类型选择佣金配置
+    const commissionRate =
+      stockType === StockType.ETF ? commissionConfig.etfCommissionRate : commissionConfig.stockCommissionRate;
+    const commissionMinAmount =
+      stockType === StockType.ETF ? commissionConfig.etfCommissionMinAmount : commissionConfig.stockCommissionMinAmount;
+
+    // 计算各项费用
+    const commission = this.calculateCommission(amount, commissionRate, commissionMinAmount);
+    const stampTax = this.calculateStampTax(amount, transactionType, stockInfo);
+    const transferFee = this.calculateTransferFee(amount, stockInfo);
+
+    const totalFee = commission + stampTax + transferFee;
+
+    // 生成费用明细说明
+    const description = this.generateFeeDescription(commission, stampTax, transferFee, stockInfo);
+
+    return {
+      commission,
+      stampTax,
+      transferFee,
+      totalFee,
+      description,
+    };
+  }
+
+  /**
+   * 计算交易费用（兼容旧版本）
+   * @deprecated 请使用带 CommissionConfig 参数的新版本
+   */
+  static calculateFeesLegacy(
     symbol: string,
     transactionType: TransactionType,
     amount: number,
@@ -107,37 +156,22 @@ export class FeeCalculator {
    * 获取股票信息（类型和交易所）
    */
   static getStockInfo(symbol: string): StockInfo {
+    const stockType = getStockType(symbol);
+    const isETF = stockType === StockType.ETF;
+
     // 统一处理，去掉可能的市场前缀
     const cleanSymbol = symbol.replace(/^(SH|SZ|HK|US)/, "");
 
-    // A股ETF判断
-    if (this.isAShareETF(cleanSymbol)) {
-      const exchange = this.getAShareExchange(cleanSymbol);
-      return { isETF: true, exchange };
+    // 确定交易所
+    let exchange: "SH" | "SZ" | "HK" | "US" = "US"; // 默认美股
+
+    if (this.isAShareStock(cleanSymbol) || this.isAShareETF(cleanSymbol)) {
+      exchange = this.getAShareExchange(cleanSymbol);
+    } else if (this.isHKStock(cleanSymbol) || this.isHKETF(cleanSymbol)) {
+      exchange = "HK";
     }
 
-    // 港股ETF判断
-    if (this.isHKETF(cleanSymbol)) {
-      return { isETF: true, exchange: "HK" };
-    }
-
-    // 美股ETF判断（暂时简单处理）
-    if (this.isUSETF(cleanSymbol)) {
-      return { isETF: true, exchange: "US" };
-    }
-
-    // 个股判断
-    if (this.isAShareStock(cleanSymbol)) {
-      const exchange = this.getAShareExchange(cleanSymbol);
-      return { isETF: false, exchange };
-    }
-
-    if (this.isHKStock(cleanSymbol)) {
-      return { isETF: false, exchange: "HK" };
-    }
-
-    // 默认为美股个股
-    return { isETF: false, exchange: "US" };
+    return { isETF, exchange };
   }
 
   /**

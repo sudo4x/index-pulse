@@ -15,6 +15,8 @@ export class TransactionProcessor {
     let totalBuyAmount = 0;
     let totalSellAmount = 0;
     let totalDividend = 0;
+    let totalCommission = 0;
+    let totalTax = 0;
     let buyShares = 0;
     let openTime: Date | null = null;
     let liquidationTime: Date | null = null;
@@ -22,6 +24,8 @@ export class TransactionProcessor {
     for (const transaction of transactions) {
       const shares = parseFloat(String(transaction.shares)) || 0;
       const amount = parseFloat(String(transaction.amount)) || 0;
+      const commission = parseFloat(String(transaction.commission)) || 0;
+      const tax = parseFloat(String(transaction.tax)) || 0;
 
       const result = this.processTransaction(transaction, shares, amount, {
         totalShares,
@@ -29,6 +33,8 @@ export class TransactionProcessor {
         totalBuyAmount,
         totalSellAmount,
         totalDividend,
+        totalCommission,
+        totalTax,
       });
 
       totalShares = result.totalShares;
@@ -36,6 +42,12 @@ export class TransactionProcessor {
       totalBuyAmount = result.totalBuyAmount;
       totalSellAmount = result.totalSellAmount;
       totalDividend = result.totalDividend;
+      totalCommission = result.totalCommission;
+      totalTax = result.totalTax;
+
+      // 累加佣金和税费
+      totalCommission += commission;
+      totalTax += tax;
 
       if (transaction.type === TransactionType.BUY) {
         openTime ??= transaction.transactionDate;
@@ -49,6 +61,8 @@ export class TransactionProcessor {
       totalBuyAmount,
       totalSellAmount,
       totalDividend,
+      totalCommission,
+      totalTax,
       buyShares,
       openTime,
       liquidationTime,

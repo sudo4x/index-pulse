@@ -60,20 +60,27 @@ export async function POST(request: Request) {
 }
 
 function validatePortfolioData(data: any): string | null {
-  const { name, commissionMinAmount, commissionRate } = data;
+  const { name, stockCommissionMinAmount, stockCommissionRate, etfCommissionMinAmount, etfCommissionRate } = data;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return "组合名称不能为空";
   }
 
-  const finalCommissionMinAmount = commissionMinAmount ?? 5.0;
-  const finalCommissionRate = commissionRate ?? 0.0003;
+  const finalStockCommissionMinAmount = stockCommissionMinAmount ?? 5.0;
+  const finalStockCommissionRate = stockCommissionRate ?? 0.0003;
+  const finalEtfCommissionMinAmount = etfCommissionMinAmount ?? 5.0;
+  const finalEtfCommissionRate = etfCommissionRate ?? 0.0003;
 
-  if (finalCommissionMinAmount < 0) {
+  if (finalStockCommissionMinAmount < 0 || finalEtfCommissionMinAmount < 0) {
     return "佣金最低金额不能为负数";
   }
 
-  if (finalCommissionRate < 0 || finalCommissionRate > 0.01) {
+  if (
+    finalStockCommissionRate < 0 ||
+    finalStockCommissionRate > 0.01 ||
+    finalEtfCommissionRate < 0 ||
+    finalEtfCommissionRate > 0.01
+  ) {
     return "佣金费率必须在0-1%之间";
   }
 
@@ -81,10 +88,12 @@ function validatePortfolioData(data: any): string | null {
 }
 
 async function buildPortfolioData(data: any, userId: string) {
-  const { name, commissionMinAmount, commissionRate } = data;
+  const { name, stockCommissionMinAmount, stockCommissionRate, etfCommissionMinAmount, etfCommissionRate } = data;
 
-  const finalCommissionMinAmount = commissionMinAmount ?? 5.0;
-  const finalCommissionRate = commissionRate ?? 0.0003;
+  const finalStockCommissionMinAmount = stockCommissionMinAmount ?? 5.0;
+  const finalStockCommissionRate = stockCommissionRate ?? 0.0003;
+  const finalEtfCommissionMinAmount = etfCommissionMinAmount ?? 5.0;
+  const finalEtfCommissionRate = etfCommissionRate ?? 0.0003;
 
   const newSortOrder = await getNextSortOrder(userId);
 
@@ -92,8 +101,10 @@ async function buildPortfolioData(data: any, userId: string) {
     userId,
     name: name.trim(),
     sortOrder: newSortOrder,
-    commissionMinAmount: finalCommissionMinAmount.toString(),
-    commissionRate: finalCommissionRate.toString(),
+    stockCommissionMinAmount: finalStockCommissionMinAmount.toString(),
+    stockCommissionRate: finalStockCommissionRate.toString(),
+    etfCommissionMinAmount: finalEtfCommissionMinAmount.toString(),
+    etfCommissionRate: finalEtfCommissionRate.toString(),
   };
 }
 

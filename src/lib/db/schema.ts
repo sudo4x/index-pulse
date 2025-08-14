@@ -19,9 +19,14 @@ export const portfolios = pgTable(
       .notNull(),
     name: varchar("name", { length: 100 }).notNull(),
     sortOrder: integer("sort_order").notNull().default(0),
-    // 佣金配置字段
-    commissionMinAmount: decimal("commission_min_amount", { precision: 18, scale: 2 }).notNull().default("5.0"), // 佣金最低金额（元）
-    commissionRate: decimal("commission_rate", { precision: 8, scale: 6 }).notNull().default("0.0003"), // 佣金费率（万分比：0.03%）
+    // 个股佣金配置字段
+    stockCommissionMinAmount: decimal("stock_commission_min_amount", { precision: 18, scale: 2 })
+      .notNull()
+      .default("5.0"), // 个股佣金最低金额（元）
+    stockCommissionRate: decimal("stock_commission_rate", { precision: 8, scale: 6 }).notNull().default("0.0003"), // 个股佣金费率（万分比：0.03%）
+    // ETF佣金配置字段
+    etfCommissionMinAmount: decimal("etf_commission_min_amount", { precision: 18, scale: 2 }).notNull().default("5.0"), // ETF佣金最低金额（元）
+    etfCommissionRate: decimal("etf_commission_rate", { precision: 8, scale: 6 }).notNull().default("0.0003"), // ETF佣金费率（万分比：0.03%）
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

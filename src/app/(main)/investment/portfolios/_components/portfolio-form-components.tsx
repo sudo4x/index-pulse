@@ -52,20 +52,28 @@ export function LoadingIndicator({ isLoading, editMode }: { isLoading: boolean; 
 export function PortfolioForm({
   portfolioName,
   setPortfolioName,
-  commissionMinAmount,
-  setCommissionMinAmount,
-  commissionRate,
-  setCommissionRate,
+  stockCommissionMinAmount,
+  setStockCommissionMinAmount,
+  stockCommissionRate,
+  setStockCommissionRate,
+  etfCommissionMinAmount,
+  setEtfCommissionMinAmount,
+  etfCommissionRate,
+  setEtfCommissionRate,
   isLoading,
   editMode,
   handleSubmit,
 }: {
   portfolioName: string;
   setPortfolioName: (value: string) => void;
-  commissionMinAmount: number;
-  setCommissionMinAmount: (value: number) => void;
-  commissionRate: number;
-  setCommissionRate: (value: number) => void;
+  stockCommissionMinAmount: number;
+  setStockCommissionMinAmount: (value: number) => void;
+  stockCommissionRate: number;
+  setStockCommissionRate: (value: number) => void;
+  etfCommissionMinAmount: number;
+  setEtfCommissionMinAmount: (value: number) => void;
+  etfCommissionRate: number;
+  setEtfCommissionRate: (value: number) => void;
   isLoading: boolean;
   editMode: boolean;
   handleSubmit: () => void;
@@ -79,11 +87,18 @@ export function PortfolioForm({
       className="space-y-4"
     >
       <NameField value={portfolioName} onChange={setPortfolioName} disabled={isLoading} />
-      <CommissionFields
-        minAmount={commissionMinAmount}
-        rate={commissionRate}
-        onMinAmountChange={setCommissionMinAmount}
-        onRateChange={setCommissionRate}
+      <StockCommissionFields
+        minAmount={stockCommissionMinAmount}
+        rate={stockCommissionRate}
+        onMinAmountChange={setStockCommissionMinAmount}
+        onRateChange={setStockCommissionRate}
+        disabled={isLoading}
+      />
+      <EtfCommissionFields
+        minAmount={etfCommissionMinAmount}
+        rate={etfCommissionRate}
+        onMinAmountChange={setEtfCommissionMinAmount}
+        onRateChange={setEtfCommissionRate}
         disabled={isLoading}
       />
       <SubmitButton isLoading={isLoading} editMode={editMode} />
@@ -102,7 +117,7 @@ export function NameField({
   disabled: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[80px_1fr] items-center gap-4">
+    <div className="grid grid-cols-[80px_1fr] items-center gap-3">
       <Label htmlFor="name" className="text-sm font-medium">
         组合名称
       </Label>
@@ -117,8 +132,8 @@ export function NameField({
   );
 }
 
-// 佣金字段组件
-export function CommissionFields({
+// 个股佣金字段组件
+export function StockCommissionFields({
   minAmount,
   rate,
   onMinAmountChange,
@@ -132,12 +147,13 @@ export function CommissionFields({
   disabled: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[auto_1fr_auto_1fr] items-center gap-4">
-      <Label htmlFor="commissionMin" className="text-sm font-medium">
-        最低佣金
+    <div className="grid grid-cols-[80px_60px_1fr_60px_1fr] items-center gap-3">
+      <Label className="text-sm font-medium">个股佣金</Label>
+      <Label htmlFor="stockCommissionMin" className="text-muted-foreground text-sm">
+        最低(元)
       </Label>
       <Input
-        id="commissionMin"
+        id="stockCommissionMin"
         type="number"
         step="0.01"
         min="0"
@@ -146,11 +162,59 @@ export function CommissionFields({
         placeholder="5.00"
         disabled={disabled}
       />
-      <Label htmlFor="commissionRate" className="text-sm font-medium">
+      <Label htmlFor="stockCommissionRate" className="text-muted-foreground text-sm">
         佣金率
       </Label>
       <Input
-        id="commissionRate"
+        id="stockCommissionRate"
+        type="number"
+        step="0.0001"
+        min="0"
+        max="0.01"
+        value={rate}
+        onChange={(e) => onRateChange(Number(e.target.value))}
+        placeholder="0.0003"
+        disabled={disabled}
+      />
+    </div>
+  );
+}
+
+// ETF佣金字段组件
+export function EtfCommissionFields({
+  minAmount,
+  rate,
+  onMinAmountChange,
+  onRateChange,
+  disabled,
+}: {
+  minAmount: number;
+  rate: number;
+  onMinAmountChange: (value: number) => void;
+  onRateChange: (value: number) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-[80px_60px_1fr_60px_1fr] items-center gap-3">
+      <Label className="text-sm font-medium">ETF佣金</Label>
+      <Label htmlFor="etfCommissionMin" className="text-muted-foreground text-sm">
+        最低(元)
+      </Label>
+      <Input
+        id="etfCommissionMin"
+        type="number"
+        step="0.01"
+        min="0"
+        value={minAmount}
+        onChange={(e) => onMinAmountChange(Number(e.target.value))}
+        placeholder="5.00"
+        disabled={disabled}
+      />
+      <Label htmlFor="etfCommissionRate" className="text-muted-foreground text-sm">
+        佣金率
+      </Label>
+      <Input
+        id="etfCommissionRate"
         type="number"
         step="0.0001"
         min="0"

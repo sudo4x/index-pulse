@@ -5,14 +5,18 @@ import { useToast } from "@/hooks/use-toast";
 interface PortfolioData {
   id: string;
   name: string;
-  commissionMinAmount?: number;
-  commissionRate?: number;
+  stockCommissionMinAmount?: number;
+  stockCommissionRate?: number;
+  etfCommissionMinAmount?: number;
+  etfCommissionRate?: number;
 }
 
 export function usePortfolioForm(editMode: boolean, portfolioData?: PortfolioData, isOpen?: boolean) {
   const [portfolioName, setPortfolioName] = useState("");
-  const [commissionMinAmount, setCommissionMinAmount] = useState<number>(5.0);
-  const [commissionRate, setCommissionRate] = useState<number>(0.0003);
+  const [stockCommissionMinAmount, setStockCommissionMinAmount] = useState<number>(5.0);
+  const [stockCommissionRate, setStockCommissionRate] = useState<number>(0.0003);
+  const [etfCommissionMinAmount, setEtfCommissionMinAmount] = useState<number>(5.0);
+  const [etfCommissionRate, setEtfCommissionRate] = useState<number>(0.0003);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -28,8 +32,10 @@ export function usePortfolioForm(editMode: boolean, portfolioData?: PortfolioDat
         const result = await response.json();
         if (result.success) {
           setPortfolioName(result.data.name);
-          setCommissionMinAmount(Number(result.data.commissionMinAmount) || 5.0);
-          setCommissionRate(Number(result.data.commissionRate) || 0.0003);
+          setStockCommissionMinAmount(Number(result.data.stockCommissionMinAmount) || 5.0);
+          setStockCommissionRate(Number(result.data.stockCommissionRate) || 0.0003);
+          setEtfCommissionMinAmount(Number(result.data.etfCommissionMinAmount) || 5.0);
+          setEtfCommissionRate(Number(result.data.etfCommissionRate) || 0.0003);
         }
       } catch (error) {
         console.error("Error loading portfolio details:", error);
@@ -50,18 +56,22 @@ export function usePortfolioForm(editMode: boolean, portfolioData?: PortfolioDat
     if (isOpen) {
       if (editMode && portfolioData) {
         // 如果已有详细数据，直接使用
-        if (portfolioData.commissionMinAmount !== undefined && portfolioData.commissionRate !== undefined) {
+        if (portfolioData.stockCommissionMinAmount !== undefined && portfolioData.stockCommissionRate !== undefined) {
           setPortfolioName(portfolioData.name);
-          setCommissionMinAmount(portfolioData.commissionMinAmount);
-          setCommissionRate(portfolioData.commissionRate);
+          setStockCommissionMinAmount(portfolioData.stockCommissionMinAmount);
+          setStockCommissionRate(portfolioData.stockCommissionRate);
+          setEtfCommissionMinAmount(portfolioData.etfCommissionMinAmount ?? 5.0);
+          setEtfCommissionRate(portfolioData.etfCommissionRate ?? 0.0003);
         } else {
           // 否则异步加载
           loadPortfolioDetails(portfolioData.id);
         }
       } else {
         setPortfolioName("");
-        setCommissionMinAmount(5.0);
-        setCommissionRate(0.0003);
+        setStockCommissionMinAmount(5.0);
+        setStockCommissionRate(0.0003);
+        setEtfCommissionMinAmount(5.0);
+        setEtfCommissionRate(0.0003);
       }
     }
   }, [isOpen, editMode, portfolioData, loadPortfolioDetails]);
@@ -77,7 +87,7 @@ export function usePortfolioForm(editMode: boolean, portfolioData?: PortfolioDat
       return false;
     }
 
-    if (commissionMinAmount < 0) {
+    if (stockCommissionMinAmount < 0 || etfCommissionMinAmount < 0) {
       toast({
         title: "错误",
         description: "佣金最低金额不能为负数",
@@ -86,7 +96,7 @@ export function usePortfolioForm(editMode: boolean, portfolioData?: PortfolioDat
       return false;
     }
 
-    if (commissionRate < 0 || commissionRate > 0.01) {
+    if (stockCommissionRate < 0 || stockCommissionRate > 0.01 || etfCommissionRate < 0 || etfCommissionRate > 0.01) {
       toast({
         title: "错误",
         description: "佣金费率必须在0-1%之间",
@@ -101,10 +111,14 @@ export function usePortfolioForm(editMode: boolean, portfolioData?: PortfolioDat
   return {
     portfolioName,
     setPortfolioName,
-    commissionMinAmount,
-    setCommissionMinAmount,
-    commissionRate,
-    setCommissionRate,
+    stockCommissionMinAmount,
+    setStockCommissionMinAmount,
+    stockCommissionRate,
+    setStockCommissionRate,
+    etfCommissionMinAmount,
+    setEtfCommissionMinAmount,
+    etfCommissionRate,
+    setEtfCommissionRate,
     isLoading,
     setIsLoading,
     validateForm,

@@ -55,14 +55,34 @@ export async function PUT(request: Request, { params }: { params: Promise<Params
     }
 
     const requestData = await request.json();
-    const { name, sortOrder, commissionMinAmount, commissionRate } = requestData;
+    const {
+      name,
+      sortOrder,
+      stockCommissionMinAmount,
+      stockCommissionRate,
+      etfCommissionMinAmount,
+      etfCommissionRate,
+    } = requestData;
 
-    const validationError = validateUpdateData({ name, commissionMinAmount, commissionRate });
+    const validationError = validateUpdateData({
+      name,
+      stockCommissionMinAmount,
+      stockCommissionRate,
+      etfCommissionMinAmount,
+      etfCommissionRate,
+    });
     if (validationError) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    const updateData = buildUpdateData({ name, sortOrder, commissionMinAmount, commissionRate });
+    const updateData = buildUpdateData({
+      name,
+      sortOrder,
+      stockCommissionMinAmount,
+      stockCommissionRate,
+      etfCommissionMinAmount,
+      etfCommissionRate,
+    });
 
     return await updatePortfolioInDb(authResult.portfolioIdInt, authResult.user.id, updateData);
   } catch (error) {
@@ -80,14 +100,27 @@ export async function PATCH(request: Request, { params }: { params: Promise<Para
     }
 
     const requestData = await request.json();
-    const { name, commissionMinAmount, commissionRate } = requestData;
+    const { name, stockCommissionMinAmount, stockCommissionRate, etfCommissionMinAmount, etfCommissionRate } =
+      requestData;
 
-    const validationError = validateUpdateData({ name, commissionMinAmount, commissionRate });
+    const validationError = validateUpdateData({
+      name,
+      stockCommissionMinAmount,
+      stockCommissionRate,
+      etfCommissionMinAmount,
+      etfCommissionRate,
+    });
     if (validationError) {
       return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    const updateData = buildUpdateData({ name, commissionMinAmount, commissionRate });
+    const updateData = buildUpdateData({
+      name,
+      stockCommissionMinAmount,
+      stockCommissionRate,
+      etfCommissionMinAmount,
+      etfCommissionRate,
+    });
 
     return await updatePortfolioInDb(authResult.portfolioIdInt, authResult.user.id, updateData);
   } catch (error) {
@@ -144,8 +177,14 @@ async function authenticateAndValidateParams(params: Promise<Params>) {
   return { portfolioIdInt, user };
 }
 
-function validateUpdateData(data: { name?: any; commissionMinAmount?: any; commissionRate?: any }): string | null {
-  const { name, commissionMinAmount, commissionRate } = data;
+function validateUpdateData(data: {
+  name?: any;
+  stockCommissionMinAmount?: any;
+  stockCommissionRate?: any;
+  etfCommissionMinAmount?: any;
+  etfCommissionRate?: any;
+}): string | null {
+  const { name, stockCommissionMinAmount, stockCommissionRate, etfCommissionMinAmount, etfCommissionRate } = data;
 
   if (name !== undefined) {
     if (!name || typeof name !== "string" || name.trim().length === 0) {
@@ -153,11 +192,17 @@ function validateUpdateData(data: { name?: any; commissionMinAmount?: any; commi
     }
   }
 
-  if (commissionMinAmount !== undefined && commissionMinAmount < 0) {
+  if (
+    (stockCommissionMinAmount !== undefined && stockCommissionMinAmount < 0) ||
+    (etfCommissionMinAmount !== undefined && etfCommissionMinAmount < 0)
+  ) {
     return "佣金最低金额不能为负数";
   }
 
-  if (commissionRate !== undefined && (commissionRate < 0 || commissionRate > 0.01)) {
+  if (
+    (stockCommissionRate !== undefined && (stockCommissionRate < 0 || stockCommissionRate > 0.01)) ||
+    (etfCommissionRate !== undefined && (etfCommissionRate < 0 || etfCommissionRate > 0.01))
+  ) {
     return "佣金费率必须在0-1%之间";
   }
 
@@ -167,10 +212,13 @@ function validateUpdateData(data: { name?: any; commissionMinAmount?: any; commi
 function buildUpdateData(data: {
   name?: string;
   sortOrder?: number;
-  commissionMinAmount?: number;
-  commissionRate?: number;
+  stockCommissionMinAmount?: number;
+  stockCommissionRate?: number;
+  etfCommissionMinAmount?: number;
+  etfCommissionRate?: number;
 }) {
-  const { name, sortOrder, commissionMinAmount, commissionRate } = data;
+  const { name, sortOrder, stockCommissionMinAmount, stockCommissionRate, etfCommissionMinAmount, etfCommissionRate } =
+    data;
 
   const updateData: any = { updatedAt: new Date() };
 
@@ -182,12 +230,20 @@ function buildUpdateData(data: {
     updateData.sortOrder = sortOrder;
   }
 
-  if (commissionMinAmount !== undefined) {
-    updateData.commissionMinAmount = commissionMinAmount.toString();
+  if (stockCommissionMinAmount !== undefined) {
+    updateData.stockCommissionMinAmount = stockCommissionMinAmount.toString();
   }
 
-  if (commissionRate !== undefined) {
-    updateData.commissionRate = commissionRate.toString();
+  if (stockCommissionRate !== undefined) {
+    updateData.stockCommissionRate = stockCommissionRate.toString();
+  }
+
+  if (etfCommissionMinAmount !== undefined) {
+    updateData.etfCommissionMinAmount = etfCommissionMinAmount.toString();
+  }
+
+  if (etfCommissionRate !== undefined) {
+    updateData.etfCommissionRate = etfCommissionRate.toString();
   }
 
   return updateData;
