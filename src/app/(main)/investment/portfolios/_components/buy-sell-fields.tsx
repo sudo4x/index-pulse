@@ -14,16 +14,20 @@ interface BuySellFieldsProps {
   transactionType: TransactionType;
   form: BuySellForm;
   sharesInputRef?: RefObject<HTMLInputElement>;
-  commissionRate?: number;
-  commissionMinAmount?: number;
+  stockCommissionRate?: number;
+  stockCommissionMinAmount?: number;
+  etfCommissionRate?: number;
+  etfCommissionMinAmount?: number;
 }
 
 export function BuySellFields({
   transactionType,
   form,
   sharesInputRef,
-  commissionRate = 0.0003,
-  commissionMinAmount = 5.0,
+  stockCommissionRate = 0.0003,
+  stockCommissionMinAmount = 5.0,
+  etfCommissionRate = 0.0003,
+  etfCommissionMinAmount = 5.0,
 }: BuySellFieldsProps) {
   return (
     <>
@@ -90,8 +94,10 @@ export function BuySellFields({
           transactionType={transactionType}
           shares={form.watch("shares")}
           price={form.watch("price")}
-          commissionRate={commissionRate}
-          commissionMinAmount={commissionMinAmount}
+          stockCommissionRate={stockCommissionRate}
+          stockCommissionMinAmount={stockCommissionMinAmount}
+          etfCommissionRate={etfCommissionRate}
+          etfCommissionMinAmount={etfCommissionMinAmount}
         />
       </div>
     </>

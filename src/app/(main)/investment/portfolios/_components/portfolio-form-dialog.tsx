@@ -2,9 +2,6 @@
 
 import React, { useState } from "react";
 
-import { Plus } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";

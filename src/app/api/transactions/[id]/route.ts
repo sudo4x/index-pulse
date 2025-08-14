@@ -114,7 +114,7 @@ export async function DELETE(request: Request, context: RouteContext) {
   }
 }
 
-// 计算买入卖出交易金额
+// 计算买入卖出交易金额（只记录纯股票交易金额，不包含费用）
 function calculateTradeAmount(
   shares: number,
   price: number,
@@ -123,14 +123,8 @@ function calculateTradeAmount(
   type: TransactionType,
 ): string {
   const baseAmount = shares * price;
-  const fees = commission + tax;
-
-  const amount =
-    type === TransactionType.BUY
-      ? baseAmount + fees // 买入时加上费用
-      : baseAmount - fees; // 卖出时扣除费用
-
-  return amount.toFixed(2);
+  // amount 字段只记录纯股票交易金额，不包含费用
+  return baseAmount.toFixed(2);
 }
 
 // 计算股息金额

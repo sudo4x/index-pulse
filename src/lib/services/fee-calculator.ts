@@ -73,38 +73,6 @@ export class FeeCalculator {
   }
 
   /**
-   * 计算交易费用（兼容旧版本）
-   * @deprecated 请使用带 CommissionConfig 参数的新版本
-   */
-  static calculateFeesLegacy(
-    symbol: string,
-    transactionType: TransactionType,
-    amount: number,
-    commissionRate: number,
-    commissionMinAmount: number,
-  ): FeeCalculationResult {
-    const stockInfo = this.getStockInfo(symbol);
-
-    // 计算各项费用
-    const commission = this.calculateCommission(amount, commissionRate, commissionMinAmount);
-    const stampTax = this.calculateStampTax(amount, transactionType, stockInfo);
-    const transferFee = this.calculateTransferFee(amount, stockInfo);
-
-    const totalFee = commission + stampTax + transferFee;
-
-    // 生成费用明细说明
-    const description = this.generateFeeDescription(commission, stampTax, transferFee, stockInfo);
-
-    return {
-      commission,
-      stampTax,
-      transferFee,
-      totalFee,
-      description,
-    };
-  }
-
-  /**
    * 计算佣金
    * 佣金 = max(成交金额 × 佣金率, 最低佣金)
    */

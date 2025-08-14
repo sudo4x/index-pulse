@@ -40,8 +40,10 @@ export interface TransactionOutput {
 }
 
 export interface PortfolioConfig {
-  commissionRate: string;
-  commissionMinAmount: string;
+  stockCommissionRate: string;
+  stockCommissionMinAmount: string;
+  etfCommissionRate: string;
+  etfCommissionMinAmount: string;
 }
 
 export abstract class BaseTransactionHandler {

@@ -109,8 +109,10 @@ export async function POST(request: Request) {
     // 使用策略模式处理交易
     const handler = TransactionHandlerFactory.getHandler(transactionData.type);
     const processedTransaction = await handler.processTransaction(transactionData, {
-      commissionRate: portfolio.commissionRate,
-      commissionMinAmount: portfolio.commissionMinAmount,
+      stockCommissionRate: portfolio.stockCommissionRate,
+      stockCommissionMinAmount: portfolio.stockCommissionMinAmount,
+      etfCommissionRate: portfolio.etfCommissionRate,
+      etfCommissionMinAmount: portfolio.etfCommissionMinAmount,
     });
 
     // 保存交易记录

@@ -1,4 +1,4 @@
-import { FeeCalculator } from "@/lib/services/fee-calculator";
+import { FeeCalculator, CommissionConfig } from "@/lib/services/fee-calculator";
 import { TransactionType } from "@/types/investment";
 
 import {
@@ -22,24 +22,21 @@ export class BuySellHandler extends BaseTransactionHandler {
     const price = Number(input.price ?? 0);
     const baseAmount = shares * price;
 
-    // 获取佣金配置
-    const commissionRate = Number(portfolioConfig.commissionRate);
-    const commissionMinAmount = Number(portfolioConfig.commissionMinAmount);
+    // 构建佣金配置对象
+    const commissionConfig: CommissionConfig = {
+      stockCommissionRate: Number(portfolioConfig.stockCommissionRate),
+      stockCommissionMinAmount: Number(portfolioConfig.stockCommissionMinAmount),
+      etfCommissionRate: Number(portfolioConfig.etfCommissionRate),
+      etfCommissionMinAmount: Number(portfolioConfig.etfCommissionMinAmount),
+    };
 
     // 计算所有费用
     const feeResult = FeeCalculator.calculateFees(
       this.cleanSymbol(input.symbol),
       input.type,
       baseAmount,
-      commissionRate,
-      commissionMinAmount,
+      commissionConfig,
     );
-
-    // 计算最终交易金额（包含费用）
-    const finalAmount =
-      input.type === TransactionType.BUY
-        ? baseAmount + feeResult.totalFee // 买入时加上费用
-        : baseAmount - feeResult.totalFee; // 卖出时扣除费用
 
     return {
       portfolioId: this.parsePortfolioId(input.portfolioId),
@@ -49,7 +46,7 @@ export class BuySellHandler extends BaseTransactionHandler {
       transactionDate: this.parseDate(input.transactionDate),
       shares: shares.toString(),
       price: price.toString(),
-      amount: finalAmount.toFixed(2),
+      amount: baseAmount.toFixed(2), // 只记录股票交易金额，不包含费用
       commission: feeResult.commission.toFixed(2),
       tax: feeResult.stampTax.toFixed(2),
       transferFee: feeResult.transferFee.toFixed(2),

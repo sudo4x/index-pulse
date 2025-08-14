@@ -87,7 +87,7 @@ function validatePortfolioData(data: any): string | null {
   return null;
 }
 
-async function buildPortfolioData(data: any, userId: string) {
+async function buildPortfolioData(data: any, userId: number) {
   const { name, stockCommissionMinAmount, stockCommissionRate, etfCommissionMinAmount, etfCommissionRate } = data;
 
   const finalStockCommissionMinAmount = stockCommissionMinAmount ?? 5.0;
@@ -108,7 +108,7 @@ async function buildPortfolioData(data: any, userId: string) {
   };
 }
 
-async function getNextSortOrder(userId: string): Promise<number> {
+async function getNextSortOrder(userId: number): Promise<number> {
   const maxSortOrder = await db
     .select({ maxSort: portfolios.sortOrder })
     .from(portfolios)

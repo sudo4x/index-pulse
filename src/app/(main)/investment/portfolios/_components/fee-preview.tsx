@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FeeCalculator } from "@/lib/services/fee-calculator";
+import { FeeCalculator, CommissionConfig } from "@/lib/services/fee-calculator";
 import { TransactionType } from "@/types/investment";
 
 interface FeePreviewProps {
@@ -11,8 +11,10 @@ interface FeePreviewProps {
   transactionType: TransactionType;
   shares: number;
   price: number;
-  commissionRate: number;
-  commissionMinAmount: number;
+  stockCommissionRate: number;
+  stockCommissionMinAmount: number;
+  etfCommissionRate: number;
+  etfCommissionMinAmount: number;
 }
 
 export function FeePreview({
@@ -20,8 +22,10 @@ export function FeePreview({
   transactionType,
   shares,
   price,
-  commissionRate,
-  commissionMinAmount,
+  stockCommissionRate,
+  stockCommissionMinAmount,
+  etfCommissionRate,
+  etfCommissionMinAmount,
 }: FeePreviewProps) {
   const feeCalculation = useMemo(() => {
     if (
@@ -36,8 +40,24 @@ export function FeePreview({
     const baseAmount = shares * price;
     if (baseAmount <= 0) return null;
 
-    return FeeCalculator.calculateFees(symbol, transactionType, baseAmount, commissionRate, commissionMinAmount);
-  }, [symbol, transactionType, shares, price, commissionRate, commissionMinAmount]);
+    const commissionConfig: CommissionConfig = {
+      stockCommissionRate,
+      stockCommissionMinAmount,
+      etfCommissionRate,
+      etfCommissionMinAmount,
+    };
+
+    return FeeCalculator.calculateFees(symbol, transactionType, baseAmount, commissionConfig);
+  }, [
+    symbol,
+    transactionType,
+    shares,
+    price,
+    stockCommissionRate,
+    stockCommissionMinAmount,
+    etfCommissionRate,
+    etfCommissionMinAmount,
+  ]);
 
   if (!feeCalculation) {
     return null;
