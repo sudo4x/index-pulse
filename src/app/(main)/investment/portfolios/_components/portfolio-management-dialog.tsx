@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-import { GripVertical, Trash2, Settings } from "lucide-react";
+import { GripVertical, Trash2, Edit } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -172,7 +172,7 @@ export function PortfolioManagementDialog({
                           }}
                           trigger={
                             <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
-                              <Settings className="mr-1 h-3 w-3" />
+                              <Edit className="mr-1 h-3 w-3" />
                               编辑
                             </Button>
                           }

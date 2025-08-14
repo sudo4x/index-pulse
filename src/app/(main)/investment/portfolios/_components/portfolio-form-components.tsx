@@ -1,3 +1,5 @@
+import React from "react";
+
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,22 +18,23 @@ export function getButtonProps(variant: "primary" | "outline"): {
 }
 
 // 默认触发按钮组件
-export function DefaultTriggerButton({
-  size,
-  variant,
-  text,
-}: {
-  size?: "sm";
-  variant: "default" | "outline";
-  text: string;
-}) {
+export const DefaultTriggerButton = React.forwardRef<
+  HTMLButtonElement,
+  {
+    size?: "sm";
+    variant: "default" | "outline";
+    text: string;
+  } & React.ButtonHTMLAttributes<HTMLButtonElement>
+>(({ size, variant, text, ...props }, ref) => {
   return (
-    <Button size={size} variant={variant}>
+    <Button ref={ref} size={size} variant={variant} {...props}>
       <Plus className="mr-2 size-4" />
       {text}
     </Button>
   );
-}
+});
+
+DefaultTriggerButton.displayName = "DefaultTriggerButton";
 
 // 加载指示器组件
 export function LoadingIndicator({ isLoading, editMode }: { isLoading: boolean; editMode: boolean }) {
