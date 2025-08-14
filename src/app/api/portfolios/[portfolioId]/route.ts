@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { portfolios } from "@/lib/db/schema";
+import { PortfolioValidator, PortfolioValidationData } from "@/lib/validators/portfolio-validator";
 
 interface Params {
   portfolioId: string;
@@ -64,15 +65,15 @@ export async function PUT(request: Request, { params }: { params: Promise<Params
       etfCommissionRate,
     } = requestData;
 
-    const validationError = validateUpdateData({
+    const validation = PortfolioValidator.validateForUpdate({
       name,
       stockCommissionMinAmount,
       stockCommissionRate,
       etfCommissionMinAmount,
       etfCommissionRate,
     });
-    if (validationError) {
-      return NextResponse.json({ error: validationError }, { status: 400 });
+    if (!validation.isValid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const updateData = buildUpdateData({
@@ -103,15 +104,15 @@ export async function PATCH(request: Request, { params }: { params: Promise<Para
     const { name, stockCommissionMinAmount, stockCommissionRate, etfCommissionMinAmount, etfCommissionRate } =
       requestData;
 
-    const validationError = validateUpdateData({
+    const validation = PortfolioValidator.validateForUpdate({
       name,
       stockCommissionMinAmount,
       stockCommissionRate,
       etfCommissionMinAmount,
       etfCommissionRate,
     });
-    if (validationError) {
-      return NextResponse.json({ error: validationError }, { status: 400 });
+    if (!validation.isValid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const updateData = buildUpdateData({
@@ -177,50 +178,11 @@ async function authenticateAndValidateParams(params: Promise<Params>) {
   return { portfolioIdInt, user };
 }
 
-function validateUpdateData(data: {
-  name?: any;
-  stockCommissionMinAmount?: any;
-  stockCommissionRate?: any;
-  etfCommissionMinAmount?: any;
-  etfCommissionRate?: any;
-}): string | null {
-  const { name, stockCommissionMinAmount, stockCommissionRate, etfCommissionMinAmount, etfCommissionRate } = data;
-
-  if (name !== undefined) {
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return "组合名称不能为空";
-    }
-  }
-
-  if (
-    (stockCommissionMinAmount !== undefined && stockCommissionMinAmount < 0) ||
-    (etfCommissionMinAmount !== undefined && etfCommissionMinAmount < 0)
-  ) {
-    return "佣金最低金额不能为负数";
-  }
-
-  if (
-    (stockCommissionRate !== undefined && (stockCommissionRate < 0 || stockCommissionRate > 0.01)) ||
-    (etfCommissionRate !== undefined && (etfCommissionRate < 0 || etfCommissionRate > 0.01))
-  ) {
-    return "佣金费率必须在0-1%之间";
-  }
-
-  return null;
-}
-
-function buildUpdateData(data: {
-  name?: string;
-  sortOrder?: number;
-  stockCommissionMinAmount?: number;
-  stockCommissionRate?: number;
-  etfCommissionMinAmount?: number;
-  etfCommissionRate?: number;
-}) {
+function buildUpdateData(data: PortfolioValidationData & { sortOrder?: number }) {
   const { name, sortOrder, stockCommissionMinAmount, stockCommissionRate, etfCommissionMinAmount, etfCommissionRate } =
     data;
 
-  const updateData: any = { updatedAt: new Date() };
+  const updateData: Record<string, unknown> = { updatedAt: new Date() };
 
   if (name !== undefined) {
     updateData.name = name.trim();

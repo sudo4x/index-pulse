@@ -5,6 +5,7 @@ import { eq, desc, asc } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { portfolios } from "@/lib/db/schema";
+import { PortfolioValidator, PortfolioValidationData } from "@/lib/validators/portfolio-validator";
 
 // 获取用户的所有投资组合
 export async function GET() {
@@ -41,9 +42,9 @@ export async function POST(request: Request) {
 
     const requestData = await request.json();
 
-    const validationError = validatePortfolioData(requestData);
-    if (validationError) {
-      return NextResponse.json({ error: validationError }, { status: 400 });
+    const validation = PortfolioValidator.validateForCreate(requestData);
+    if (!validation.isValid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     const portfolioData = await buildPortfolioData(requestData, user.id);
@@ -59,52 +60,20 @@ export async function POST(request: Request) {
   }
 }
 
-function validatePortfolioData(data: any): string | null {
+async function buildPortfolioData(data: PortfolioValidationData, userId: number) {
   const { name, stockCommissionMinAmount, stockCommissionRate, etfCommissionMinAmount, etfCommissionRate } = data;
 
-  if (!name || typeof name !== "string" || name.trim().length === 0) {
-    return "组合名称不能为空";
-  }
-
-  const finalStockCommissionMinAmount = stockCommissionMinAmount ?? 5.0;
-  const finalStockCommissionRate = stockCommissionRate ?? 0.0003;
-  const finalEtfCommissionMinAmount = etfCommissionMinAmount ?? 5.0;
-  const finalEtfCommissionRate = etfCommissionRate ?? 0.0003;
-
-  if (finalStockCommissionMinAmount < 0 || finalEtfCommissionMinAmount < 0) {
-    return "佣金最低金额不能为负数";
-  }
-
-  if (
-    finalStockCommissionRate < 0 ||
-    finalStockCommissionRate > 0.01 ||
-    finalEtfCommissionRate < 0 ||
-    finalEtfCommissionRate > 0.01
-  ) {
-    return "佣金费率必须在0-1%之间";
-  }
-
-  return null;
-}
-
-async function buildPortfolioData(data: any, userId: number) {
-  const { name, stockCommissionMinAmount, stockCommissionRate, etfCommissionMinAmount, etfCommissionRate } = data;
-
-  const finalStockCommissionMinAmount = stockCommissionMinAmount ?? 5.0;
-  const finalStockCommissionRate = stockCommissionRate ?? 0.0003;
-  const finalEtfCommissionMinAmount = etfCommissionMinAmount ?? 5.0;
-  const finalEtfCommissionRate = etfCommissionRate ?? 0.0003;
-
+  const actualValues = PortfolioValidator.getActualValues(data);
   const newSortOrder = await getNextSortOrder(userId);
 
   return {
     userId,
     name: name.trim(),
     sortOrder: newSortOrder,
-    stockCommissionMinAmount: finalStockCommissionMinAmount.toString(),
-    stockCommissionRate: finalStockCommissionRate.toString(),
-    etfCommissionMinAmount: finalEtfCommissionMinAmount.toString(),
-    etfCommissionRate: finalEtfCommissionRate.toString(),
+    stockCommissionMinAmount: actualValues.stockCommissionMinAmount.toString(),
+    stockCommissionRate: actualValues.stockCommissionRate.toString(),
+    etfCommissionMinAmount: actualValues.etfCommissionMinAmount.toString(),
+    etfCommissionRate: actualValues.etfCommissionRate.toString(),
   };
 }
 
