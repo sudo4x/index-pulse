@@ -47,13 +47,12 @@ ETF佣金 最低(元) input 佣金率 input
 - fee-preview组件太占空间，没必要，删掉吧。相关引用也要一并清理掉
 - 交易记录对话框 买入价/卖出价 输入框很难修改值，填入马上会被修正成三位小数，整数很难修改，这个改一下，可以让用户输入，你要做小数点修正可以在保存之前做
 
-
 - 两个复杂度问题
-src/app/api/portfolios/[portfolioId]/route.ts  Error: Function 'validateUpdateData' has a complexity of 15. Maximum allowed is 10.
-src/app/api/portfolios/route.ts Error: Function 'validatePortfolioData' has a complexity of 14. Maximum allowed is 10
-我发现这两个代码中功能相似度很高，你解决复杂度的同时要考虑重构复用代码，两个都属于验证逻辑，应该有专门的验证代码文件来实现
-
+  src/app/api/portfolios/[portfolioId]/route.ts Error: Function 'validateUpdateData' has a complexity of 15. Maximum allowed is 10.
+  src/app/api/portfolios/route.ts Error: Function 'validatePortfolioData' has a complexity of 14. Maximum allowed is 10
+  我发现这两个代码中功能相似度很高，你解决复杂度的同时要考虑重构复用代码，两个都属于验证逻辑，应该有专门的验证代码文件来实现
 
 请把以下要求加入到项目记忆中，级别为重要，必须准守
+
 - 开发新功能或者修改重构原有代码时，必须先查看是否已有类似实现，要尽量复用代码，用到哪写到哪，要考虑良好的设计模式
 - 开发中遵循良好设计规范，做到用途清晰明了，比如类型定义要统一到一起，其他的比如validator，helper，calaculator也要做到分门别类，归类清晰
