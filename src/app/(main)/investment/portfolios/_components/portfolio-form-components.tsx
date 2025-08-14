@@ -5,10 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 // 工具函数
-export function getButtonProps(variant: "primary" | "outline") {
+export function getButtonProps(variant: "primary" | "outline"): {
+  size?: "sm";
+  variant: "default" | "outline";
+} {
   return {
     size: variant === "primary" ? undefined : ("sm" as const),
-    variant: variant === "primary" ? "default" : ("outline" as const),
+    variant: variant === "primary" ? ("default" as const) : ("outline" as const),
   };
 }
 
