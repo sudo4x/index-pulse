@@ -38,7 +38,7 @@ export class PortfolioValidator {
     // 验证佣金最低金额
     const minAmountValidation = this.validateCommissionMinAmounts(
       actualValues.stockCommissionMinAmount,
-      actualValues.etfCommissionMinAmount
+      actualValues.etfCommissionMinAmount,
     );
     if (!minAmountValidation.isValid) {
       return minAmountValidation;
@@ -47,7 +47,7 @@ export class PortfolioValidator {
     // 验证佣金费率
     const rateValidation = this.validateCommissionRates(
       actualValues.stockCommissionRate,
-      actualValues.etfCommissionRate
+      actualValues.etfCommissionRate,
     );
     if (!rateValidation.isValid) {
       return rateValidation;
@@ -71,7 +71,7 @@ export class PortfolioValidator {
     // 验证佣金最低金额（只验证提供的字段）
     const minAmountValidation = this.validateOptionalCommissionMinAmounts(
       data.stockCommissionMinAmount,
-      data.etfCommissionMinAmount
+      data.etfCommissionMinAmount,
     );
     if (!minAmountValidation.isValid) {
       return minAmountValidation;
@@ -128,10 +128,9 @@ export class PortfolioValidator {
    */
   private static validateOptionalCommissionMinAmounts(
     stockMinAmount?: number,
-    etfMinAmount?: number
+    etfMinAmount?: number,
   ): ValidationResult {
-    if ((stockMinAmount !== undefined && stockMinAmount < 0) || 
-        (etfMinAmount !== undefined && etfMinAmount < 0)) {
+    if ((stockMinAmount !== undefined && stockMinAmount < 0) || (etfMinAmount !== undefined && etfMinAmount < 0)) {
       return { isValid: false, error: "佣金最低金额不能为负数" };
     }
     return { isValid: true };

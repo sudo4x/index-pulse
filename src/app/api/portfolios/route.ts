@@ -68,7 +68,7 @@ async function buildPortfolioData(data: PortfolioValidationData, userId: number)
 
   return {
     userId,
-    name: name.trim(),
+    name: name?.trim() ?? "",
     sortOrder: newSortOrder,
     stockCommissionMinAmount: actualValues.stockCommissionMinAmount.toString(),
     stockCommissionRate: actualValues.stockCommissionRate.toString(),
