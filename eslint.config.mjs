@@ -100,7 +100,7 @@ export default [
       "import/no-cycle": ["error", { maxDepth: 2 }],
 
       // Whitespace and Punctuation (Style Rules)
-      "no-trailing-spaces": "error",
+      "no-trailing-spaces": "warn",
       "no-multiple-empty-lines": ["error", { max: 1, maxEOF: 1 }],
       "space-before-function-paren": [
         "error",

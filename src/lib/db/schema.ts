@@ -19,6 +19,9 @@ export const portfolios = pgTable(
       .notNull(),
     name: varchar("name", { length: 100 }).notNull(),
     sortOrder: integer("sort_order").notNull().default(0),
+    // 佣金配置字段
+    commissionMinAmount: decimal("commission_min_amount", { precision: 18, scale: 2 }).notNull().default("5.0"), // 佣金最低金额（元）
+    commissionRate: decimal("commission_rate", { precision: 8, scale: 6 }).notNull().default("0.0003"), // 佣金费率（万分比：0.03%）
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
@@ -71,9 +74,11 @@ export const transactions = pgTable(
     price: decimal("price", { precision: 18, scale: 6 }).notNull().default("0"), // 交易价格
     amount: decimal("amount", { precision: 18, scale: 2 }).notNull().default("0"), // 交易金额
     commission: decimal("commission", { precision: 18, scale: 2 }).default("0"), // 佣金
-    commissionRate: decimal("commission_rate", { precision: 8, scale: 6 }), // 佣金费率 (千分比)
+    commissionRate: decimal("commission_rate", { precision: 8, scale: 6 }), // 佣金费率 (千分比) - 保留兼容
     tax: decimal("tax", { precision: 18, scale: 2 }).default("0"), // 税费
-    taxRate: decimal("tax_rate", { precision: 8, scale: 6 }), // 税费费率 (千分比)
+    taxRate: decimal("tax_rate", { precision: 8, scale: 6 }), // 税费费率 (千分比) - 保留兼容
+    transferFee: decimal("transfer_fee", { precision: 18, scale: 2 }).default("0"), // 过户费
+    description: text("description"), // 费用明细说明
     // 合股拆股相关字段
     unitShares: decimal("unit_shares", { precision: 18, scale: 6 }), // 合股：多少股合为1股 / 拆股：1股拆为多少股
     // 除权除息相关字段

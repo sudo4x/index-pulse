@@ -5,6 +5,8 @@ import { eq, and, desc } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { transactions, portfolios } from "@/lib/db/schema";
+import { TransactionHandlerFactory } from "@/lib/services/transaction-handlers/transaction-handler-factory";
+import { TransactionValidator } from "@/lib/validators/transaction-validator";
 import { TransactionType, TransactionTypeNames } from "@/types/investment";
 
 // 获取交易记录
@@ -50,6 +52,8 @@ export async function GET(request: Request) {
         commissionRate: transactions.commissionRate,
         tax: transactions.tax,
         taxRate: transactions.taxRate,
+        transferFee: transactions.transferFee,
+        description: transactions.description,
         unitShares: transactions.unitShares,
         per10SharesTransfer: transactions.per10SharesTransfer,
         per10SharesBonus: transactions.per10SharesBonus,
@@ -84,39 +88,33 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const transactionData = await request.json();
 
-    // 验证组合所有权
-    const portfolio = await db
-      .select()
-      .from(portfolios)
-      .where(and(eq(portfolios.id, parseInt(transactionData.portfolioId)), eq(portfolios.userId, user.id)))
-      .limit(1);
+    // 验证交易数据
+    const validation = TransactionValidator.validateTransaction(transactionData);
+    if (!validation.isValid) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
 
-    if (portfolio.length === 0) {
+    // 验证组合所有权并获取佣金配置
+    const portfolio = await getPortfolioConfig(transactionData.portfolioId, user.id);
+    if (!portfolio) {
       return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
     }
 
-    // 计算交易金额
-    const calculatedAmount = calculateTransactionAmount(transactionData);
+    // 使用策略模式处理交易
+    const handler = TransactionHandlerFactory.getHandler(transactionData.type);
+    const processedTransaction = await handler.processTransaction(transactionData, {
+      commissionRate: portfolio.commissionRate,
+      commissionMinAmount: portfolio.commissionMinAmount,
+    });
 
-    const newTransaction = await db
-      .insert(transactions)
-      .values({
-        ...transactionData,
-        amount: calculatedAmount,
-        symbol: transactionData.symbol.toUpperCase(),
-        name: transactionData.name.replace(/\s+/g, ""), // 处理名称中的空白字符
-        transactionDate: new Date(transactionData.transactionDate),
-      })
-      .returning();
-
-    // TODO: 在这里触发持仓和组合数据的重新计算
+    // 保存交易记录
+    const newTransaction = await db.insert(transactions).values(processedTransaction).returning();
 
     return NextResponse.json({
       success: true,
@@ -132,74 +130,20 @@ export async function POST(request: Request) {
   }
 }
 
-// 计算买入卖出交易金额
-function calculateTradeAmount(
-  shares: number,
-  price: number,
-  commission: number,
-  tax: number,
-  type: TransactionType,
-): string {
-  const baseAmount = shares * price;
-  const fees = commission + tax;
-
-  const amount =
-    type === TransactionType.BUY
-      ? baseAmount + fees // 买入时加上费用
-      : baseAmount - fees; // 卖出时扣除费用
-
-  return amount.toFixed(2);
-}
-
-// 计算股息金额
-function calculateDividendAmount(per10SharesDividend: number, holdingShares: number): string {
-  return ((per10SharesDividend / 10) * holdingShares).toFixed(2);
-}
-
-// 提取交易数值参数
-function extractTransactionParams(transactionData: {
-  shares?: string | number;
-  price?: string | number;
-  commission?: string | number;
-  tax?: string | number;
-  per10SharesDividend?: string | number;
-}) {
-  return {
-    shares: Number(transactionData.shares ?? 0),
-    price: Number(transactionData.price ?? 0),
-    commission: Number(transactionData.commission ?? 0),
-    tax: Number(transactionData.tax ?? 0),
-    per10SharesDividend: Number(transactionData.per10SharesDividend ?? 0),
-  };
-}
-
-// 检查是否为买入或卖出交易
-function isTradeTransaction(type: TransactionType): boolean {
-  return type === TransactionType.BUY || type === TransactionType.SELL;
-}
-
-// 计算交易金额
-function calculateTransactionAmount(transactionData: {
-  type: TransactionType;
-  shares?: string | number;
-  price?: string | number;
-  commission?: string | number;
-  tax?: string | number;
-  per10SharesDividend?: string | number;
-}): string {
-  const type = transactionData.type;
-  const params = extractTransactionParams(transactionData);
-
-  if (isTradeTransaction(type)) {
-    return calculateTradeAmount(params.shares, params.price, params.commission, params.tax, type);
+// 获取组合配置的辅助函数
+async function getPortfolioConfig(portfolioId: string, userId: number) {
+  const portfolioIdInt = parseInt(portfolioId);
+  if (isNaN(portfolioIdInt)) {
+    return null;
   }
 
-  if (type === TransactionType.DIVIDEND) {
-    return calculateDividendAmount(params.per10SharesDividend, params.shares);
-  }
+  const portfolio = await db
+    .select()
+    .from(portfolios)
+    .where(and(eq(portfolios.id, portfolioIdInt), eq(portfolios.userId, userId)))
+    .limit(1);
 
-  // MERGE, SPLIT, 或其他类型默认为 0
-  return "0.00";
+  return portfolio.length > 0 ? portfolio[0] : null;
 }
 
 // 格式化股息描述

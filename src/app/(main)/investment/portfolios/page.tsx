@@ -2,24 +2,14 @@
 
 import { useState, useEffect } from "react";
 
-import { Plus, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { PortfolioOverview } from "@/types/investment";
 
+import { PortfolioFormDialog } from "./_components/portfolio-form-dialog";
 import { PortfolioManagementDialog } from "./_components/portfolio-management-dialog";
 import { PortfolioTabs } from "./_components/portfolio-tabs";
 
@@ -27,8 +17,6 @@ export default function PortfoliosPage() {
   const [portfolios, setPortfolios] = useState<PortfolioOverview[]>([]);
   const [activePortfolioId, setActivePortfolioId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [newPortfolioName, setNewPortfolioName] = useState("");
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isManagementDialogOpen, setIsManagementDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -83,67 +71,10 @@ export default function PortfoliosPage() {
     }
   };
 
-  // 创建新投资组合
-  const handleCreatePortfolio = async () => {
-    if (!newPortfolioName.trim()) {
-      toast({
-        title: "错误",
-        description: "请输入投资组合名称",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/portfolios", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: newPortfolioName.trim() }),
-      });
-
-      if (!response.ok) {
-        throw new Error("创建投资组合失败");
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
-        const newPortfolio = {
-          portfolioId: result.data.id.toString(),
-          name: result.data.name,
-          sortOrder: result.data.sortOrder ?? 0,
-          totalAssets: 0,
-          marketValue: 0,
-          cash: 0,
-          principal: 0,
-          floatAmount: 0,
-          floatRate: 0,
-          accumAmount: 0,
-          accumRate: 0,
-          dayFloatAmount: 0,
-          dayFloatRate: 0,
-        };
-        setPortfolios((prev) => [...prev, newPortfolio]);
-
-        setActivePortfolioId(result.data.id.toString());
-        setNewPortfolioName("");
-        setIsCreateDialogOpen(false);
-
-        toast({
-          title: "成功",
-          description: "投资组合创建成功",
-        });
-      }
-    } catch (error) {
-      console.error("Error creating portfolio:", error);
-      toast({
-        title: "错误",
-        description: "创建投资组合失败，请重试",
-        variant: "destructive",
-      });
-    }
+  // 处理组合创建成功
+  const handlePortfolioCreated = (newPortfolio: PortfolioOverview) => {
+    setPortfolios((prev) => [...prev, newPortfolio]);
+    setActivePortfolioId(newPortfolio.portfolioId);
   };
 
   useEffect(() => {
@@ -165,40 +96,7 @@ export default function PortfoliosPage() {
           <div className="text-lg font-medium">还没有投资组合</div>
           <div className="text-sm">创建您的第一个投资组合来开始管理投资</div>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 size-4" />
-              创建投资组合
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>创建投资组合</DialogTitle>
-              <DialogDescription>输入投资组合名称来创建新的投资组合。</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">
-                  名称
-                </Label>
-                <Input
-                  id="name"
-                  value={newPortfolioName}
-                  onChange={(e) => setNewPortfolioName(e.target.value)}
-                  className="col-span-3"
-                  placeholder="输入投资组合名称"
-                  onKeyDown={(e) => e.key === "Enter" && handleCreatePortfolio()}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" onClick={handleCreatePortfolio}>
-                创建
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <PortfolioFormDialog onPortfolioCreated={handlePortfolioCreated} />
       </div>
     );
   }
@@ -222,40 +120,7 @@ export default function PortfoliosPage() {
             ))}
           </TabsList>
           <div className="flex items-center space-x-2">
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <Plus className="mr-2 size-4" />
-                  添加组合
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>创建投资组合</DialogTitle>
-                  <DialogDescription>输入投资组合名称来创建新的投资组合。</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      名称
-                    </Label>
-                    <Input
-                      id="name"
-                      value={newPortfolioName}
-                      onChange={(e) => setNewPortfolioName(e.target.value)}
-                      className="col-span-3"
-                      placeholder="输入投资组合名称"
-                      onKeyDown={(e) => e.key === "Enter" && handleCreatePortfolio()}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" onClick={handleCreatePortfolio}>
-                    创建
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <PortfolioFormDialog variant="outline" buttonText="添加组合" onPortfolioCreated={handlePortfolioCreated} />
             <Button size="sm" variant="outline" onClick={() => setIsManagementDialogOpen(true)}>
               <Settings className="mr-2 size-4" />
               管理组合

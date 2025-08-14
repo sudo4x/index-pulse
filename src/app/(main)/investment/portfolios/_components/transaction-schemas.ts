@@ -13,12 +13,6 @@ const baseTransactionSchema = z.object({
 const buySchema = baseTransactionSchema.extend({
   shares: z.number().positive("请输入正确的股数"),
   price: z.number().positive("请输入正确的价格"),
-  commission: z.number().min(0).optional(),
-  commissionRate: z.number().min(0).optional(),
-  tax: z.number().min(0).optional(),
-  taxRate: z.number().min(0).optional(),
-  commissionType: z.enum(["amount", "rate"]).default("amount"),
-  taxType: z.enum(["amount", "rate"]).default("amount"),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -73,12 +67,6 @@ export function getTransactionDefaultValues(transactionType: TransactionType) {
         ...baseDefaults,
         shares: 0,
         price: 0,
-        commission: 0,
-        commissionRate: 0,
-        tax: 0,
-        taxRate: 0,
-        commissionType: "amount" as const,
-        taxType: "amount" as const,
       };
     case TransactionType.MERGE:
     case TransactionType.SPLIT:

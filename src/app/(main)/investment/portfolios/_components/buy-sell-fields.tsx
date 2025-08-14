@@ -5,18 +5,26 @@ import { RefObject } from "react";
 import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TransactionType } from "@/types/investment";
 
+import { FeePreview } from "./fee-preview";
 import { BuySellForm } from "./transaction-form-types";
 
 interface BuySellFieldsProps {
   transactionType: TransactionType;
   form: BuySellForm;
   sharesInputRef?: RefObject<HTMLInputElement>;
+  commissionRate?: number;
+  commissionMinAmount?: number;
 }
 
-export function BuySellFields({ transactionType, form, sharesInputRef }: BuySellFieldsProps) {
+export function BuySellFields({
+  transactionType,
+  form,
+  sharesInputRef,
+  commissionRate = 0.0003,
+  commissionMinAmount = 5.0,
+}: BuySellFieldsProps) {
   return (
     <>
       {/* 买入价/卖出价 */}
@@ -75,93 +83,15 @@ export function BuySellFields({ transactionType, form, sharesInputRef }: BuySell
         />
       </div>
 
-      {/* 佣金 - 3列布局 */}
-      <div className="grid grid-cols-[80px_1fr_80px] items-center gap-4">
-        <Label className="text-sm font-medium">佣金</Label>
-        <FormField
-          control={form.control}
-          name="commission"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="1"
-                  {...field}
-                  value={field.value ?? ""}
-                  onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                  className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="commissionType"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rate">率(‰)</SelectItem>
-                    <SelectItem value="amount">元</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </div>
-
-      {/* 税费 - 3列布局 */}
-      <div className="grid grid-cols-[80px_1fr_80px] items-center gap-4">
-        <Label className="text-sm font-medium">税费</Label>
-        <FormField
-          control={form.control}
-          name="tax"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0"
-                  {...field}
-                  value={field.value ?? ""}
-                  onChange={(e) => field.onChange(Number(e.target.value) || 0)}
-                  className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="taxType"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="rate">率(‰)</SelectItem>
-                    <SelectItem value="amount">元</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+      {/* 费用预览 */}
+      <div className="col-span-full">
+        <FeePreview
+          symbol={form.watch("symbol")}
+          transactionType={transactionType}
+          shares={form.watch("shares")}
+          price={form.watch("price")}
+          commissionRate={commissionRate}
+          commissionMinAmount={commissionMinAmount}
         />
       </div>
     </>

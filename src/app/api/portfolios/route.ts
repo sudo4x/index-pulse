@@ -35,35 +35,19 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name } = await request.json();
+    const requestData = await request.json();
 
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return NextResponse.json({ error: "组合名称不能为空" }, { status: 400 });
+    const validationError = validatePortfolioData(requestData);
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 });
     }
 
-    // 获取当前最大排序值
-    const maxSortOrder = await db
-      .select({ maxSort: portfolios.sortOrder })
-      .from(portfolios)
-      .where(eq(portfolios.userId, user.id))
-      .orderBy(desc(portfolios.sortOrder))
-      .limit(1);
-
-    const newSortOrder = (maxSortOrder[0]?.maxSort ?? 0) + 1;
-
-    const newPortfolio = await db
-      .insert(portfolios)
-      .values({
-        userId: user.id,
-        name: name.trim(),
-        sortOrder: newSortOrder,
-      })
-      .returning();
+    const portfolioData = await buildPortfolioData(requestData, user.id);
+    const newPortfolio = await db.insert(portfolios).values(portfolioData).returning();
 
     return NextResponse.json({
       success: true,
@@ -73,4 +57,53 @@ export async function POST(request: Request) {
     console.error("Error creating portfolio:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
+}
+
+function validatePortfolioData(data: any): string | null {
+  const { name, commissionMinAmount, commissionRate } = data;
+
+  if (!name || typeof name !== "string" || name.trim().length === 0) {
+    return "组合名称不能为空";
+  }
+
+  const finalCommissionMinAmount = commissionMinAmount ?? 5.0;
+  const finalCommissionRate = commissionRate ?? 0.0003;
+
+  if (finalCommissionMinAmount < 0) {
+    return "佣金最低金额不能为负数";
+  }
+
+  if (finalCommissionRate < 0 || finalCommissionRate > 0.01) {
+    return "佣金费率必须在0-1%之间";
+  }
+
+  return null;
+}
+
+async function buildPortfolioData(data: any, userId: string) {
+  const { name, commissionMinAmount, commissionRate } = data;
+
+  const finalCommissionMinAmount = commissionMinAmount ?? 5.0;
+  const finalCommissionRate = commissionRate ?? 0.0003;
+
+  const newSortOrder = await getNextSortOrder(userId);
+
+  return {
+    userId,
+    name: name.trim(),
+    sortOrder: newSortOrder,
+    commissionMinAmount: finalCommissionMinAmount.toString(),
+    commissionRate: finalCommissionRate.toString(),
+  };
+}
+
+async function getNextSortOrder(userId: string): Promise<number> {
+  const maxSortOrder = await db
+    .select({ maxSort: portfolios.sortOrder })
+    .from(portfolios)
+    .where(eq(portfolios.userId, userId))
+    .orderBy(desc(portfolios.sortOrder))
+    .limit(1);
+
+  return (maxSortOrder[0]?.maxSort ?? 0) + 1;
 }

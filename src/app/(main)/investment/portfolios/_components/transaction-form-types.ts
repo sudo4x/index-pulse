@@ -13,12 +13,6 @@ export interface BaseTransactionFormData {
 export interface BuySellFormData extends BaseTransactionFormData {
   shares: number;
   price: number;
-  commission?: number;
-  commissionRate?: number;
-  tax?: number;
-  taxRate?: number;
-  commissionType: "amount" | "rate";
-  taxType: "amount" | "rate";
 }
 
 // 合股/拆股表单数据
