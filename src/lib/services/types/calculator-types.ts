@@ -31,6 +31,7 @@ export interface StockPrice {
   currentPrice: number;
   change: number;
   changePercent: number;
+  previousClose?: number;
 }
 
 export interface CashData {
@@ -59,4 +60,17 @@ export interface TransactionRecord {
   per10SharesTransfer?: number | string | null;
   per10SharesBonus?: number | string | null;
   per10SharesDividend?: number | string | null;
+}
+
+export interface DayTradingData {
+  todayBuyAmount: number;    // 当日买入金额
+  todaySellAmount: number;   // 当日卖出金额
+  todayBuyShares: number;    // 当日买入股数
+  todaySellShares: number;   // 当日卖出股数
+  yesterdayShares: number;   // 昨日持股数
+  yesterdayMarketValue: number; // 昨日市值
+}
+
+export interface EnhancedSharesData extends SharesData {
+  dayTradingData?: DayTradingData;
 }

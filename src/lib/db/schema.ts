@@ -60,6 +60,8 @@ export const holdings = pgTable(
   (table) => ({
     portfolioIdIdx: index("idx_holdings_portfolio_id").on(table.portfolioId),
     symbolIdx: index("idx_holdings_symbol").on(table.symbol),
+    portfolioSymbolIdx: index("idx_holdings_portfolio_symbol").on(table.portfolioId, table.symbol), // 复合索引：组合查询
+    activeHoldingsIdx: index("idx_holdings_active").on(table.portfolioId, table.isActive), // 复合索引：活跃持仓查询
   }),
 );
 
@@ -98,6 +100,9 @@ export const transactions = pgTable(
     portfolioIdIdx: index("idx_transactions_portfolio_id").on(table.portfolioId),
     symbolIdx: index("idx_transactions_symbol").on(table.symbol),
     dateIdx: index("idx_transactions_date").on(table.transactionDate),
+    portfolioSymbolIdx: index("idx_transactions_portfolio_symbol").on(table.portfolioId, table.symbol), // 复合索引：持仓计算查询
+    portfolioDateIdx: index("idx_transactions_portfolio_date").on(table.portfolioId, table.transactionDate), // 复合索引：按时间查询
+    portfolioSymbolDateIdx: index("idx_transactions_portfolio_symbol_date").on(table.portfolioId, table.symbol, table.transactionDate), // 复合索引：全方位查询
   }),
 );
 
@@ -119,6 +124,8 @@ export const transfers = pgTable(
   (table) => ({
     portfolioIdIdx: index("idx_transfers_portfolio_id").on(table.portfolioId),
     dateIdx: index("idx_transfers_date").on(table.transferDate),
+    portfolioDateIdx: index("idx_transfers_portfolio_date").on(table.portfolioId, table.transferDate), // 复合索引：按组合和时间查询
+    portfolioTypeIdx: index("idx_transfers_portfolio_type").on(table.portfolioId, table.type), // 复合索引：按类型查询
   }),
 );
 
@@ -155,6 +162,7 @@ export const stockPrices = pgTable(
     symbol: varchar("symbol", { length: 20 }).primaryKey(),
     name: varchar("name", { length: 100 }).notNull(),
     currentPrice: decimal("current_price", { precision: 18, scale: 6 }).notNull(),
+    previousClose: decimal("previous_close", { precision: 18, scale: 6 }).default("0"), // 昨日收盘价
     change: decimal("change", { precision: 18, scale: 6 }).notNull().default("0"), // 涨跌额
     changePercent: decimal("change_percent", { precision: 8, scale: 6 }).notNull().default("0"), // 涨跌幅
     volume: decimal("volume", { precision: 18, scale: 0 }).default("0"), // 成交量
@@ -164,6 +172,8 @@ export const stockPrices = pgTable(
   },
   (table) => ({
     lastUpdatedIdx: index("idx_stock_prices_last_updated").on(table.lastUpdated),
+    symbolUpdatedIdx: index("idx_stock_prices_symbol_updated").on(table.symbol, table.lastUpdated), // 复合索引：符号和更新时间
+    priceChangeIdx: index("idx_stock_prices_change").on(table.changePercent, table.lastUpdated), // 复合索引：涨跌幅排序
   }),
 );
 

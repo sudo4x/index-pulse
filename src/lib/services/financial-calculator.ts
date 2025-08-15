@@ -1,4 +1,4 @@
-import { SharesData, CostsData, ProfitLossData, StockPrice } from "./types/calculator-types";
+import { SharesData, CostsData, ProfitLossData, StockPrice, EnhancedSharesData, DayTradingData } from "./types/calculator-types";
 
 /**
  * 财务计算器
@@ -25,7 +25,7 @@ export class FinancialCalculator {
   }
 
   /**
-   * 计算盈亏数据
+   * 计算盈亏数据（基础版本）
    */
   static calculateProfitLoss(sharesData: SharesData, currentPrice: StockPrice, costs: CostsData): ProfitLossData {
     const currentPriceValue = parseFloat(String(currentPrice.currentPrice)) || 0;
@@ -39,13 +39,86 @@ export class FinancialCalculator {
     const accumAmount = costs.marketValue - totalCost + sharesData.totalSellAmount + sharesData.totalDividend;
     const accumRate = totalCost > 0 ? accumAmount / totalCost : 0;
 
-    // 当日盈亏 = 涨跌额 × 持股数
-    const dayFloatAmount = currentPrice.change * sharesData.totalShares;
-    const dayFloatRate =
-      currentPrice.currentPrice > 0
-        ? dayFloatAmount / ((currentPrice.currentPrice - currentPrice.change) * sharesData.totalShares)
-        : 0;
+    // 当日盈亏计算
+    const { dayFloatAmount, dayFloatRate } = this.calculateDayProfitLoss(
+      sharesData as EnhancedSharesData,
+      currentPrice,
+      costs
+    );
 
     return { floatAmount, floatRate, accumAmount, accumRate, dayFloatAmount, dayFloatRate };
+  }
+
+  /**
+   * 计算盈亏数据（增强版本，支持精确当日盈亏）
+   */
+  static calculateEnhancedProfitLoss(
+    sharesData: EnhancedSharesData,
+    currentPrice: StockPrice,
+    costs: CostsData
+  ): ProfitLossData {
+    const currentPriceValue = parseFloat(String(currentPrice.currentPrice)) || 0;
+
+    // 浮动盈亏 = (当前价 - 持仓成本) × 持股数
+    const floatAmount = (currentPriceValue - costs.holdCost) * sharesData.totalShares;
+    const floatRate = costs.holdCost > 0 ? floatAmount / (costs.holdCost * sharesData.totalShares) : 0;
+
+    // 累计盈亏 = 多仓市值 - 总买入金额 - 总佣金 - 总税费 + 总卖出金额 + 总现金股息
+    const totalCost = sharesData.totalBuyAmount + sharesData.totalCommission + sharesData.totalTax;
+    const accumAmount = costs.marketValue - totalCost + sharesData.totalSellAmount + sharesData.totalDividend;
+    const accumRate = totalCost > 0 ? accumAmount / totalCost : 0;
+
+    // 精确当日盈亏计算
+    const { dayFloatAmount, dayFloatRate } = this.calculateDayProfitLoss(sharesData, currentPrice, costs);
+
+    return { floatAmount, floatRate, accumAmount, accumRate, dayFloatAmount, dayFloatRate };
+  }
+
+  /**
+   * 计算当日盈亏（根据是否有昨日市值采用不同算法）
+   */
+  private static calculateDayProfitLoss(
+    sharesData: EnhancedSharesData,
+    currentPrice: StockPrice,
+    costs: CostsData
+  ): { dayFloatAmount: number; dayFloatRate: number } {
+    const currentPriceValue = parseFloat(String(currentPrice.currentPrice)) || 0;
+    const dayTradingData = sharesData.dayTradingData;
+
+    // 如果没有当日交易数据，使用简单算法
+    if (!dayTradingData) {
+      const dayFloatAmount = currentPrice.change * sharesData.totalShares;
+      const dayFloatRate =
+        currentPrice.currentPrice > 0
+          ? dayFloatAmount / ((currentPrice.currentPrice - currentPrice.change) * sharesData.totalShares)
+          : 0;
+      return { dayFloatAmount, dayFloatRate };
+    }
+
+    const { yesterdayMarketValue, yesterdayShares, todayBuyAmount, todaySellAmount } = dayTradingData;
+
+    if (yesterdayMarketValue > 0) {
+      // 昨日市值 > 0 的情况
+      // 当日盈亏额 = (现市值 - 昨收市值 + 当日∑卖出 - 当日∑买入)
+      const yesterdayClosePrice = currentPrice.previousClose || (currentPriceValue - currentPrice.change);
+      const yesterdayCloseMarketValue = yesterdayShares * yesterdayClosePrice;
+      
+      const dayFloatAmount = costs.marketValue - yesterdayCloseMarketValue + todaySellAmount - todayBuyAmount;
+      
+      // 当日盈亏率 = 当日盈亏额 / (昨市值 + 当日∑买入)
+      const denominator = yesterdayMarketValue + todayBuyAmount;
+      const dayFloatRate = denominator > 0 ? dayFloatAmount / denominator : 0;
+
+      return { dayFloatAmount, dayFloatRate };
+    } else {
+      // 昨日市值 = 0 的情况（当日新开仓）
+      // 当日盈亏额 = (现价 - 持仓成本) * 股数 + 当日∑卖出 - 当日∑买入
+      const dayFloatAmount = (currentPriceValue - costs.holdCost) * sharesData.totalShares + todaySellAmount - todayBuyAmount;
+      
+      // 当日盈亏率 = 当日盈亏额 / 当日∑买入
+      const dayFloatRate = todayBuyAmount > 0 ? dayFloatAmount / todayBuyAmount : 0;
+
+      return { dayFloatAmount, dayFloatRate };
+    }
   }
 }

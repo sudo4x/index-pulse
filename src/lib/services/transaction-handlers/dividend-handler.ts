@@ -1,8 +1,10 @@
 import { eq, and } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { holdings } from "@/lib/db/schema";
+import { holdings, transactions } from "@/lib/db/schema";
 import { TransactionType } from "@/types/investment";
+import { HoldingService } from "@/lib/services/holding-service";
+import { TransactionProcessor } from "@/lib/services/transaction-processor";
 
 import {
   BaseTransactionHandler,
@@ -70,16 +72,36 @@ export class DividendHandler extends BaseTransactionHandler {
     const portfolioIdInt = this.parsePortfolioId(portfolioId);
     const cleanSymbol = this.cleanSymbol(symbol);
 
-    const holding = await db
-      .select({ shares: holdings.shares })
-      .from(holdings)
-      .where(and(eq(holdings.portfolioId, portfolioIdInt), eq(holdings.symbol, cleanSymbol)))
-      .limit(1);
-
-    if (holding.length === 0) {
-      throw new Error(`未找到股票 ${cleanSymbol} 的持仓记录`);
+    // 首先尝试从holdings表获取（如果已持久化）
+    try {
+      const holdingShares = await HoldingService.getHoldingShares(portfolioIdInt, cleanSymbol);
+      if (holdingShares > 0) {
+        return holdingShares;
+      }
+    } catch (error) {
+      console.warn(`从holdings表获取持股数失败，转为动态计算: ${error}`);
     }
 
-    return Number(holding[0].shares);
+    // 后备方案：动态计算持股数
+    return await this.calculateHoldingSharesDynamically(portfolioIdInt, cleanSymbol);
+  }
+
+  /**
+   * 动态计算持股数（后备方案）
+   */
+  private async calculateHoldingSharesDynamically(portfolioId: number, symbol: string): Promise<number> {
+    // 获取该品种除当前除权除息记录外的所有交易记录
+    const holdingTransactions = await db
+      .select()
+      .from(transactions)
+      .where(and(eq(transactions.portfolioId, portfolioId), eq(transactions.symbol, symbol)))
+      .orderBy(transactions.transactionDate);
+
+    if (holdingTransactions.length === 0) {
+      throw new Error(`未找到股票 ${symbol} 的任何交易记录`);
+    }
+
+    const sharesData = TransactionProcessor.calculateSharesAndAmounts(holdingTransactions);
+    return sharesData.totalShares;
   }
 }

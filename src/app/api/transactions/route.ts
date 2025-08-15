@@ -8,6 +8,7 @@ import { transactions, portfolios } from "@/lib/db/schema";
 import { TransactionHandlerFactory } from "@/lib/services/transaction-handlers/transaction-handler-factory";
 import { TransactionValidator } from "@/lib/validators/transaction-validator";
 import { TransactionType, TransactionTypeNames } from "@/types/investment";
+import { HoldingService } from "@/lib/services/holding-service";
 
 // 获取交易记录
 export async function GET(request: Request) {
@@ -127,6 +128,22 @@ export async function POST(request: Request) {
 
     // 保存交易记录
     const newTransaction = await db.insert(transactions).values(processedTransaction).returning();
+
+    // 更新相关持仓数据
+    try {
+      await HoldingService.updateHoldingBySymbol(
+        processedTransaction.portfolioId,
+        processedTransaction.symbol
+      );
+    } catch (holdingError) {
+      console.error("Error updating holding after transaction creation:", {
+        error: holdingError instanceof Error ? holdingError.message : String(holdingError),
+        portfolioId: processedTransaction.portfolioId,
+        symbol: processedTransaction.symbol,
+        timestamp: new Date().toISOString(),
+      });
+      // 不阻断交易记录的成功返回，但记录错误
+    }
 
     return NextResponse.json({
       success: true,

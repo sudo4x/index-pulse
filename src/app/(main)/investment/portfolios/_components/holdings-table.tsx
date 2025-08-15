@@ -5,7 +5,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useWebSocketPrices } from "@/hooks/use-websocket-prices";
 import { HoldingDetail } from "@/types/investment";
 
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
@@ -29,8 +31,21 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingHolding, setDeletingHolding] = useState<HoldingDetail | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPollingMode, setIsPollingMode] = useState(false);
   const { toast } = useToast();
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // WebSocket实时价格更新
+  const {
+    isConnected: wsConnected,
+    isConnecting: wsConnecting,
+    error: wsError,
+    prices: wsPrices,
+    subscribe: wsSubscribe,
+    unsubscribe: wsUnsubscribe,
+    stats: wsStats,
+  } = useWebSocketPrices();
 
   const fetchHoldings = useCallback(async () => {
     if (!portfolioId || portfolioId === "undefined") {
@@ -80,6 +95,163 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
       }
     };
   }, [portfolioId, showHistorical, fetchHoldings]);
+
+  // WebSocket订阅管理
+  useEffect(() => {
+    if (holdings.length > 0) {
+      const symbols = holdings.map(holding => holding.symbol);
+      console.log("订阅股票代码:", symbols);
+      wsSubscribe(symbols);
+
+      return () => {
+        console.log("取消订阅股票代码:", symbols);
+        wsUnsubscribe(symbols);
+      };
+    }
+  }, [holdings, wsSubscribe, wsUnsubscribe]);
+
+  // WebSocket价格更新处理
+  useEffect(() => {
+    if (Object.keys(wsPrices).length > 0) {
+      setHoldings(prevHoldings => 
+        prevHoldings.map(holding => {
+          const priceUpdate = wsPrices[holding.symbol];
+          if (priceUpdate) {
+            // 计算新的市值和盈亏
+            const newMarketValue = holding.shares * priceUpdate.currentPrice;
+            const floatAmount = newMarketValue - (holding.holdCost * holding.shares);
+            const floatRate = holding.holdCost > 0 ? floatAmount / (holding.holdCost * holding.shares) : 0;
+
+            return {
+              ...holding,
+              currentPrice: priceUpdate.currentPrice,
+              change: priceUpdate.change,
+              changePercent: priceUpdate.changePercent,
+              marketValue: newMarketValue,
+              floatAmount,
+              floatRate,
+            };
+          }
+          return holding;
+        })
+      );
+    }
+  }, [wsPrices]);
+
+  // WebSocket错误处理
+  useEffect(() => {
+    if (wsError) {
+      console.warn("WebSocket错误:", wsError);
+      // 可以选择性地显示错误，但不影响主要功能
+    }
+  }, [wsError]);
+
+  // 轮询获取价格更新（备用方案）
+  const fetchPriceUpdates = useCallback(async () => {
+    if (holdings.length === 0) return;
+
+    try {
+      const symbols = holdings.map(holding => holding.symbol);
+      const response = await fetch(`/api/stock-prices?symbols=${symbols.join(',')}`);
+      
+      if (!response.ok) {
+        console.error("获取价格更新失败:", response.status);
+        return;
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        // 更新holdings中的价格信息
+        setHoldings(prevHoldings => 
+          prevHoldings.map(holding => {
+            const priceUpdate = result.data.find((price: any) => price.symbol === holding.symbol);
+            if (priceUpdate) {
+              // 计算新的市值和盈亏
+              const newMarketValue = holding.shares * Number(priceUpdate.currentPrice);
+              const floatAmount = newMarketValue - (holding.holdCost * holding.shares);
+              const floatRate = holding.holdCost > 0 ? floatAmount / (holding.holdCost * holding.shares) : 0;
+
+              return {
+                ...holding,
+                currentPrice: Number(priceUpdate.currentPrice),
+                change: Number(priceUpdate.change),
+                changePercent: Number(priceUpdate.changePercent),
+                marketValue: newMarketValue,
+                floatAmount,
+                floatRate,
+              };
+            }
+            return holding;
+          })
+        );
+        console.log(`轮询模式：已更新 ${result.data.length} 个股票价格`);
+      }
+    } catch (error) {
+      console.error("轮询获取价格更新失败:", error);
+    }
+  }, [holdings]);
+
+  // 轮询模式管理
+  useEffect(() => {
+    const shouldUsePolling = !wsConnected && holdings.length > 0;
+
+    if (shouldUsePolling !== isPollingMode) {
+      setIsPollingMode(shouldUsePolling);
+    }
+
+    if (shouldUsePolling) {
+      console.log("启动轮询模式（每1分钟更新一次）");
+      
+      // 立即获取一次价格更新
+      fetchPriceUpdates();
+
+      // 设置轮询间隔（1分钟）
+      pollingIntervalRef.current = setInterval(() => {
+        // 只在页面可见时进行轮询
+        if (!document.hidden) {
+          fetchPriceUpdates();
+        }
+      }, 60000);
+
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+          pollingIntervalRef.current = null;
+        }
+      };
+    } else {
+      // 清除轮询
+      if (pollingIntervalRef.current) {
+        console.log("停止轮询模式");
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    }
+  }, [wsConnected, holdings.length, isPollingMode, fetchPriceUpdates]);
+
+  // 页面可见性变化处理
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (isPollingMode && !document.hidden) {
+        // 页面重新可见时，立即获取一次价格更新
+        fetchPriceUpdates();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isPollingMode, fetchPriceUpdates]);
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
 
   const handleDeleteHolding = async () => {
     if (!deletingHolding) return;
@@ -169,6 +341,37 @@ export function HoldingsTable({ portfolioId, showHistorical }: HoldingsTableProp
     <>
       <Card className="shadow-xs">
         <CardContent className="flex size-full flex-col gap-4">
+          {/* WebSocket连接状态指示器 */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">持仓列表</span>
+              {wsConnecting && (
+                <Badge variant="outline" className="text-xs">
+                  连接中...
+                </Badge>
+              )}
+              {wsConnected && (
+                <Badge variant="default" className="text-xs bg-green-500">
+                  实时更新
+                </Badge>
+              )}
+              {isPollingMode && (
+                <Badge variant="secondary" className="text-xs bg-blue-500 text-white">
+                  轮询模式
+                </Badge>
+              )}
+              {wsError && !wsConnected && !isPollingMode && (
+                <Badge variant="destructive" className="text-xs">
+                  离线模式
+                </Badge>
+              )}
+            </div>
+            {wsStats.totalUpdates > 0 && (
+              <div className="text-xs text-muted-foreground">
+                已更新 {wsStats.totalUpdates} 次
+              </div>
+            )}
+          </div>
           <div className="overflow-hidden rounded-md border">
             <Table>
               <TableHeader>

@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { transactions, portfolios } from "@/lib/db/schema";
 import { TransactionType, TransactionTypeNames } from "@/types/investment";
+import { HoldingService } from "@/lib/services/holding-service";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -56,7 +57,22 @@ export async function PUT(request: Request, context: RouteContext) {
       .where(eq(transactions.id, transactionId))
       .returning();
 
-    // TODO: 在这里触发持仓和组合数据的重新计算
+    // 更新相关持仓数据
+    try {
+      await HoldingService.updateHoldingBySymbol(
+        updatedTransaction[0].portfolioId,
+        updatedTransaction[0].symbol
+      );
+    } catch (holdingError) {
+      console.error("Error updating holding after transaction update:", {
+        error: holdingError instanceof Error ? holdingError.message : String(holdingError),
+        transactionId: transactionId,
+        portfolioId: updatedTransaction[0].portfolioId,
+        symbol: updatedTransaction[0].symbol,
+        timestamp: new Date().toISOString(),
+      });
+      // 不阻断交易记录的成功返回，但记录错误
+    }
 
     return NextResponse.json({
       success: true,
@@ -100,9 +116,27 @@ export async function DELETE(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
     }
 
+    // 保存交易信息用于后续持仓更新
+    const transactionToDelete = existingTransaction[0].transactions;
+
     await db.delete(transactions).where(eq(transactions.id, transactionId));
 
-    // TODO: 在这里触发持仓和组合数据的重新计算
+    // 更新相关持仓数据
+    try {
+      await HoldingService.updateHoldingBySymbol(
+        transactionToDelete.portfolioId,
+        transactionToDelete.symbol
+      );
+    } catch (holdingError) {
+      console.error("Error updating holding after transaction deletion:", {
+        error: holdingError instanceof Error ? holdingError.message : String(holdingError),
+        deletedTransactionId: transactionId,
+        portfolioId: transactionToDelete.portfolioId,
+        symbol: transactionToDelete.symbol,
+        timestamp: new Date().toISOString(),
+      });
+      // 不阻断删除操作的成功返回，但记录错误
+    }
 
     return NextResponse.json({
       success: true,
