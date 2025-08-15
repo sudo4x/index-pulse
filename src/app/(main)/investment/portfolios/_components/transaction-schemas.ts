@@ -11,19 +11,19 @@ const baseTransactionSchema = z.object({
 });
 
 const buySchema = baseTransactionSchema.extend({
-  shares: z.number().positive("请输入正确的股数"),
-  price: z.number().positive("请输入正确的价格"),
+  shares: z.number().min(0, "股数不能为负数"),
+  price: z.number().min(0, "价格不能为负数"),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const sellSchema = buySchema;
 
 const mergeSchema = baseTransactionSchema.extend({
-  unitShares: z.number().positive("请输入合股比例"),
+  unitShares: z.number().min(0, "合股比例不能为负数"),
 });
 
 const splitSchema = baseTransactionSchema.extend({
-  unitShares: z.number().positive("请输入拆股比例"),
+  unitShares: z.number().min(0, "拆股比例不能为负数"),
 });
 
 const dividendSchema = baseTransactionSchema.extend({

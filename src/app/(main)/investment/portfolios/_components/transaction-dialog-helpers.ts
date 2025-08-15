@@ -1,3 +1,4 @@
+import { parseDecimal } from "@/lib/db/decimal-utils";
 import { HoldingDetail, TransactionType } from "@/types/investment";
 
 import { TransactionFormData } from "./transaction-form-types";
@@ -6,29 +7,60 @@ import { TransactionFormData } from "./transaction-form-types";
 export const createBasicFormData = (transaction: any) => ({
   symbol: transaction.symbol ?? "",
   name: transaction.name ?? "",
+  type: transaction.type?.toString() ?? "1",
   transactionDate: transaction.transactionDate ? new Date(transaction.transactionDate) : new Date(),
   comment: transaction.comment ?? "",
 });
 
 export const createTransactionAmounts = (transaction: any) => ({
-  shares: transaction.shares ?? 0,
-  price: transaction.price ?? 0,
-  commission: transaction.commission ?? 0,
-  tax: transaction.tax ?? 0,
+  shares: parseDecimal(transaction.shares),
+  price: parseDecimal(transaction.price),
+  commission: parseDecimal(transaction.commission),
+  tax: parseDecimal(transaction.tax),
 });
 
 export const createUnitData = (transaction: any) => ({
-  unitShares: transaction.unitShares ?? 0,
-  unitDividend: transaction.unitDividend ?? 0,
-  unitIncreaseShares: transaction.unitIncreaseShares ?? 0,
+  unitShares: parseDecimal(transaction.unitShares),
+  unitDividend: parseDecimal(transaction.unitDividend),
+  unitIncreaseShares: parseDecimal(transaction.unitIncreaseShares),
+  per10SharesTransfer: parseDecimal(transaction.per10SharesTransfer),
+  per10SharesBonus: parseDecimal(transaction.per10SharesBonus),
+  per10SharesDividend: parseDecimal(transaction.per10SharesDividend),
   recordDate: transaction.recordDate ? new Date(transaction.recordDate) : null,
 });
 
-export const createFormDataFromTransaction = (transaction: any) => ({
-  ...createBasicFormData(transaction),
-  ...createTransactionAmounts(transaction),
-  ...createUnitData(transaction),
-});
+export const createFormDataFromTransaction = (transaction: any) => {
+  const baseData = createBasicFormData(transaction);
+  const transactionType = Number(transaction.type);
+
+  // 根据交易类型返回对应的字段
+  switch (transactionType) {
+    case TransactionType.BUY:
+    case TransactionType.SELL:
+      return {
+        ...baseData,
+        ...createTransactionAmounts(transaction),
+      };
+    case TransactionType.MERGE:
+    case TransactionType.SPLIT:
+      return {
+        ...baseData,
+        unitShares: parseDecimal(transaction.unitShares),
+      };
+    case TransactionType.DIVIDEND:
+      return {
+        ...baseData,
+        per10SharesTransfer: parseDecimal(transaction.per10SharesTransfer),
+        per10SharesBonus: parseDecimal(transaction.per10SharesBonus),
+        per10SharesDividend: parseDecimal(transaction.per10SharesDividend),
+        tax: parseDecimal(transaction.tax),
+        taxRate: parseDecimal(transaction.taxRate),
+        taxType: transaction.taxType ?? "amount",
+      };
+    default:
+      return baseData;
+  }
+};
 
 // Helper function to get dialog title
 export const getDialogTitle = (editingTransaction: any, selectedHolding: HoldingDetail | null | undefined) => {

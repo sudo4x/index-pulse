@@ -33,7 +33,7 @@ export function BuySellFields({ transactionType, form, sharesInputRef }: BuySell
                   placeholder="122.123"
                   {...field}
                   value={field.value || ""}
-                  onChange={(e) => field.onChange(e.target.value)}
+                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
               </FormControl>
