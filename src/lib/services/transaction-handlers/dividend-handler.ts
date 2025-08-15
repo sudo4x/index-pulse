@@ -1,3 +1,7 @@
+import { eq, and } from "drizzle-orm";
+
+import { db } from "@/lib/db";
+import { holdings } from "@/lib/db/schema";
 import { TransactionType } from "@/types/investment";
 
 import {
@@ -17,7 +21,10 @@ export class DividendHandler extends BaseTransactionHandler {
   }
 
   async processTransaction(input: TransactionInput, _portfolioConfig: PortfolioConfig): Promise<TransactionOutput> {
-    const calculations = this.calculateDividendAmounts(input);
+    // 查询当前持股数
+    const holdingShares = await this.getHoldingShares(input.portfolioId, input.symbol);
+
+    const calculations = this.calculateDividendAmounts(input, holdingShares);
     const basicInfo = this.buildBasicTransactionInfo(input);
     const dividendInfo = this.buildDividendSpecificInfo(input, calculations.taxAmount);
     return {
@@ -28,9 +35,8 @@ export class DividendHandler extends BaseTransactionHandler {
     };
   }
 
-  private calculateDividendAmounts(input: TransactionInput) {
+  private calculateDividendAmounts(input: TransactionInput, holdingShares: number) {
     const per10SharesDividend = Number(input.per10SharesDividend ?? 0);
-    const holdingShares = Number(input.shares ?? 0);
     const dividendAmount = (per10SharesDividend / 10) * holdingShares;
     const taxAmount = Number(input.tax ?? 0);
     return { dividendAmount, taxAmount };
@@ -58,5 +64,22 @@ export class DividendHandler extends BaseTransactionHandler {
       per10SharesDividend: input.per10SharesDividend?.toString() ?? null,
       description: `除权除息 - 税费: ${taxAmount.toFixed(2)}元`,
     };
+  }
+
+  private async getHoldingShares(portfolioId: string, symbol: string): Promise<number> {
+    const portfolioIdInt = this.parsePortfolioId(portfolioId);
+    const cleanSymbol = this.cleanSymbol(symbol);
+
+    const holding = await db
+      .select({ shares: holdings.shares })
+      .from(holdings)
+      .where(and(eq(holdings.portfolioId, portfolioIdInt), eq(holdings.symbol, cleanSymbol)))
+      .limit(1);
+
+    if (holding.length === 0) {
+      throw new Error(`未找到股票 ${cleanSymbol} 的持仓记录`);
+    }
+
+    return Number(holding[0].shares);
   }
 }

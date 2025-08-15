@@ -101,17 +101,22 @@ export class TransactionValidator {
       return { isValid: true }; // Skip validation for other types
     }
 
-    if (!transactionData.shares || Number(transactionData.shares) <= 0) {
-      return { isValid: false, error: "shares (holding shares) is required for dividend transactions" };
+    // 验证至少填写一个除权除息字段
+    const per10SharesTransfer = Number(transactionData.per10SharesTransfer ?? 0);
+    const per10SharesBonus = Number(transactionData.per10SharesBonus ?? 0);
+    const per10SharesDividend = Number(transactionData.per10SharesDividend ?? 0);
+
+    if (per10SharesTransfer <= 0 && per10SharesBonus <= 0 && per10SharesDividend <= 0) {
+      return {
+        isValid: false,
+        error: "至少需要填写一个除权除息字段：每10股转增、每10股送股或每10股红利",
+      };
     }
 
-    if (!transactionData.per10SharesDividend || Number(transactionData.per10SharesDividend) <= 0) {
-      return { isValid: false, error: "per10SharesDividend must be a positive number for dividend transactions" };
-    }
-
+    // 验证税费不能为负数
     const tax = Number(transactionData.tax ?? 0);
     if (tax < 0) {
-      return { isValid: false, error: "tax cannot be negative" };
+      return { isValid: false, error: "税费不能为负数" };
     }
 
     return { isValid: true };

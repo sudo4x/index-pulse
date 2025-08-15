@@ -97,12 +97,22 @@ export async function POST(request: Request) {
     // 验证交易数据
     const validation = TransactionValidator.validateTransaction(transactionData);
     if (!validation.isValid) {
+      console.error("Transaction validation failed:", {
+        error: validation.error,
+        data: transactionData,
+        timestamp: new Date().toISOString(),
+      });
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
     // 验证组合所有权并获取佣金配置
     const portfolio = await getPortfolioConfig(transactionData.portfolioId, user.id);
     if (!portfolio) {
+      console.error("Portfolio not found:", {
+        portfolioId: transactionData.portfolioId,
+        userId: user.id,
+        timestamp: new Date().toISOString(),
+      });
       return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
     }
 
@@ -127,7 +137,17 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Error creating transaction:", error);
+    console.error("Error creating transaction:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString(),
+    });
+
+    // 如果是已知的业务错误（如找不到持仓），返回具体错误信息
+    if (error instanceof Error && error.message.includes("未找到")) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

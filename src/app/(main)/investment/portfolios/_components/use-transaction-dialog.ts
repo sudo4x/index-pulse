@@ -138,12 +138,14 @@ export function useTransactionDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      console.log(await response.json());
-      if (!response.ok) {
-        throw new Error(isEditing ? "更新交易记录失败" : "提交交易记录失败");
-      }
 
       const result = await response.json();
+
+      if (!response.ok) {
+        // 显示具体的错误信息
+        const errorMessage = result.error ?? (isEditing ? "更新交易记录失败" : "提交交易记录失败");
+        throw new Error(errorMessage);
+      }
       if (result.success) {
         toast({
           title: "成功",
