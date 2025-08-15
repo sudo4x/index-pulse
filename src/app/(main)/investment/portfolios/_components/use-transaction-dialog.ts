@@ -138,7 +138,7 @@ export function useTransactionDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
+      console.log(await response.json());
       if (!response.ok) {
         throw new Error(isEditing ? "更新交易记录失败" : "提交交易记录失败");
       }

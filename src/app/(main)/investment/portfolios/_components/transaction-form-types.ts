@@ -26,8 +26,6 @@ export interface DividendFormData extends BaseTransactionFormData {
   per10SharesBonus?: number;
   per10SharesDividend?: number;
   tax?: number;
-  taxRate?: number;
-  taxType: "amount" | "rate";
 }
 
 // 联合类型：所有可能的表单数据

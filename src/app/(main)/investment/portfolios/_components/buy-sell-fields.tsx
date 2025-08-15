@@ -32,8 +32,8 @@ export function BuySellFields({ transactionType, form, sharesInputRef }: BuySell
                   step="0.001"
                   placeholder="122.123"
                   {...field}
-                  value={field.value || ""}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                  value={field.value ? field.value.toString() : ""}
+                  onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseFloat(e.target.value) || 0)}
                   className="w-full [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
               </FormControl>

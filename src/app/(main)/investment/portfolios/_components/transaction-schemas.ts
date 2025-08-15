@@ -12,7 +12,11 @@ const baseTransactionSchema = z.object({
 
 const buySchema = baseTransactionSchema.extend({
   shares: z.number().min(0, "股数不能为负数"),
-  price: z.number().min(0, "价格不能为负数"),
+  price: z
+    .number()
+    .min(0, "价格不能为负数")
+    .optional()
+    .transform((val) => val ?? 0),
 });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -27,12 +31,26 @@ const splitSchema = baseTransactionSchema.extend({
 });
 
 const dividendSchema = baseTransactionSchema.extend({
-  per10SharesTransfer: z.number().min(0).optional(),
-  per10SharesBonus: z.number().min(0).optional(),
-  per10SharesDividend: z.number().min(0).optional(),
-  tax: z.number().min(0).optional(),
-  taxRate: z.number().min(0).optional(),
-  taxType: z.enum(["amount", "rate"]).default("amount"),
+  per10SharesTransfer: z
+    .number()
+    .min(0)
+    .optional()
+    .transform((val) => val ?? 0),
+  per10SharesBonus: z
+    .number()
+    .min(0)
+    .optional()
+    .transform((val) => val ?? 0),
+  per10SharesDividend: z
+    .number()
+    .min(0)
+    .optional()
+    .transform((val) => val ?? 0),
+  tax: z
+    .number()
+    .min(0)
+    .optional()
+    .transform((val) => val ?? 0),
 });
 
 export function getTransactionSchema(transactionType: TransactionType) {
@@ -81,8 +99,6 @@ export function getTransactionDefaultValues(transactionType: TransactionType) {
         per10SharesBonus: 0,
         per10SharesDividend: 0,
         tax: 0,
-        taxRate: 0,
-        taxType: "amount" as const,
       };
     default:
       return baseDefaults;

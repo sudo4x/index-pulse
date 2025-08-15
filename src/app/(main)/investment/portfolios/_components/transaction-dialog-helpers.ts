@@ -54,8 +54,6 @@ export const createFormDataFromTransaction = (transaction: any) => {
         per10SharesBonus: parseDecimal(transaction.per10SharesBonus),
         per10SharesDividend: parseDecimal(transaction.per10SharesDividend),
         tax: parseDecimal(transaction.tax),
-        taxRate: parseDecimal(transaction.taxRate),
-        taxType: transaction.taxType ?? "amount",
       };
     default:
       return baseData;
