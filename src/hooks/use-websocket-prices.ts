@@ -16,7 +16,11 @@ interface PriceUpdateData {
 
 interface WebSocketMessage {
   type: "connected" | "subscribed" | "unsubscribed" | "priceUpdate" | "pong" | "error";
-  data?: PriceUpdateData;
+  data?: {
+    prices: any[];
+    count: number;
+    source: string;
+  } | PriceUpdateData;
   symbols?: string[];
   message?: string;
   clientId?: string;
@@ -163,17 +167,31 @@ export function useWebSocketPrices(
             break;
 
           case "priceUpdate":
-            if (message.data) {
-              setPrices(prev => ({
-                ...prev,
-                [message.data!.symbol]: message.data!,
-              }));
-              setLastUpdate(message.data.lastUpdated);
+            if (message.data && 'prices' in message.data) {
+              // 处理Cloudflare Workers格式：{type:"priceUpdate", data:{prices:[...], count:n, source:"tencent"}}
+              const { prices } = message.data;
+              console.log(`接收到价格更新批次: ${prices.length} 个股票`);
+              
+              const newPrices: Record<string, PriceUpdateData> = {};
+              let lastUpdateTime = message.timestamp;
+
+              prices.forEach((rawItem: any) => {
+                try {
+                  const priceData = convertRawDataToPriceUpdate(rawItem);
+                  newPrices[priceData.symbol] = priceData;
+                  console.log(`价格更新: ${priceData.symbol} = ${priceData.currentPrice}`);
+                } catch (error) {
+                  console.warn(`处理股票数据失败: ${rawItem.symbol}`, error);
+                }
+              });
+
+              // 批量更新价格数据
+              setPrices(prev => ({ ...prev, ...newPrices }));
+              setLastUpdate(lastUpdateTime);
               setStats(prev => ({
                 ...prev,
-                totalUpdates: prev.totalUpdates + 1,
+                totalUpdates: prev.totalUpdates + prices.length,
               }));
-              console.log(`价格更新: ${message.data.symbol} = ${message.data.currentPrice}`);
             }
             break;
 
@@ -189,54 +207,9 @@ export function useWebSocketPrices(
           default:
             console.warn("未知消息类型:", message.type);
         }
-        return;
+      } else {
+        console.warn("未知消息格式:", data);
       }
-
-      // 处理Cloudflare Workers直接数组格式
-      if (Array.isArray(data)) {
-        console.log(`接收到价格更新批次: ${data.length} 个股票`);
-        
-        const newPrices: Record<string, PriceUpdateData> = {};
-        let lastUpdateTime = "";
-
-        data.forEach((rawItem: any) => {
-          try {
-            const priceData = convertRawDataToPriceUpdate(rawItem);
-            newPrices[priceData.symbol] = priceData;
-            lastUpdateTime = priceData.lastUpdated;
-            console.log(`价格更新: ${priceData.symbol} = ${priceData.currentPrice}`);
-          } catch (error) {
-            console.warn(`处理股票数据失败: ${rawItem.symbol}`, error);
-          }
-        });
-
-        // 批量更新价格数据
-        setPrices(prev => ({ ...prev, ...newPrices }));
-        setLastUpdate(lastUpdateTime);
-        setStats(prev => ({
-          ...prev,
-          totalUpdates: prev.totalUpdates + data.length,
-        }));
-        return;
-      }
-
-      // 处理单个价格更新对象
-      if (data.symbol) {
-        const priceData = convertRawDataToPriceUpdate(data);
-        setPrices(prev => ({
-          ...prev,
-          [priceData.symbol]: priceData,
-        }));
-        setLastUpdate(priceData.lastUpdated);
-        setStats(prev => ({
-          ...prev,
-          totalUpdates: prev.totalUpdates + 1,
-        }));
-        console.log(`价格更新: ${priceData.symbol} = ${priceData.currentPrice}`);
-        return;
-      }
-
-      console.warn("未知消息格式:", data);
     } catch (error) {
       console.error("解析WebSocket消息失败:", error);
       setError("消息解析失败");
