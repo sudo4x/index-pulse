@@ -112,7 +112,7 @@ export function useWebSocketPrices(
       marketValue: parseFloat(rawData.marketValue) || 0,
       limitUp: parseFloat(rawData.limitUp) || 0,
       limitDown: parseFloat(rawData.limitDown) || 0,
-      lastUpdated: rawData.lastUpdated || new Date().toISOString(),
+      lastUpdated: rawData.lastUpdated ?? new Date().toISOString(),
     };
   }, []);
 
@@ -173,7 +173,7 @@ export function useWebSocketPrices(
               console.log(`接收到价格更新批次: ${prices.length} 个股票`);
               
               const newPrices: Record<string, PriceUpdateData> = {};
-              let lastUpdateTime = message.timestamp;
+              const lastUpdateTime = message.timestamp;
 
               prices.forEach((rawItem: any) => {
                 try {
@@ -201,7 +201,7 @@ export function useWebSocketPrices(
 
           case "error":
             console.error("WebSocket服务器错误:", message.message);
-            setError(message.message || "未知错误");
+            setError(message.message ?? "未知错误");
             break;
 
           default:

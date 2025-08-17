@@ -5,8 +5,8 @@ import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { transactions, portfolios } from "@/lib/db/schema";
-import { TransactionType, TransactionTypeNames } from "@/types/investment";
 import { HoldingService } from "@/lib/services/holding-service";
+import { TransactionType, TransactionTypeNames } from "@/types/investment";
 
 interface RouteContext {
   params: Promise<{ id: string }>;

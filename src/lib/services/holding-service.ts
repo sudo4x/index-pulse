@@ -1,13 +1,12 @@
 import { eq, and } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { holdings, transactions } from "@/lib/db/schema";
-import { Holding, NewHolding } from "@/lib/db/schema";
+import { holdings, transactions, Holding, NewHolding } from "@/lib/db/schema";
 import { TransactionType } from "@/types/investment";
 
 import { FinancialCalculator } from "./financial-calculator";
-import { TransactionProcessor } from "./transaction-processor";
 import { PortfolioCalculator } from "./portfolio-calculator";
+import { TransactionProcessor } from "./transaction-processor";
 
 /**
  * 持仓数据服务
@@ -33,7 +32,7 @@ export class HoldingService {
 
     // 计算持仓数据
     const sharesData = TransactionProcessor.calculateSharesAndAmounts(holdingTransactions);
-    
+
     // 准备持仓数据
     const holdingData: NewHolding = {
       portfolioId,
@@ -46,13 +45,13 @@ export class HoldingService {
       totalSellAmount: sharesData.totalSellAmount.toString(),
       totalDividend: sharesData.totalDividend.toString(),
       isActive: sharesData.totalShares > 0,
-      openTime: sharesData.openTime || new Date(),
+      openTime: sharesData.openTime ?? new Date(),
       liquidationTime: sharesData.totalShares <= 0 ? new Date() : null,
     };
 
     // 检查是否已存在持仓记录
     const existingHolding = await this.getHolding(portfolioId, symbol);
-    
+
     if (existingHolding) {
       // 更新现有记录
       await db
@@ -100,10 +99,7 @@ export class HoldingService {
   /**
    * 获取投资组合的所有持仓记录
    */
-  static async getHoldingsByPortfolio(
-    portfolioId: number,
-    includeHistorical: boolean = false
-  ): Promise<Holding[]> {
+  static async getHoldingsByPortfolio(portfolioId: number, includeHistorical: boolean = false): Promise<Holding[]> {
     let query = db.select().from(holdings).where(eq(holdings.portfolioId, portfolioId));
 
     if (!includeHistorical) {

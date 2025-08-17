@@ -100,11 +100,11 @@ export class FinancialCalculator {
     if (yesterdayMarketValue > 0) {
       // 昨日市值 > 0 的情况
       // 当日盈亏额 = (现市值 - 昨收市值 + 当日∑卖出 - 当日∑买入)
-      const yesterdayClosePrice = currentPrice.previousClose || (currentPriceValue - currentPrice.change);
+      const yesterdayClosePrice = currentPrice.previousClose ?? currentPriceValue - currentPrice.change;
       const yesterdayCloseMarketValue = yesterdayShares * yesterdayClosePrice;
-      
+
       const dayFloatAmount = costs.marketValue - yesterdayCloseMarketValue + todaySellAmount - todayBuyAmount;
-      
+
       // 当日盈亏率 = 当日盈亏额 / (昨市值 + 当日∑买入)
       const denominator = yesterdayMarketValue + todayBuyAmount;
       const dayFloatRate = denominator > 0 ? dayFloatAmount / denominator : 0;
@@ -114,7 +114,7 @@ export class FinancialCalculator {
       // 昨日市值 = 0 的情况（当日新开仓）
       // 当日盈亏额 = (现价 - 持仓成本) * 股数 + 当日∑卖出 - 当日∑买入
       const dayFloatAmount = (currentPriceValue - costs.holdCost) * sharesData.totalShares + todaySellAmount - todayBuyAmount;
-      
+
       // 当日盈亏率 = 当日盈亏额 / 当日∑买入
       const dayFloatRate = todayBuyAmount > 0 ? dayFloatAmount / todayBuyAmount : 0;
 
