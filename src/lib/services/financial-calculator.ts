@@ -1,4 +1,11 @@
-import { SharesData, CostsData, ProfitLossData, StockPrice, EnhancedSharesData, DayTradingData } from "./types/calculator-types";
+import {
+  SharesData,
+  CostsData,
+  ProfitLossData,
+  StockPrice,
+  EnhancedSharesData,
+  DayTradingData,
+} from "./types/calculator-types";
 
 /**
  * 财务计算器
@@ -43,7 +50,7 @@ export class FinancialCalculator {
     const { dayFloatAmount, dayFloatRate } = this.calculateDayProfitLoss(
       sharesData as EnhancedSharesData,
       currentPrice,
-      costs
+      costs,
     );
 
     return { floatAmount, floatRate, accumAmount, accumRate, dayFloatAmount, dayFloatRate };
@@ -55,7 +62,7 @@ export class FinancialCalculator {
   static calculateEnhancedProfitLoss(
     sharesData: EnhancedSharesData,
     currentPrice: StockPrice,
-    costs: CostsData
+    costs: CostsData,
   ): ProfitLossData {
     const currentPriceValue = parseFloat(String(currentPrice.currentPrice)) || 0;
 
@@ -80,7 +87,7 @@ export class FinancialCalculator {
   private static calculateDayProfitLoss(
     sharesData: EnhancedSharesData,
     currentPrice: StockPrice,
-    costs: CostsData
+    costs: CostsData,
   ): { dayFloatAmount: number; dayFloatRate: number } {
     const currentPriceValue = parseFloat(String(currentPrice.currentPrice)) || 0;
     const dayTradingData = sharesData.dayTradingData;
@@ -113,7 +120,8 @@ export class FinancialCalculator {
     } else {
       // 昨日市值 = 0 的情况（当日新开仓）
       // 当日盈亏额 = (现价 - 持仓成本) * 股数 + 当日∑卖出 - 当日∑买入
-      const dayFloatAmount = (currentPriceValue - costs.holdCost) * sharesData.totalShares + todaySellAmount - todayBuyAmount;
+      const dayFloatAmount =
+        (currentPriceValue - costs.holdCost) * sharesData.totalShares + todaySellAmount - todayBuyAmount;
 
       // 当日盈亏率 = 当日盈亏额 / 当日∑买入
       const dayFloatRate = todayBuyAmount > 0 ? dayFloatAmount / todayBuyAmount : 0;

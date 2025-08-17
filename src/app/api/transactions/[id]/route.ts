@@ -59,10 +59,7 @@ export async function PUT(request: Request, context: RouteContext) {
 
     // 更新相关持仓数据
     try {
-      await HoldingService.updateHoldingBySymbol(
-        updatedTransaction[0].portfolioId,
-        updatedTransaction[0].symbol
-      );
+      await HoldingService.updateHoldingBySymbol(updatedTransaction[0].portfolioId, updatedTransaction[0].symbol);
     } catch (holdingError) {
       console.error("Error updating holding after transaction update:", {
         error: holdingError instanceof Error ? holdingError.message : String(holdingError),
@@ -123,10 +120,7 @@ export async function DELETE(request: Request, context: RouteContext) {
 
     // 更新相关持仓数据
     try {
-      await HoldingService.updateHoldingBySymbol(
-        transactionToDelete.portfolioId,
-        transactionToDelete.symbol
-      );
+      await HoldingService.updateHoldingBySymbol(transactionToDelete.portfolioId, transactionToDelete.symbol);
     } catch (holdingError) {
       console.error("Error updating holding after transaction deletion:", {
         error: holdingError instanceof Error ? holdingError.message : String(holdingError),

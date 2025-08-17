@@ -85,87 +85,125 @@ export async function GET(request: Request) {
   }
 }
 
+// 验证交易请求的所有必要条件
+async function validateTransactionRequest(transactionData: any, user: any) {
+  // 验证用户
+  if (!user) {
+    return {
+      success: false,
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+
+  // 验证交易数据
+  const validation = TransactionValidator.validateTransaction(transactionData);
+  if (!validation.isValid) {
+    console.error("Transaction validation failed:", {
+      error: validation.error,
+      data: transactionData,
+      timestamp: new Date().toISOString(),
+    });
+    return {
+      success: false,
+      response: NextResponse.json({ error: validation.error }, { status: 400 }),
+    };
+  }
+
+  // 验证组合所有权并获取佣金配置
+  const portfolio = await getPortfolioConfig(transactionData.portfolioId, user.id);
+  if (!portfolio) {
+    console.error("Portfolio not found:", {
+      portfolioId: transactionData.portfolioId,
+      userId: user.id,
+      timestamp: new Date().toISOString(),
+    });
+    return {
+      success: false,
+      response: NextResponse.json({ error: "Portfolio not found" }, { status: 404 }),
+    };
+  }
+
+  return {
+    success: true,
+    portfolio,
+  };
+}
+
+// 处理交易核心逻辑
+async function processTransactionCore(transactionData: any, portfolio: any) {
+  // 使用策略模式处理交易
+  const handler = TransactionHandlerFactory.getHandler(transactionData.type);
+  const processedTransaction = await handler.processTransaction(transactionData, {
+    stockCommissionRate: portfolio.stockCommissionRate,
+    stockCommissionMinAmount: portfolio.stockCommissionMinAmount,
+    etfCommissionRate: portfolio.etfCommissionRate,
+    etfCommissionMinAmount: portfolio.etfCommissionMinAmount,
+  });
+
+  // 保存交易记录
+  const newTransaction = await db.insert(transactions).values(processedTransaction).returning();
+
+  // 更新相关持仓数据
+  await updateHoldingAfterTransaction(processedTransaction.portfolioId, processedTransaction.symbol);
+
+  return {
+    success: true,
+    data: {
+      ...newTransaction[0],
+      typeName: TransactionTypeNames[newTransaction[0].type as TransactionType],
+      description: formatTransactionDescription(newTransaction[0]),
+    },
+  };
+}
+
+// 更新持仓数据（非阻断式）
+async function updateHoldingAfterTransaction(portfolioId: number, symbol: string) {
+  try {
+    await HoldingService.updateHoldingBySymbol(portfolioId, symbol);
+  } catch (holdingError) {
+    console.error("Error updating holding after transaction creation:", {
+      error: holdingError instanceof Error ? holdingError.message : String(holdingError),
+      portfolioId,
+      symbol,
+      timestamp: new Date().toISOString(),
+    });
+    // 不阻断交易记录的成功返回，但记录错误
+  }
+}
+
+// 统一错误处理
+function handleTransactionError(error: unknown): NextResponse {
+  console.error("Error creating transaction:", {
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+    timestamp: new Date().toISOString(),
+  });
+
+  // 如果是已知的业务错误（如找不到持仓），返回具体错误信息
+  if (error instanceof Error && error.message.includes("未找到")) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+}
+
 // 创建交易记录
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const transactionData = await request.json();
 
-    // 验证交易数据
-    const validation = TransactionValidator.validateTransaction(transactionData);
-    if (!validation.isValid) {
-      console.error("Transaction validation failed:", {
-        error: validation.error,
-        data: transactionData,
-        timestamp: new Date().toISOString(),
-      });
-      return NextResponse.json({ error: validation.error }, { status: 400 });
+    // 验证阶段
+    const validation = await validateTransactionRequest(transactionData, user);
+    if (!validation.success) {
+      return validation.response;
     }
 
-    // 验证组合所有权并获取佣金配置
-    const portfolio = await getPortfolioConfig(transactionData.portfolioId, user.id);
-    if (!portfolio) {
-      console.error("Portfolio not found:", {
-        portfolioId: transactionData.portfolioId,
-        userId: user.id,
-        timestamp: new Date().toISOString(),
-      });
-      return NextResponse.json({ error: "Portfolio not found" }, { status: 404 });
-    }
-
-    // 使用策略模式处理交易
-    const handler = TransactionHandlerFactory.getHandler(transactionData.type);
-    const processedTransaction = await handler.processTransaction(transactionData, {
-      stockCommissionRate: portfolio.stockCommissionRate,
-      stockCommissionMinAmount: portfolio.stockCommissionMinAmount,
-      etfCommissionRate: portfolio.etfCommissionRate,
-      etfCommissionMinAmount: portfolio.etfCommissionMinAmount,
-    });
-
-    // 保存交易记录
-    const newTransaction = await db.insert(transactions).values(processedTransaction).returning();
-
-    // 更新相关持仓数据
-    try {
-      await HoldingService.updateHoldingBySymbol(
-        processedTransaction.portfolioId,
-        processedTransaction.symbol
-      );
-    } catch (holdingError) {
-      console.error("Error updating holding after transaction creation:", {
-        error: holdingError instanceof Error ? holdingError.message : String(holdingError),
-        portfolioId: processedTransaction.portfolioId,
-        symbol: processedTransaction.symbol,
-        timestamp: new Date().toISOString(),
-      });
-      // 不阻断交易记录的成功返回，但记录错误
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        ...newTransaction[0],
-        typeName: TransactionTypeNames[newTransaction[0].type as TransactionType],
-        description: formatTransactionDescription(newTransaction[0]),
-      },
-    });
+    // 处理阶段
+    const result = await processTransactionCore(transactionData, validation.portfolio);
+    return NextResponse.json(result);
   } catch (error) {
-    console.error("Error creating transaction:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString(),
-    });
-
-    // 如果是已知的业务错误（如找不到持仓），返回具体错误信息
-    if (error instanceof Error && error.message.includes("未找到")) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return handleTransactionError(error);
   }
 }
 

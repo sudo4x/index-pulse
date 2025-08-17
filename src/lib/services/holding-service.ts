@@ -113,9 +113,7 @@ export class HoldingService {
    * 删除持仓记录
    */
   static async deleteHolding(portfolioId: number, symbol: string): Promise<void> {
-    await db
-      .delete(holdings)
-      .where(and(eq(holdings.portfolioId, portfolioId), eq(holdings.symbol, symbol)));
+    await db.delete(holdings).where(and(eq(holdings.portfolioId, portfolioId), eq(holdings.symbol, symbol)));
   }
 
   /**
@@ -139,10 +137,7 @@ export class HoldingService {
    */
   private static calculateDilutedCost(sharesData: any): number {
     if (sharesData.totalShares <= 0) return 0;
-    return (
-      (sharesData.totalBuyAmount - sharesData.totalSellAmount - sharesData.totalDividend) /
-      sharesData.totalShares
-    );
+    return (sharesData.totalBuyAmount - sharesData.totalSellAmount - sharesData.totalDividend) / sharesData.totalShares;
   }
 
   /**
@@ -157,11 +152,7 @@ export class HoldingService {
   /**
    * 在事务操作后更新相关持仓（事务安全）
    */
-  static async updateHoldingAfterTransaction(
-    portfolioId: number,
-    symbol: string,
-    dbTransaction?: any
-  ): Promise<void> {
+  static async updateHoldingAfterTransaction(portfolioId: number, symbol: string, dbTransaction?: any): Promise<void> {
     try {
       if (dbTransaction) {
         // 如果提供了数据库事务，在事务中执行更新

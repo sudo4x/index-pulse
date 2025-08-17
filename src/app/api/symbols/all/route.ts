@@ -20,16 +20,16 @@ export async function GET() {
 
     // 获取所有活跃持仓的股票代码（去重）
     const activeSymbols = await db
-      .selectDistinct({ 
+      .selectDistinct({
         symbol: holdings.symbol,
-        name: holdings.name 
+        name: holdings.name,
       })
       .from(holdings)
       .where(eq(holdings.isActive, true));
 
     // 提取股票代码并去重
-    const symbols = [...new Set(activeSymbols.map(h => h.symbol))];
-    
+    const symbols = [...new Set(activeSymbols.map((h) => h.symbol))];
+
     console.log(`返回 ${symbols.length} 个活跃股票代码:`, symbols);
 
     return NextResponse.json({
@@ -40,16 +40,15 @@ export async function GET() {
         timestamp: new Date().toISOString(),
       },
     });
-
   } catch (error) {
     console.error("Error fetching symbols:", error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: "Failed to fetch symbols",
         timestamp: new Date().toISOString(),
-      }, 
-      { status: 500 }
+      },
+      { status: 500 },
     );
   }
 }
@@ -68,16 +67,16 @@ export async function POST(request: Request) {
 
     // 获取所有活跃持仓的股票代码
     const activeSymbols = await db
-      .selectDistinct({ 
+      .selectDistinct({
         symbol: holdings.symbol,
-        name: holdings.name 
+        name: holdings.name,
       })
       .from(holdings)
       .where(eq(holdings.isActive, true));
 
     // 提取股票代码并去重
-    const symbols = [...new Set(activeSymbols.map(h => h.symbol))];
-    
+    const symbols = [...new Set(activeSymbols.map((h) => h.symbol))];
+
     console.log(`Cloudflare Workers请求: 返回 ${symbols.length} 个股票代码`);
 
     return NextResponse.json({
@@ -88,16 +87,15 @@ export async function POST(request: Request) {
         timestamp: new Date().toISOString(),
       },
     });
-
   } catch (error) {
     console.error("Error fetching symbols for Cloudflare Workers:", error);
     return NextResponse.json(
-      { 
+      {
         success: false,
         error: "Failed to fetch symbols",
         timestamp: new Date().toISOString(),
-      }, 
-      { status: 500 }
+      },
+      { status: 500 },
     );
   }
 }

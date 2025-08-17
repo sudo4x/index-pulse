@@ -102,7 +102,11 @@ export const transactions = pgTable(
     dateIdx: index("idx_transactions_date").on(table.transactionDate),
     portfolioSymbolIdx: index("idx_transactions_portfolio_symbol").on(table.portfolioId, table.symbol), // 复合索引：持仓计算查询
     portfolioDateIdx: index("idx_transactions_portfolio_date").on(table.portfolioId, table.transactionDate), // 复合索引：按时间查询
-    portfolioSymbolDateIdx: index("idx_transactions_portfolio_symbol_date").on(table.portfolioId, table.symbol, table.transactionDate), // 复合索引：全方位查询
+    portfolioSymbolDateIdx: index("idx_transactions_portfolio_symbol_date").on(
+      table.portfolioId,
+      table.symbol,
+      table.transactionDate,
+    ), // 复合索引：全方位查询
   }),
 );
 
