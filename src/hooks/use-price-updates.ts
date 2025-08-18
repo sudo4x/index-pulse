@@ -7,7 +7,6 @@ export interface UsePriceUpdatesReturn {
   // 连接状态
   isConnected: boolean;
   isConnecting: boolean;
-  isPollingMode: boolean;
   error: string | null;
 
   // 价格数据
@@ -22,8 +21,6 @@ export interface UsePriceUpdatesReturn {
   // 连接控制
   connect: () => void;
   disconnect: () => void;
-  switchToWebSocket: () => void;
-  switchToPolling: () => void;
 
   // 统计信息
   stats: {
@@ -41,10 +38,16 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
 
   const priceManagerRef = useRef<PriceManager | null>(null);
+  const optionsRef = useRef(options);
 
-  // 初始化价格管理器
+  // 更新options引用
   useEffect(() => {
-    priceManagerRef.current = new PriceManager(options);
+    optionsRef.current = options;
+  }, [options]);
+
+  // 初始化价格管理器 - 只在组件挂载时创建一次
+  useEffect(() => {
+    priceManagerRef.current = new PriceManager(optionsRef.current);
     const priceManager = priceManagerRef.current;
 
     // 设置事件监听器
@@ -61,7 +64,7 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
 
     const handleStateChanged = (state: ConnectionState) => {
       setIsConnecting(state === ConnectionState.CONNECTING);
-      setIsConnected(state === ConnectionState.CONNECTED || state === ConnectionState.POLLING);
+      setIsConnected(state === ConnectionState.CONNECTED);
     };
 
     const handleUpdated = (newPrices: Record<string, PriceUpdateData>) => {
@@ -80,33 +83,26 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
     priceManager.on(PRICE_UPDATE_EVENTS.ERROR, handleError);
 
     // 自动连接
-    if (options.autoConnect !== false) {
+    if (optionsRef.current.autoConnect !== false) {
       priceManager.connect().catch((err) => {
         console.error("自动连接失败:", err);
       });
     }
 
-    // 清理函数
+    // 清理函数 - 只在组件卸载时销毁
     return () => {
       priceManager.destroy();
     };
-  }, [options.autoConnect, options.websocketUrl, options.pollingInterval]); // 依赖配置变化
+  }, []); // 移除所有依赖，只在组件挂载时执行一次
 
-  // 页面可见性检测
+  // 页面可见性检测 - 简化逻辑，避免额外重连
   useEffect(() => {
     const handleVisibilityChange = () => {
-      const priceManager = priceManagerRef.current;
-      if (!priceManager) return;
-
       if (document.hidden) {
         console.log("页面隐藏，保持连接");
       } else {
-        console.log("页面显示，检查连接状态");
-        if (!isConnected && !isConnecting) {
-          priceManager.connect().catch((err) => {
-            console.error("页面恢复时重连失败:", err);
-          });
-        }
+        console.log("页面显示");
+        // 不再主动重连，让内部重连机制处理
       }
     };
 
@@ -114,7 +110,7 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isConnected, isConnecting]);
+  }, []);
 
   const subscribe = useCallback((symbols: string[]) => {
     priceManagerRef.current?.subscribe(symbols).catch((err) => {
@@ -143,20 +139,6 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
     });
   }, []);
 
-  const switchToWebSocket = useCallback(() => {
-    priceManagerRef.current?.switchToWebSocket().catch((err) => {
-      console.error("切换到WebSocket失败:", err);
-      setError(`切换到WebSocket失败: ${err.message}`);
-    });
-  }, []);
-
-  const switchToPolling = useCallback(() => {
-    priceManagerRef.current?.switchToPolling().catch((err) => {
-      console.error("切换到轮询模式失败:", err);
-      setError(`切换到轮询模式失败: ${err.message}`);
-    });
-  }, []);
-
   const stats = priceManagerRef.current?.stats ?? {
     totalSubscriptions: 0,
     totalUpdates: 0,
@@ -164,12 +146,10 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
   };
 
   const subscribedSymbols = priceManagerRef.current?.subscribedSymbols ?? [];
-  const isPollingMode = priceManagerRef.current?.isPollingMode ?? false;
 
   return {
     isConnected,
     isConnecting,
-    isPollingMode,
     error,
     prices,
     lastUpdate,
@@ -178,8 +158,6 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
     unsubscribe,
     connect,
     disconnect,
-    switchToWebSocket,
-    switchToPolling,
     stats,
   };
 }

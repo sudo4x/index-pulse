@@ -37,13 +37,11 @@ export enum ConnectionState {
   DISCONNECTED = "disconnected",
   CONNECTING = "connecting",
   CONNECTED = "connected",
-  POLLING = "polling",
   ERROR = "error",
 }
 
 export interface PriceProviderConfig {
   websocketUrl?: string;
-  pollingInterval?: number;
   autoConnect?: boolean;
   heartbeatInterval?: number;
   reconnectDelay?: number;

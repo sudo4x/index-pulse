@@ -1,6 +1,5 @@
 import { EventEmitter } from "events";
 
-import { PriceProvider } from "./price-provider";
 import { DEFAULT_WEBSOCKET_CONFIG, PRICE_UPDATE_EVENTS } from "./websocket-config";
 import {
   PriceUpdateData,
@@ -10,11 +9,14 @@ import {
   PriceProviderConfig,
 } from "./websocket-types";
 
-export class WebSocketPriceProvider extends EventEmitter implements PriceProvider {
+export class WebSocketPriceProvider extends EventEmitter {
   private ws: WebSocket | null = null;
   private config: Required<PriceProviderConfig>;
   private reconnectTimeout: NodeJS.Timeout | null = null;
   private heartbeatInterval: NodeJS.Timeout | null = null;
+  private reconnectAttempts: number = 0;
+  private maxReconnectAttempts: number = 3;
+  private isDestroyed: boolean = false;
 
   private connectionState: ConnectionState = ConnectionState.DISCONNECTED;
   private connectionStats: ConnectionStats = {
@@ -47,6 +49,10 @@ export class WebSocketPriceProvider extends EventEmitter implements PriceProvide
   }
 
   async connect(): Promise<void> {
+    if (this.isDestroyed) {
+      throw new Error("Provider has been destroyed");
+    }
+
     if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
       return;
     }
@@ -60,6 +66,7 @@ export class WebSocketPriceProvider extends EventEmitter implements PriceProvide
         this.ws.onopen = () => {
           this.setState(ConnectionState.CONNECTED);
           this.connectionStats.connectionTime = new Date().toISOString();
+          this.reconnectAttempts = 0; // 重置重连计数
           this.emit(PRICE_UPDATE_EVENTS.CONNECTED);
           this.startHeartbeat();
           resolve();
@@ -69,7 +76,9 @@ export class WebSocketPriceProvider extends EventEmitter implements PriceProvide
         this.ws.onclose = this.handleClose.bind(this);
         this.ws.onerror = (error) => {
           this.setState(ConnectionState.ERROR);
-          this.emit(PRICE_UPDATE_EVENTS.ERROR, "WebSocket连接错误");
+          const errorMessage = `WebSocket连接失败: ${this.config.websocketUrl}。请检查服务器是否运行。`;
+          console.warn(errorMessage, error);
+          this.emit(PRICE_UPDATE_EVENTS.ERROR, errorMessage);
           reject(error);
         };
       } catch (error) {
@@ -83,8 +92,9 @@ export class WebSocketPriceProvider extends EventEmitter implements PriceProvide
     this.clearReconnectTimeout();
     this.clearHeartbeat();
 
-    if (this.ws) {
-      this.ws.close(1000, "用户主动断开");
+    if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
+      // 使用正常关闭码，避免触发重连
+      this.ws.close(1000, "正常关闭");
       this.ws = null;
     }
 
@@ -125,8 +135,20 @@ export class WebSocketPriceProvider extends EventEmitter implements PriceProvide
   }
 
   destroy(): void {
-    this.disconnect();
+    this.isDestroyed = true;
+
+    // 先清理定时器和监听器，再断开连接
+    this.clearReconnectTimeout();
+    this.clearHeartbeat();
     this.removeAllListeners();
+
+    // 最后关闭 WebSocket 连接
+    if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
+      this.ws.close(1000, "组件销毁");
+      this.ws = null;
+    }
+
+    this.setState(ConnectionState.DISCONNECTED);
   }
 
   private setState(newState: ConnectionState): void {
@@ -229,9 +251,12 @@ export class WebSocketPriceProvider extends EventEmitter implements PriceProvide
     this.clearHeartbeat();
     this.ws = null;
 
-    if (event.code !== 1000) {
-      this.emit(PRICE_UPDATE_EVENTS.ERROR, "连接断开，尝试重连...");
+    // 只有在非正常关闭且未被销毁且重连次数未达上限时才重连
+    if (!this.isDestroyed && event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+      this.emit(PRICE_UPDATE_EVENTS.ERROR, `连接断开，尝试第${this.reconnectAttempts + 1}次重连...`);
       this.scheduleReconnect();
+    } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      this.emit(PRICE_UPDATE_EVENTS.ERROR, "WebSocket重连次数已达上限，将切换到轮询模式");
     }
   }
 
@@ -251,10 +276,17 @@ export class WebSocketPriceProvider extends EventEmitter implements PriceProvide
   }
 
   private scheduleReconnect(): void {
+    if (this.isDestroyed || this.reconnectAttempts >= this.maxReconnectAttempts) {
+      return;
+    }
+
+    this.reconnectAttempts++;
     this.reconnectTimeout = setTimeout(() => {
-      this.connect().catch((error) => {
-        console.error("重连失败:", error);
-      });
+      if (!this.isDestroyed) {
+        this.connect().catch((error) => {
+          console.error(`第${this.reconnectAttempts}次重连失败:`, error);
+        });
+      }
     }, this.config.reconnectDelay);
   }
 
