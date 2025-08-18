@@ -25,7 +25,6 @@ export function HoldingsTableContainer({ portfolioId, showHistorical }: Holdings
   const {
     isConnected,
     isConnecting,
-    isPollingMode,
     error: priceError,
     prices,
     subscribe: subscribeSymbols,
@@ -161,7 +160,6 @@ export function HoldingsTableContainer({ portfolioId, showHistorical }: Holdings
           <PriceStatusIndicator
             isConnected={isConnected}
             isConnecting={isConnecting}
-            isPollingMode={isPollingMode}
             error={priceError}
             totalUpdates={stats.totalUpdates}
           />

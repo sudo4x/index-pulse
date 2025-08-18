@@ -3,18 +3,11 @@ import { Badge } from "@/components/ui/badge";
 interface PriceStatusIndicatorProps {
   isConnected: boolean;
   isConnecting: boolean;
-  isPollingMode: boolean;
   error: string | null;
   totalUpdates: number;
 }
 
-export function PriceStatusIndicator({
-  isConnected,
-  isConnecting,
-  isPollingMode,
-  error,
-  totalUpdates,
-}: PriceStatusIndicatorProps) {
+export function PriceStatusIndicator({ isConnected, isConnecting, error, totalUpdates }: PriceStatusIndicatorProps) {
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
@@ -24,19 +17,14 @@ export function PriceStatusIndicator({
             连接中...
           </Badge>
         )}
-        {isConnected && !isPollingMode && (
+        {isConnected && (
           <Badge variant="default" className="bg-green-500 text-xs">
-            实时更新
+            WebSocket 实时
           </Badge>
         )}
-        {isPollingMode && (
-          <Badge variant="secondary" className="bg-blue-500 text-xs text-white">
-            轮询模式
-          </Badge>
-        )}
-        {error && !isConnected && !isPollingMode && (
+        {error && !isConnected && (
           <Badge variant="destructive" className="text-xs">
-            离线模式
+            连接失败
           </Badge>
         )}
       </div>
