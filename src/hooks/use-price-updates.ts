@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import { PriceManager, PriceManagerOptions, PriceUpdateData, ConnectionState } from "@/lib/services/price-manager";
+import { GlobalPriceManager } from "@/lib/services/price-manager/global-price-manager";
 import { PRICE_UPDATE_EVENTS } from "@/lib/services/price-manager/websocket-config";
 
 export interface UsePriceUpdatesReturn {
@@ -45,16 +46,11 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
     optionsRef.current = options;
   }, [options]);
 
-  // 初始化价格管理器 - 只在组件挂载时创建一次
+  // 初始化价格管理器 - 使用全局单例
   useEffect(() => {
-    if (priceManagerRef.current) {
-      console.warn("PriceManager 已存在，跳过重复创建");
-      return;
-    }
-
-    console.log("创建 PriceManager");
-    priceManagerRef.current = new PriceManager(optionsRef.current);
-    const priceManager = priceManagerRef.current;
+    console.log("获取全局 PriceManager 实例");
+    const priceManager = GlobalPriceManager.getInstance(optionsRef.current);
+    priceManagerRef.current = priceManager;
 
     // 设置事件监听器
     const handleConnected = () => {
@@ -102,11 +98,18 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
       }
     }, 100); // 100ms 延迟
 
-    // 清理函数 - 只在组件卸载时销毁
+    // 清理函数 - 移除监听器并释放引用
     return () => {
       clearTimeout(autoConnectTimer);
-      console.log("销毁 PriceManager");
-      priceManager.destroy();
+      if (priceManager) {
+        priceManager.off(PRICE_UPDATE_EVENTS.CONNECTED, handleConnected);
+        priceManager.off(PRICE_UPDATE_EVENTS.DISCONNECTED, handleDisconnected);
+        priceManager.off(PRICE_UPDATE_EVENTS.STATE_CHANGED, handleStateChanged);
+        priceManager.off(PRICE_UPDATE_EVENTS.UPDATED, handleUpdated);
+        priceManager.off(PRICE_UPDATE_EVENTS.ERROR, handleError);
+      }
+      console.log("释放 PriceManager 引用");
+      GlobalPriceManager.releaseInstance();
       priceManagerRef.current = null;
     };
   }, []); // 移除所有依赖，只在组件挂载时执行一次
