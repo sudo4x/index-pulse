@@ -147,12 +147,12 @@ export class PriceManager extends EventEmitter {
       this.emit(PRICE_UPDATE_EVENTS.DISCONNECTED);
     });
 
-    this.currentProvider.on(PRICE_UPDATE_EVENTS.UPDATED, (prices: Record<string, PriceUpdateData>) => {
-      this.emit(PRICE_UPDATE_EVENTS.UPDATED, prices);
+    this.currentProvider.on(PRICE_UPDATE_EVENTS.UPDATED, (prices: unknown) => {
+      this.emit(PRICE_UPDATE_EVENTS.UPDATED, prices as Record<string, PriceUpdateData>);
     });
 
-    this.currentProvider.on(PRICE_UPDATE_EVENTS.ERROR, (error: string) => {
-      this.emit(PRICE_UPDATE_EVENTS.ERROR, error);
+    this.currentProvider.on(PRICE_UPDATE_EVENTS.ERROR, (error: unknown) => {
+      this.emit(PRICE_UPDATE_EVENTS.ERROR, error as string);
 
       // 如果WebSocket出错且启用了回退，尝试切换到轮询
       if (
@@ -167,7 +167,7 @@ export class PriceManager extends EventEmitter {
       }
     });
 
-    this.currentProvider.on(PRICE_UPDATE_EVENTS.STATE_CHANGED, (state: ConnectionState) => {
+    this.currentProvider.on(PRICE_UPDATE_EVENTS.STATE_CHANGED, (state: unknown) => {
       this.emit(PRICE_UPDATE_EVENTS.STATE_CHANGED, state);
     });
   }

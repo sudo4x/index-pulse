@@ -100,11 +100,16 @@ export class HoldingService {
    * 获取投资组合的所有持仓记录
    */
   static async getHoldingsByPortfolio(portfolioId: number, includeHistorical: boolean = false): Promise<Holding[]> {
-    let query = db.select().from(holdings).where(eq(holdings.portfolioId, portfolioId));
+    const conditions = [eq(holdings.portfolioId, portfolioId)];
 
     if (!includeHistorical) {
-      query = query.where(eq(holdings.isActive, true));
+      conditions.push(eq(holdings.isActive, true));
     }
+
+    const query = db
+      .select()
+      .from(holdings)
+      .where(and(...conditions));
 
     return await query;
   }
