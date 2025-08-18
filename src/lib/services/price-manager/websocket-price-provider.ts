@@ -53,20 +53,46 @@ export class WebSocketPriceProvider extends EventEmitter {
       throw new Error("Provider has been destroyed");
     }
 
-    if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
+    // 如果已经在连接或已连接，直接返回
+    if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
+      console.log("WebSocket already connecting or connected, skipping...");
       return;
     }
 
+    // 清理之前的连接
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+
     this.setState(ConnectionState.CONNECTING);
+    console.log("开始建立 WebSocket 连接:", this.config.websocketUrl);
 
     return new Promise((resolve, reject) => {
+      // 设置连接超时
+      const connectionTimeout = setTimeout(() => {
+        if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
+          console.warn("WebSocket 连接超时");
+          this.ws.close();
+          reject(new Error("Connection timeout"));
+        }
+      }, 10000); // 10秒超时
+
       try {
         this.ws = new WebSocket(this.config.websocketUrl);
 
         this.ws.onopen = () => {
+          clearTimeout(connectionTimeout);
+          if (this.isDestroyed) {
+            console.log("Provider已销毁，关闭连接");
+            this.ws?.close();
+            return;
+          }
+
           this.setState(ConnectionState.CONNECTED);
           this.connectionStats.connectionTime = new Date().toISOString();
           this.reconnectAttempts = 0; // 重置重连计数
+          console.log("WebSocket 连接成功");
           this.emit(PRICE_UPDATE_EVENTS.CONNECTED);
           this.startHeartbeat();
           resolve();
@@ -75,6 +101,7 @@ export class WebSocketPriceProvider extends EventEmitter {
         this.ws.onmessage = this.handleMessage.bind(this);
         this.ws.onclose = this.handleClose.bind(this);
         this.ws.onerror = (error) => {
+          clearTimeout(connectionTimeout);
           this.setState(ConnectionState.ERROR);
           const errorMessage = `WebSocket连接失败: ${this.config.websocketUrl}。请检查服务器是否运行。`;
           console.warn(errorMessage, error);
@@ -82,6 +109,7 @@ export class WebSocketPriceProvider extends EventEmitter {
           reject(error);
         };
       } catch (error) {
+        clearTimeout(connectionTimeout);
         this.setState(ConnectionState.ERROR);
         reject(error);
       }
@@ -111,6 +139,13 @@ export class WebSocketPriceProvider extends EventEmitter {
   async subscribe(symbols: string[]): Promise<void> {
     if (symbols.length === 0) return;
 
+    // 等待连接建立
+    if (this.connectionState !== ConnectionState.CONNECTED) {
+      console.warn(`订阅被跳过，当前连接状态: ${this.connectionState}, symbols:`, symbols);
+      return;
+    }
+
+    console.log("发送订阅请求:", symbols);
     const success = this.sendMessage({
       type: "subscribe",
       symbols: symbols.map((s) => s.toUpperCase()),
@@ -124,13 +159,20 @@ export class WebSocketPriceProvider extends EventEmitter {
   async unsubscribe(symbols: string[]): Promise<void> {
     if (symbols.length === 0) return;
 
+    // 只有在连接状态下才发送取消订阅
+    if (this.connectionState !== ConnectionState.CONNECTED) {
+      console.warn(`取消订阅被跳过，当前连接状态: ${this.connectionState}, symbols:`, symbols);
+      return;
+    }
+
+    console.log("发送取消订阅请求:", symbols);
     const success = this.sendMessage({
       type: "unsubscribe",
       symbols: symbols.map((s) => s.toUpperCase()),
     });
 
     if (!success) {
-      throw new Error("取消订阅失败：连接未建立");
+      console.warn("取消订阅失败：连接未建立");
     }
   }
 

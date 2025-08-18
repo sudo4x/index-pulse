@@ -9,6 +9,7 @@ export type PriceManagerOptions = PriceProviderConfig;
 export class PriceManager extends EventEmitter {
   private webSocketProvider: WebSocketPriceProvider;
   private options: Required<PriceProviderConfig>;
+  private destroyed: boolean = false;
 
   constructor(options: PriceManagerOptions = {}) {
     super();
@@ -52,6 +53,10 @@ export class PriceManager extends EventEmitter {
     return false; // 不再有轮询模式
   }
 
+  get isDestroyed(): boolean {
+    return this.destroyed;
+  }
+
   async connect(): Promise<void> {
     console.log("尝试连接到 WebSocket...");
     await this.webSocketProvider.connect();
@@ -70,6 +75,7 @@ export class PriceManager extends EventEmitter {
   }
 
   destroy(): void {
+    this.destroyed = true;
     this.webSocketProvider.destroy();
     this.removeAllListeners();
   }
