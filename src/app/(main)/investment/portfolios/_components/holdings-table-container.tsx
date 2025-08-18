@@ -22,15 +22,7 @@ export function HoldingsTableContainer({ portfolioId, showHistorical }: Holdings
   const { toast } = useToast();
 
   // 使用新的价格更新Hook
-  const {
-    isConnected,
-    isConnecting,
-    error: priceError,
-    prices,
-    subscribe: subscribeSymbols,
-    unsubscribe: unsubscribeSymbols,
-    stats,
-  } = usePriceUpdates();
+  const { isConnected, isConnecting, error: priceError, prices, subscribe, unsubscribe, stats } = usePriceUpdates();
 
   const fetchHoldings = useCallback(async () => {
     if (!portfolioId || portfolioId === "undefined") {
@@ -85,50 +77,30 @@ export function HoldingsTableContainer({ portfolioId, showHistorical }: Holdings
     };
   }, [portfolioId, showHistorical, fetchHoldings]);
 
-  // 管理价格订阅
-  const subscribedSymbolsRef = useRef<string[]>([]);
+  // 管理价格订阅 - 简化逻辑，只需要在连接成功时订阅一次
+  const hasSubscribedRef = useRef(false);
 
   useEffect(() => {
-    // 只在连接成功后才订阅
-    if (!isConnected) return;
-
-    if (holdings.length > 0) {
-      const symbols = holdings.map((holding) => holding.symbol);
-      const currentSymbols = subscribedSymbolsRef.current;
-
-      // 计算需要新增和移除的symbols
-      const toSubscribe = symbols.filter((symbol) => !currentSymbols.includes(symbol));
-      const toUnsubscribe = currentSymbols.filter((symbol) => !symbols.includes(symbol));
-
-      // 只有在有变化时才执行订阅操作
-      if (toSubscribe.length > 0) {
-        console.log("订阅新股票:", toSubscribe);
-        subscribeSymbols(toSubscribe);
-      }
-
-      if (toUnsubscribe.length > 0) {
-        console.log("取消订阅股票:", toUnsubscribe);
-        unsubscribeSymbols(toUnsubscribe);
-      }
-
-      subscribedSymbolsRef.current = symbols;
-    } else if (subscribedSymbolsRef.current.length > 0) {
-      // 没有持仓时，取消所有订阅
-      console.log("取消所有订阅:", subscribedSymbolsRef.current);
-      unsubscribeSymbols(subscribedSymbolsRef.current);
-      subscribedSymbolsRef.current = [];
+    // 只在连接成功且有持仓时才订阅
+    if (isConnected && holdings.length > 0 && !hasSubscribedRef.current) {
+      console.log("连接成功，订阅所有价格数据");
+      subscribe();
+      hasSubscribedRef.current = true;
+    } else if (!isConnected) {
+      // 连接断开时重置订阅状态
+      hasSubscribedRef.current = false;
     }
-  }, [holdings, isConnected, subscribeSymbols, unsubscribeSymbols]);
+  }, [isConnected, holdings.length, subscribe]);
 
   // 组件卸载时清理订阅
   useEffect(() => {
     return () => {
-      if (subscribedSymbolsRef.current.length > 0) {
-        console.log("组件卸载，清理订阅:", subscribedSymbolsRef.current);
-        unsubscribeSymbols(subscribedSymbolsRef.current);
+      if (hasSubscribedRef.current) {
+        console.log("组件卸载，取消订阅");
+        unsubscribe();
       }
     };
-  }, [unsubscribeSymbols]);
+  }, [unsubscribe]);
 
   // 价格更新处理
   useEffect(() => {

@@ -25,7 +25,7 @@ export class WebSocketPriceProvider extends EventEmitter {
     connectionTime: null,
   };
   private priceData: Record<string, PriceUpdateData> = {};
-  private subscribedSymbolsList: string[] = [];
+  private isSubscribed: boolean = false;
 
   constructor(config: Partial<PriceProviderConfig> = {}) {
     super();
@@ -45,7 +45,8 @@ export class WebSocketPriceProvider extends EventEmitter {
   }
 
   get subscribedSymbols(): string[] {
-    return [...this.subscribedSymbolsList];
+    // 返回空数组，因为我们不再跟踪特定股票订阅
+    return [];
   }
 
   async connect(): Promise<void> {
@@ -127,7 +128,7 @@ export class WebSocketPriceProvider extends EventEmitter {
     }
 
     this.setState(ConnectionState.DISCONNECTED);
-    this.subscribedSymbolsList = [];
+    this.isSubscribed = false;
     this.priceData = {};
     this.connectionStats = {
       totalSubscriptions: 0,
@@ -136,19 +137,16 @@ export class WebSocketPriceProvider extends EventEmitter {
     };
   }
 
-  async subscribe(symbols: string[]): Promise<void> {
-    if (symbols.length === 0) return;
-
+  async subscribe(): Promise<void> {
     // 等待连接建立
     if (this.connectionState !== ConnectionState.CONNECTED) {
-      console.warn(`订阅被跳过，当前连接状态: ${this.connectionState}, symbols:`, symbols);
+      console.warn(`订阅被跳过，当前连接状态: ${this.connectionState}`);
       return;
     }
 
-    console.log("发送订阅请求:", symbols);
+    console.log("发送订阅请求 - 订阅所有价格数据");
     const success = this.sendMessage({
       type: "subscribe",
-      symbols: symbols.map((s) => s.toUpperCase()),
     });
 
     if (!success) {
@@ -156,19 +154,16 @@ export class WebSocketPriceProvider extends EventEmitter {
     }
   }
 
-  async unsubscribe(symbols: string[]): Promise<void> {
-    if (symbols.length === 0) return;
-
+  async unsubscribe(): Promise<void> {
     // 只有在连接状态下才发送取消订阅
     if (this.connectionState !== ConnectionState.CONNECTED) {
-      console.warn(`取消订阅被跳过，当前连接状态: ${this.connectionState}, symbols:`, symbols);
+      console.warn(`取消订阅被跳过，当前连接状态: ${this.connectionState}`);
       return;
     }
 
-    console.log("发送取消订阅请求:", symbols);
+    console.log("发送取消订阅请求 - 停止接收价格数据");
     const success = this.sendMessage({
       type: "unsubscribe",
-      symbols: symbols.map((s) => s.toUpperCase()),
     });
 
     if (!success) {
@@ -231,19 +226,13 @@ export class WebSocketPriceProvider extends EventEmitter {
   private processMessage(message: WebSocketMessage): void {
     switch (message.type) {
       case "subscribed":
-        if (message.symbols) {
-          this.subscribedSymbolsList = [...new Set([...this.subscribedSymbolsList, ...message.symbols])];
-          this.connectionStats.totalSubscriptions = this.subscribedSymbolsList.length;
-        }
+        this.isSubscribed = true;
+        console.log("订阅成功 - 开始接收所有价格数据");
         break;
 
       case "unsubscribed":
-        if (message.symbols) {
-          this.subscribedSymbolsList = this.subscribedSymbolsList.filter(
-            (symbol) => !message.symbols!.includes(symbol),
-          );
-          this.connectionStats.totalSubscriptions = this.subscribedSymbolsList.length;
-        }
+        this.isSubscribed = false;
+        console.log("取消订阅成功 - 停止接收价格数据");
         break;
 
       case "priceUpdate":

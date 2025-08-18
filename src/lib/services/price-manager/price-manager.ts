@@ -66,12 +66,12 @@ export class PriceManager extends EventEmitter {
     await this.webSocketProvider.disconnect();
   }
 
-  async subscribe(symbols: string[]): Promise<void> {
-    await this.webSocketProvider.subscribe(symbols);
+  async subscribe(): Promise<void> {
+    await this.webSocketProvider.subscribe();
   }
 
-  async unsubscribe(symbols: string[]): Promise<void> {
-    await this.webSocketProvider.unsubscribe(symbols);
+  async unsubscribe(): Promise<void> {
+    await this.webSocketProvider.unsubscribe();
   }
 
   destroy(): void {

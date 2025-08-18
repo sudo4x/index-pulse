@@ -15,8 +15,8 @@ export interface UsePriceUpdatesReturn {
 
   // 订阅管理
   subscribedSymbols: string[];
-  subscribe: (symbols: string[]) => void;
-  unsubscribe: (symbols: string[]) => void;
+  subscribe: () => void;
+  unsubscribe: () => void;
 
   // 连接控制
   connect: () => void;
@@ -128,15 +128,15 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
     };
   }, []);
 
-  const subscribe = useCallback((symbols: string[]) => {
-    priceManagerRef.current?.subscribe(symbols).catch((err) => {
+  const subscribe = useCallback(() => {
+    priceManagerRef.current?.subscribe().catch((err) => {
       console.error("订阅失败:", err);
       setError(`订阅失败: ${err.message}`);
     });
   }, []);
 
-  const unsubscribe = useCallback((symbols: string[]) => {
-    priceManagerRef.current?.unsubscribe(symbols).catch((err) => {
+  const unsubscribe = useCallback(() => {
+    priceManagerRef.current?.unsubscribe().catch((err) => {
       console.error("取消订阅失败:", err);
       setError(`取消订阅失败: ${err.message}`);
     });
