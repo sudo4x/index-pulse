@@ -1,13 +1,4 @@
-export interface StockPrice {
-  symbol: string;
-  name: string;
-  currentPrice: number;
-  change: number;
-  changePercent: number;
-  previousClose: number; // 昨日收盘价
-  limitUp: string; // 涨停价
-  limitDown: string; // 跌停价
-}
+import { StockPrice } from "./types/calculator-types";
 
 /**
  * 统一的股票价格服务

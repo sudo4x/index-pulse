@@ -4,10 +4,11 @@ import { eq, and } from "drizzle-orm";
 
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
-import { portfolios } from "@/lib/db/schema";
+import { Holding, portfolios } from "@/lib/db/schema";
 import { FinancialCalculator } from "@/lib/services/financial-calculator";
 import { HoldingService } from "@/lib/services/holding-service";
 import { StockPriceService } from "@/lib/services/stock-price-service";
+import { StockPrice } from "@/lib/services/types/calculator-types";
 
 // 验证请求参数
 function validateRequestParams(portfolioId: string | null) {
@@ -92,7 +93,7 @@ async function getHoldingsWithRealTimeData(portfolioIdInt: number, includeHistor
 }
 
 // 转换持仓数据
-function transformHoldingData(holding: any, currentPrice: any) {
+function transformHoldingData(holding: Holding, currentPrice: StockPrice) {
   // 转换数据库 decimal 字段为 number
   const holdingData = {
     shares: parseFloat(String(holding.shares)),
