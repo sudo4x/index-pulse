@@ -49,10 +49,6 @@ export class PriceManager extends EventEmitter {
     return true; // 总是 WebSocket 模式
   }
 
-  get isPollingMode(): boolean {
-    return false; // 不再有轮询模式
-  }
-
   get isDestroyed(): boolean {
     return this.destroyed;
   }

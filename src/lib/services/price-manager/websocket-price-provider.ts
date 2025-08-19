@@ -287,7 +287,7 @@ export class WebSocketPriceProvider extends EventEmitter {
       this.emit(PRICE_UPDATE_EVENTS.ERROR, `连接断开，尝试第${this.reconnectAttempts + 1}次重连...`);
       this.scheduleReconnect();
     } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      this.emit(PRICE_UPDATE_EVENTS.ERROR, "WebSocket重连次数已达上限，将切换到轮询模式");
+      this.emit(PRICE_UPDATE_EVENTS.ERROR, "WebSocket重连次数已达上限");
     }
   }
 
