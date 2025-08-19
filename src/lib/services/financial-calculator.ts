@@ -30,6 +30,69 @@ export class FinancialCalculator {
   }
 
   /**
+   * 基于 holdings 表数据计算成本（直接使用数据库中的汇总数据）
+   */
+  static calculateCostsFromHoldings(holdingData: {
+    shares: number;
+    totalBuyAmount: number;
+    totalSellAmount: number;
+    totalDividend: number;
+    totalCommission: number;
+    totalTax: number;
+  }): { holdCost: number; dilutedCost: number } {
+    // 持仓成本 = (总买入金额 + 佣金 + 税费) / 持股数（需要考虑拆股合股后的实际买入股数，这里简化处理）
+    // 注意：这里使用当前持股数作为分母，这是一个简化处理
+    const totalCost = holdingData.totalBuyAmount + holdingData.totalCommission + holdingData.totalTax;
+    const holdCost = holdingData.shares > 0 ? totalCost / holdingData.shares : 0;
+
+    // 摊薄成本 = (总买入金额 + 佣金 + 税费 - 总卖出金额 - 总现金股息) / 持股数
+    const dilutedCost =
+      holdingData.shares > 0
+        ? (totalCost - holdingData.totalSellAmount - holdingData.totalDividend) / holdingData.shares
+        : 0;
+
+    return { holdCost, dilutedCost };
+  }
+
+  /**
+   * 基于 holdings 数据计算盈亏（使用数据库汇总数据，性能更高）
+   */
+  static calculateProfitLossFromHoldings(
+    holdingData: {
+      shares: number;
+      totalBuyAmount: number;
+      totalSellAmount: number;
+      totalDividend: number;
+      totalCommission: number;
+      totalTax: number;
+    },
+    currentPrice: StockPrice,
+    holdCost: number,
+    dilutedCost: number,
+    marketValue: number,
+  ): ProfitLossData {
+    const currentPriceValue = parseFloat(String(currentPrice.currentPrice)) || 0;
+
+    // 浮动盈亏 = (当前价 - 持仓成本) × 持股数
+    const floatAmount = (currentPriceValue - holdCost) * holdingData.shares;
+    const floatRate = holdCost > 0 ? floatAmount / (holdCost * holdingData.shares) : 0;
+
+    // 累计盈亏 = 多仓市值 - 总买入金额 - 总佣金 - 总税费 + 总卖出金额 + 总现金股息
+    const totalCost = holdingData.totalBuyAmount + holdingData.totalCommission + holdingData.totalTax;
+    const accumAmount = marketValue - totalCost + holdingData.totalSellAmount + holdingData.totalDividend;
+    const accumRate = totalCost > 0 ? accumAmount / totalCost : 0;
+
+    // 当日盈亏计算（简化版本，不支持精确的昨日市值算法）
+    const dayFloatAmount = currentPrice.change * holdingData.shares;
+    const dayFloatRate =
+      currentPrice.currentPrice > 0
+        ? dayFloatAmount / ((currentPrice.currentPrice - currentPrice.change) * holdingData.shares)
+        : 0;
+
+    return { floatAmount, floatRate, accumAmount, accumRate, dayFloatAmount, dayFloatRate };
+  }
+
+  /**
    * 计算盈亏数据（基础版本）
    */
   static calculateProfitLoss(

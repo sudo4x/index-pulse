@@ -51,6 +51,8 @@ export const holdings = pgTable(
     totalBuyAmount: decimal("total_buy_amount", { precision: 18, scale: 2 }).notNull().default("0"), // 总买入金额
     totalSellAmount: decimal("total_sell_amount", { precision: 18, scale: 2 }).notNull().default("0"), // 总卖出金额
     totalDividend: decimal("total_dividend", { precision: 18, scale: 2 }).notNull().default("0"), // 总现金股息
+    totalCommission: decimal("total_commission", { precision: 18, scale: 2 }).notNull().default("0"), // 总佣金
+    totalTax: decimal("total_tax", { precision: 18, scale: 2 }).notNull().default("0"), // 总税费
     isActive: boolean("is_active").notNull().default(true), // 是否活跃持仓
     openTime: timestamp("open_time").notNull(), // 首次买入时间
     liquidationTime: timestamp("liquidation_time"), // 清仓时间

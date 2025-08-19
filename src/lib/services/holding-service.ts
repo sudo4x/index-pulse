@@ -45,6 +45,8 @@ export class HoldingService {
       totalBuyAmount: sharesData.totalBuyAmount.toString(),
       totalSellAmount: sharesData.totalSellAmount.toString(),
       totalDividend: sharesData.totalDividend.toString(),
+      totalCommission: sharesData.totalCommission.toString(),
+      totalTax: sharesData.totalTax.toString(),
       isActive: sharesData.totalShares > 0,
       openTime: sharesData.openTime ?? new Date(),
       liquidationTime: sharesData.totalShares <= 0 ? new Date() : null,

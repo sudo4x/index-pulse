@@ -44,3 +44,14 @@ portfolio-calculator.ts 中 getStockPrice(symbol: string)这个函数目前是�
 @src/app/(main)/investment/portfolios/_components/holdings-table-container.tsx 中112行开始，只是重新算了市值和浮动盈亏，累计盈亏和当日盈亏相关的没有根据当前价格重算。需要你根据计算公式 @docs/计算公式.md 还有 @src/lib/services/financial-calculator.ts 的相关实现，完善这些重算逻辑
 
 @src/lib/services/holding-service.ts 第42、43行对dilutedCost和holdCost的计算使用了内部的私有函数，这个不对，应该使用 @src/lib/services/financial-calculator.ts 中的calculateCosts 计算成本的函数来实现才对。使用统一的方法，而不是分散在各个地方
+
+
+@src/app/api/holdings/route.ts 获取投资组合持仓信息 这个接口的数据逻辑是：通过查询品种的所有交易记录重新计算得出。
+其实这个没必要，可以通过holdings现有的字段配合当前最新价格就可以计算得出，不过目前holdings表缺少总税费和总佣金字段需要进行部分改造。
+首先， holdings 表新增总税费和总佣金两个字段，然后在新增修改交易记录时会同步更新holdings表那些地方，也把税费和佣金计算出来保存到holdings表中
+第二，修改 获取投资组合持仓信息 这个接口的数据逻辑，直接使用holdings表中的数据和当前最新价格进行计算
+补充：相关计算方法参考 @src/lib/services/financial-calculator.ts 和 @docs/计算公式.md 如果我遗漏的地方，你一起帮我补充完整
+
+
+
+@src/lib/services/stock-price-service.ts 改造计划

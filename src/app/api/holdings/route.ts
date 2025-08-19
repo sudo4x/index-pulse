@@ -4,8 +4,10 @@ import { eq, and } from "drizzle-orm";
 
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
-import { portfolios, transactions } from "@/lib/db/schema";
-import { PortfolioCalculator } from "@/lib/services/portfolio-calculator";
+import { portfolios } from "@/lib/db/schema";
+import { HoldingService } from "@/lib/services/holding-service";
+import { FinancialCalculator } from "@/lib/services/financial-calculator";
+import { StockPriceService } from "@/lib/services/stock-price-service";
 
 // 验证请求参数
 function validateRequestParams(portfolioId: string | null) {
@@ -44,36 +46,94 @@ async function validatePortfolioOwnership(portfolioIdInt: number, userId: number
   return { valid: true };
 }
 
-// 获取组合中的股票代码列表
-async function getPortfolioSymbols(portfolioIdInt: number) {
-  return await db
-    .selectDistinct({ symbol: transactions.symbol })
-    .from(transactions)
-    .where(eq(transactions.portfolioId, portfolioIdInt));
-}
-
-// 计算单个股票持仓
-async function calculateSingleHolding(portfolioId: string, symbol: string) {
+// 获取持仓数据并计算实时信息
+async function getHoldingsWithRealTimeData(portfolioIdInt: number, includeHistorical: boolean) {
   try {
-    return await PortfolioCalculator.calculateHoldingStats(portfolioId, symbol);
+    // 1. 直接从 holdings 表查询持仓数据
+    const holdingsFromDB = await HoldingService.getHoldingsByPortfolio(portfolioIdInt, includeHistorical);
+
+    if (holdingsFromDB.length === 0) {
+      return [];
+    }
+
+    // 2. 批量获取股价
+    const symbols = holdingsFromDB.map((h) => h.symbol);
+    const prices = await StockPriceService.getMultipleStockPrices(symbols);
+
+    // 3. 为每个持仓计算实时数据
+    const results = await Promise.all(
+      holdingsFromDB.map(async (holding) => {
+        const currentPrice = prices[holding.symbol];
+        if (!currentPrice) {
+          console.warn(`No price data for symbol: ${holding.symbol}`);
+          // 使用默认价格数据
+          const defaultPrice = {
+            currentPrice: 0,
+            change: 0,
+            changePercent: 0,
+          };
+          return transformHoldingData(holding, defaultPrice);
+        }
+
+        return transformHoldingData(holding, currentPrice);
+      }),
+    );
+
+    return results;
   } catch (error) {
-    console.error(`Error calculating holding for ${symbol}:`, error);
-    return null;
+    console.error("Error getting holdings with real-time data:", error);
+    throw error;
   }
 }
 
-// 计算所有持仓
-async function calculateAllHoldings(portfolioIdInt: number, symbols: { symbol: string }[], includeHistorical: boolean) {
-  const holdings = [];
+// 转换持仓数据
+function transformHoldingData(holding: any, currentPrice: any) {
+  // 转换数据库 decimal 字段为 number
+  const holdingData = {
+    shares: parseFloat(String(holding.shares)),
+    totalBuyAmount: parseFloat(String(holding.totalBuyAmount)),
+    totalSellAmount: parseFloat(String(holding.totalSellAmount)),
+    totalDividend: parseFloat(String(holding.totalDividend)),
+    totalCommission: parseFloat(String(holding.totalCommission)),
+    totalTax: parseFloat(String(holding.totalTax)),
+  };
 
-  for (const { symbol } of symbols) {
-    const holding = await calculateSingleHolding(portfolioIdInt.toString(), symbol);
-    if (holding && (includeHistorical || holding.isActive)) {
-      holdings.push(holding);
-    }
-  }
+  // 计算成本
+  const { holdCost, dilutedCost } = FinancialCalculator.calculateCostsFromHoldings(holdingData);
 
-  return holdings;
+  // 计算市值
+  const marketValue = FinancialCalculator.calculateMarketValue(holdingData.shares, currentPrice.currentPrice);
+
+  // 计算盈亏
+  const profitLoss = FinancialCalculator.calculateProfitLossFromHoldings(
+    holdingData,
+    currentPrice,
+    holdCost,
+    dilutedCost,
+    marketValue,
+  );
+
+  return {
+    id: `${holding.portfolioId}-${holding.symbol}`,
+    symbol: holding.symbol,
+    name: holding.name,
+    shares: holdingData.shares,
+    currentPrice: currentPrice.currentPrice,
+    change: currentPrice.change,
+    changePercent: currentPrice.changePercent,
+    marketValue,
+    dilutedCost,
+    holdCost,
+    floatAmount: profitLoss.floatAmount,
+    floatRate: profitLoss.floatRate,
+    accumAmount: profitLoss.accumAmount,
+    accumRate: profitLoss.accumRate,
+    dayFloatAmount: profitLoss.dayFloatAmount,
+    dayFloatRate: profitLoss.dayFloatRate,
+    isActive: holding.isActive,
+    openTime: holding.openTime.toISOString(),
+    liquidationTime: holding.liquidationTime?.toISOString(),
+  };
 }
 
 // 获取投资组合持仓信息
@@ -99,8 +159,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: ownershipValidation.error }, { status: ownershipValidation.status });
     }
 
-    const symbols = await getPortfolioSymbols(paramsValidation.portfolioIdInt!);
-    const holdings = await calculateAllHoldings(paramsValidation.portfolioIdInt!, symbols, includeHistorical);
+    const holdings = await getHoldingsWithRealTimeData(paramsValidation.portfolioIdInt!, includeHistorical);
 
     return NextResponse.json({
       success: true,
