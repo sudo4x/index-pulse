@@ -161,28 +161,6 @@ export const portfolioSnapshots = pgTable(
   }),
 );
 
-// 股票价格表 - 缓存实时行情数据
-export const stockPrices = pgTable(
-  "stock_prices",
-  {
-    symbol: varchar("symbol", { length: 20 }).primaryKey(),
-    name: varchar("name", { length: 100 }).notNull(),
-    currentPrice: decimal("current_price", { precision: 18, scale: 6 }).notNull(),
-    previousClose: decimal("previous_close", { precision: 18, scale: 6 }).default("0"), // 昨日收盘价
-    change: decimal("change", { precision: 18, scale: 6 }).notNull().default("0"), // 涨跌额
-    changePercent: decimal("change_percent", { precision: 8, scale: 6 }).notNull().default("0"), // 涨跌幅
-    volume: decimal("volume", { precision: 18, scale: 0 }).default("0"), // 成交量
-    turnover: decimal("turnover", { precision: 18, scale: 2 }).default("0"), // 成交额
-    marketValue: decimal("market_value", { precision: 18, scale: 2 }).default("0"), // 总市值
-    lastUpdated: timestamp("last_updated").defaultNow().notNull(),
-  },
-  (table) => ({
-    lastUpdatedIdx: index("idx_stock_prices_last_updated").on(table.lastUpdated),
-    symbolUpdatedIdx: index("idx_stock_prices_symbol_updated").on(table.symbol, table.lastUpdated), // 复合索引：符号和更新时间
-    priceChangeIdx: index("idx_stock_prices_change").on(table.changePercent, table.lastUpdated), // 复合索引：涨跌幅排序
-  }),
-);
-
 // 类型导出
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
@@ -201,6 +179,3 @@ export type NewTransfer = typeof transfers.$inferInsert;
 
 export type PortfolioSnapshot = typeof portfolioSnapshots.$inferSelect;
 export type NewPortfolioSnapshot = typeof portfolioSnapshots.$inferInsert;
-
-export type StockPrice = typeof stockPrices.$inferSelect;
-export type NewStockPrice = typeof stockPrices.$inferInsert;

@@ -10,7 +10,7 @@ import { FinancialCalculator } from "../src/lib/services/financial-calculator.ts
 const mockHoldingData = {
   shares: 1000, // 1000股
   totalBuyAmount: 10000, // 买入金额 10000元
-  totalSellAmount: 2000, // 卖出金额 2000元  
+  totalSellAmount: 2000, // 卖出金额 2000元
   totalDividend: 100, // 红利 100元
   totalCommission: 15, // 佣金 15元
   totalTax: 5, // 税费 5元
@@ -37,10 +37,7 @@ try {
   console.log("");
 
   // 2. 测试市值计算
-  const marketValue = FinancialCalculator.calculateMarketValue(
-    mockHoldingData.shares, 
-    mockCurrentPrice.currentPrice
-  );
+  const marketValue = FinancialCalculator.calculateMarketValue(mockHoldingData.shares, mockCurrentPrice.currentPrice);
   console.log("2. 市值计算结果:");
   console.log("   市值:", marketValue.toFixed(2), "元");
   console.log("");
@@ -51,7 +48,7 @@ try {
     mockCurrentPrice,
     costs.holdCost,
     costs.dilutedCost,
-    marketValue
+    marketValue,
   );
 
   console.log("3. 盈亏计算结果:");
@@ -65,23 +62,48 @@ try {
 
   // 4. 手动验证计算
   console.log("=== 手动验证 ===");
-  
-  // 验证持仓成本：(总买入金额 + 佣金 + 税费) / 持股数
-  const expectedHoldCost = (mockHoldingData.totalBuyAmount + mockHoldingData.totalCommission + mockHoldingData.totalTax) / mockHoldingData.shares;
-  console.log("期望持仓成本:", expectedHoldCost.toFixed(4), "实际:", costs.holdCost.toFixed(4), expectedHoldCost === costs.holdCost ? "✅" : "❌");
 
-  // 验证摊薄成本：(总买入金额 + 佣金 + 税费 - 总卖出金额 - 总现金股息) / 持股数  
-  const expectedDilutedCost = (mockHoldingData.totalBuyAmount + mockHoldingData.totalCommission + mockHoldingData.totalTax - mockHoldingData.totalSellAmount - mockHoldingData.totalDividend) / mockHoldingData.shares;
-  console.log("期望摊薄成本:", expectedDilutedCost.toFixed(4), "实际:", costs.dilutedCost.toFixed(4), Math.abs(expectedDilutedCost - costs.dilutedCost) < 0.0001 ? "✅" : "❌");
+  // 验证持仓成本：(总买入金额 + 佣金 + 税费) / 持股数
+  const expectedHoldCost =
+    (mockHoldingData.totalBuyAmount + mockHoldingData.totalCommission + mockHoldingData.totalTax) /
+    mockHoldingData.shares;
+  console.log(
+    "期望持仓成本:",
+    expectedHoldCost.toFixed(4),
+    "实际:",
+    costs.holdCost.toFixed(4),
+    expectedHoldCost === costs.holdCost ? "✅" : "❌",
+  );
+
+  // 验证摊薄成本：(总买入金额 + 佣金 + 税费 - 总卖出金额 - 总现金股息) / 持股数
+  const expectedDilutedCost =
+    (mockHoldingData.totalBuyAmount +
+      mockHoldingData.totalCommission +
+      mockHoldingData.totalTax -
+      mockHoldingData.totalSellAmount -
+      mockHoldingData.totalDividend) /
+    mockHoldingData.shares;
+  console.log(
+    "期望摊薄成本:",
+    expectedDilutedCost.toFixed(4),
+    "实际:",
+    costs.dilutedCost.toFixed(4),
+    Math.abs(expectedDilutedCost - costs.dilutedCost) < 0.0001 ? "✅" : "❌",
+  );
 
   // 验证累计盈亏：多仓市值 - 总成本 + 总卖出金额 + 总现金股息
   const totalCost = mockHoldingData.totalBuyAmount + mockHoldingData.totalCommission + mockHoldingData.totalTax;
   const expectedAccumAmount = marketValue - totalCost + mockHoldingData.totalSellAmount + mockHoldingData.totalDividend;
-  console.log("期望累计盈亏:", expectedAccumAmount.toFixed(2), "实际:", profitLoss.accumAmount.toFixed(2), Math.abs(expectedAccumAmount - profitLoss.accumAmount) < 0.01 ? "✅" : "❌");
+  console.log(
+    "期望累计盈亏:",
+    expectedAccumAmount.toFixed(2),
+    "实际:",
+    profitLoss.accumAmount.toFixed(2),
+    Math.abs(expectedAccumAmount - profitLoss.accumAmount) < 0.01 ? "✅" : "❌",
+  );
 
   console.log("");
   console.log("🎉 Holdings 计算逻辑测试完成！");
-
 } catch (error) {
   console.error("❌ 测试失败:", error);
   process.exit(1);

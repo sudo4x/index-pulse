@@ -5,8 +5,8 @@ import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { portfolios } from "@/lib/db/schema";
-import { HoldingService } from "@/lib/services/holding-service";
 import { FinancialCalculator } from "@/lib/services/financial-calculator";
+import { HoldingService } from "@/lib/services/holding-service";
 import { StockPriceService } from "@/lib/services/stock-price-service";
 
 // 验证请求参数
@@ -58,19 +58,24 @@ async function getHoldingsWithRealTimeData(portfolioIdInt: number, includeHistor
 
     // 2. 批量获取股价
     const symbols = holdingsFromDB.map((h) => h.symbol);
-    const prices = await StockPriceService.getMultipleStockPrices(symbols);
+    const priceMap = await StockPriceService.getStockPriceMap(symbols);
 
     // 3. 为每个持仓计算实时数据
     const results = await Promise.all(
       holdingsFromDB.map(async (holding) => {
-        const currentPrice = prices[holding.symbol];
+        const currentPrice = priceMap.get(holding.symbol);
         if (!currentPrice) {
           console.warn(`No price data for symbol: ${holding.symbol}`);
           // 使用默认价格数据
           const defaultPrice = {
+            symbol: holding.symbol,
+            name: holding.name,
             currentPrice: 0,
             change: 0,
             changePercent: 0,
+            previousClose: 0,
+            limitUp: "0.000",
+            limitDown: "0.000",
           };
           return transformHoldingData(holding, defaultPrice);
         }

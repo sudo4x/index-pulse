@@ -54,4 +54,13 @@ portfolio-calculator.ts 中 getStockPrice(symbol: string)这个函数目前是�
 
 
 
-@src/lib/services/stock-price-service.ts 改造计划
+@src/lib/services/stock-price-service.ts 中 getStockPrices 和 getStockPrice方法改造。
+现在的逻辑是通过数据库来缓存，缓存时间5分钟。目前使用起来感觉并不好用，改造如下：
+1、去掉缓存逻辑，改成每次都是直接从外部接口获取，涨停跌停价格的计算需要保留
+2、去掉数据库表结构，这个表不需要了，所以也不需要这个表数据保存的相关逻辑了
+3、StockPriceData和SimpleStockPrice统一成一个，就叫做StockPrice，基于SimpleStockPrice的结构，加上昨日收盘价，涨停价，跌停价
+4、提供getStockPrices(symbols: string[])方法，返回StockPrice数组
+5、提供getStockPrice(symbol: string)方法，返回单个StockPrice数据
+6、提供getStockPriceMap(symbols: string[])方法，返回StockPrice的map形式，key是symbol，value是StockPrice对象，参考
+7、6实现之后，@src/lib/services/portfolio-calculator.ts 中116行开始的priceMap的相关实现要改造成用6提供的函数来实现
+8、@src/app/api/holdings/route.ts 中61行：```const prices = await StockPriceService.getMultipleStockPrices(symbols); ```这个错误也要修复，改成用上面改造后的方法来实现。

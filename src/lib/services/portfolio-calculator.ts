@@ -115,17 +115,7 @@ export class PortfolioCalculator {
 
     // 批量获取所有股票价格
     const symbols = holdingSymbols.map((h) => h.symbol);
-    const stockPricesData = await StockPriceService.getStockPrices(symbols);
-
-    // 创建价格映射表用于快速查找
-    const priceMap = new Map<string, StockPrice>();
-    for (const priceData of stockPricesData) {
-      priceMap.set(priceData.symbol, {
-        currentPrice: Number(priceData.currentPrice),
-        change: Number(priceData.change),
-        changePercent: Number(priceData.changePercent),
-      });
-    }
+    const priceMap = await StockPriceService.getStockPriceMap(symbols);
 
     const holdingDetails: HoldingDetail[] = [];
     for (const { symbol } of holdingSymbols) {

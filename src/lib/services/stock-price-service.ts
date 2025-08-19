@@ -1,40 +1,23 @@
-import { inArray, gte } from "drizzle-orm";
-
-import { db } from "@/lib/db";
-import { stockPrices } from "@/lib/db/schema";
-
-export interface StockPriceData {
+export interface StockPrice {
   symbol: string;
   name: string;
-  currentPrice: string;
-  change: string;
-  changePercent: string;
-  volume: string | null;
-  turnover: string | null;
-  marketValue: string | null;
-  limitUp: string;
-  limitDown: string;
-  lastUpdated: Date;
-}
-
-export interface SimpleStockPrice {
   currentPrice: number;
   change: number;
   changePercent: number;
-  previousClose?: number;
+  previousClose: number; // 昨日收盘价
+  limitUp: string; // 涨停价
+  limitDown: string; // 跌停价
 }
 
 /**
  * 统一的股票价格服务
- * 负责股票价格的获取、缓存和更新逻辑
+ * 负责股票价格的获取和涨跌停价格计算
  */
 export class StockPriceService {
-  private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5分钟缓存
-
   /**
-   * 批量获取股票价格（带缓存逻辑）
+   * 批量获取股票价格
    */
-  static async getStockPrices(symbols: string[]): Promise<StockPriceData[]> {
+  static async getStockPrices(symbols: string[]): Promise<StockPrice[]> {
     if (symbols.length === 0) {
       return [];
     }
@@ -42,80 +25,65 @@ export class StockPriceService {
     // 去重处理
     const uniqueSymbols = [...new Set(symbols.map((s) => s.trim().toUpperCase()))];
 
-    // 首先尝试从缓存中获取数据（5分钟内的数据认为是新鲜的）
-    const fiveMinutesAgo = new Date(Date.now() - this.CACHE_DURATION);
-    const cachedPrices = await db
-      .select()
-      .from(stockPrices)
-      .where(inArray(stockPrices.symbol, uniqueSymbols) && gte(stockPrices.lastUpdated, fiveMinutesAgo));
-
-    const cachedSymbols = cachedPrices.map((p) => p.symbol);
-    const needUpdateSymbols = uniqueSymbols.filter((symbol) => !cachedSymbols.includes(symbol));
-
-    // 为缓存的价格数据添加涨停跌停价格
-    const allPrices: StockPriceData[] = cachedPrices.map((price) => {
-      const { limitUp, limitDown } = this.calculateLimitPrices(
-        price.symbol,
-        price.currentPrice.toString(),
-        price.changePercent.toString(),
-      );
-      return {
-        ...price,
-        currentPrice: price.currentPrice.toString(),
-        change: price.change.toString(),
-        changePercent: price.changePercent.toString(),
-        volume: price.volume?.toString() ?? null,
-        turnover: price.turnover?.toString() ?? null,
-        marketValue: price.marketValue?.toString() ?? null,
-        limitUp,
-        limitDown,
-      };
-    });
-
-    // 如果有需要更新的股票，从外部接口获取
-    if (needUpdateSymbols.length > 0) {
-      try {
-        const freshPrices = await this.fetchStockPricesFromExternal(needUpdateSymbols);
-        if (freshPrices.length > 0) {
-          await this.updateStockPricesInDatabase(freshPrices);
-          allPrices.push(...freshPrices);
-        }
-      } catch (error) {
-        console.error("Error fetching fresh stock prices:", error);
-        // 如果获取外部数据失败，返回缓存的数据（如果有的话）
-      }
+    try {
+      return await this.fetchStockPricesFromExternal(uniqueSymbols);
+    } catch (error) {
+      console.error("Error fetching stock prices:", error);
+      // 如果获取失败，返回空数组或默认数据
+      return uniqueSymbols.map((symbol) => ({
+        symbol,
+        name: "",
+        currentPrice: 0,
+        change: 0,
+        changePercent: 0,
+        previousClose: 0,
+        limitUp: "0.000",
+        limitDown: "0.000",
+      }));
     }
-
-    return allPrices;
   }
 
   /**
    * 获取单个股票价格
    */
-  static async getStockPrice(symbol: string): Promise<SimpleStockPrice> {
+  static async getStockPrice(symbol: string): Promise<StockPrice> {
     const prices = await this.getStockPrices([symbol]);
 
     if (prices.length === 0) {
       // 如果没有数据，返回默认值
       return {
+        symbol,
+        name: "",
         currentPrice: 0,
         change: 0,
         changePercent: 0,
+        previousClose: 0,
+        limitUp: "0.000",
+        limitDown: "0.000",
       };
     }
 
-    const price = prices[0];
-    return {
-      currentPrice: Number(price.currentPrice),
-      change: Number(price.change),
-      changePercent: Number(price.changePercent),
-    };
+    return prices[0];
+  }
+
+  /**
+   * 批量获取股票价格并返回Map形式
+   */
+  static async getStockPriceMap(symbols: string[]): Promise<Map<string, StockPrice>> {
+    const prices = await this.getStockPrices(symbols);
+    const priceMap = new Map<string, StockPrice>();
+
+    for (const price of prices) {
+      priceMap.set(price.symbol, price);
+    }
+
+    return priceMap;
   }
 
   /**
    * 从外部接口获取股票价格
    */
-  private static async fetchStockPricesFromExternal(symbols: string[]): Promise<StockPriceData[]> {
+  private static async fetchStockPricesFromExternal(symbols: string[]): Promise<StockPrice[]> {
     // 构建腾讯财经接口请求
     const formattedSymbols = symbols.map(this.formatSymbolForTencent).join(",");
     const url = `http://qt.gtimg.cn/q=${formattedSymbols}`;
@@ -137,40 +105,6 @@ export class StockPriceService {
     const decoder = new TextDecoder("gbk");
     const text = decoder.decode(buffer);
     return this.parseStockDataFromTencent(text);
-  }
-
-  /**
-   * 更新数据库中的股票价格
-   */
-  private static async updateStockPricesInDatabase(prices: StockPriceData[]): Promise<void> {
-    for (const price of prices) {
-      await db
-        .insert(stockPrices)
-        .values({
-          symbol: price.symbol,
-          name: price.name,
-          currentPrice: price.currentPrice,
-          change: price.change,
-          changePercent: price.changePercent,
-          volume: price.volume,
-          turnover: price.turnover,
-          marketValue: price.marketValue,
-          lastUpdated: new Date(),
-        })
-        .onConflictDoUpdate({
-          target: stockPrices.symbol,
-          set: {
-            name: price.name,
-            currentPrice: price.currentPrice,
-            change: price.change,
-            changePercent: price.changePercent,
-            volume: price.volume,
-            turnover: price.turnover,
-            marketValue: price.marketValue,
-            lastUpdated: new Date(),
-          },
-        });
-    }
   }
 
   /**
@@ -331,36 +265,37 @@ export class StockPriceService {
   /**
    * 构建股票数据对象
    */
-  private static buildStockDataObject(varName: string, parts: string[]): StockPriceData {
+  private static buildStockDataObject(varName: string, parts: string[]): StockPrice {
     const symbol = this.extractOriginalSymbol(varName);
-    const currentPrice = parts[3] || "0";
+    const currentPrice = parseFloat(parts[3] || "0");
     const changePercentRaw = parts[5] || "0";
 
-    // 腾讯财经接口返回的是百分号后的数字（如 1.5 表示 1.5%），需要转换为小数形式（0.015）
-    const changePercent = (parseFloat(changePercentRaw) / 100).toString();
+    // 腾讯财经接口返回的是百分号后的数字（如 1.5 表示 1.5%）
+    const changePercent = parseFloat(changePercentRaw) / 100;
+    const change = parseFloat(parts[4] || "0");
+
+    // 计算昨日收盘价（基于当前价格和涨跌额）
+    const previousClose = currentPrice - change;
 
     // 计算涨跌停价格（使用原始的百分号后数字）
-    const { limitUp, limitDown } = this.calculateLimitPrices(symbol, currentPrice, changePercentRaw);
+    const { limitUp, limitDown } = this.calculateLimitPrices(symbol, currentPrice.toString(), changePercentRaw);
 
     return {
       symbol,
       name: (parts[1] || "").replace(/\s+/g, ""), // 处理名称中的空白字符
       currentPrice,
-      change: parts[4] || "0",
+      change,
       changePercent,
-      volume: parts[6] || "0",
-      turnover: parts[7] || "0",
-      marketValue: parts[9] || "0",
+      previousClose,
       limitUp,
       limitDown,
-      lastUpdated: new Date(),
     };
   }
 
   /**
    * 解析单行数据
    */
-  private static parseStockDataLine(line: string): StockPriceData | null {
+  private static parseStockDataLine(line: string): StockPrice | null {
     if (!this.isValidDataLine(line)) return null;
 
     try {
@@ -382,7 +317,7 @@ export class StockPriceService {
   /**
    * 解析腾讯财经接口返回的数据
    */
-  private static parseStockDataFromTencent(text: string): StockPriceData[] {
+  private static parseStockDataFromTencent(text: string): StockPrice[] {
     const results = [];
     const lines = text.split("\n");
 

@@ -22,10 +22,14 @@ export interface ProfitLossData {
 }
 
 export interface StockPrice {
+  symbol: string;
+  name: string;
   currentPrice: number;
   change: number;
   changePercent: number;
-  previousClose?: number;
+  previousClose: number;
+  limitUp: string;
+  limitDown: string;
 }
 
 export interface CashData {
