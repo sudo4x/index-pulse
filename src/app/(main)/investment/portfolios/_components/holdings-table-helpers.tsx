@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { formatPercent, formatShares } from "@/lib/utils/format-utils";
 import { HoldingDetail } from "@/types/investment";
 
 interface HoldingTableHelpersProps {
@@ -17,14 +18,6 @@ export const createHoldingRowHelpers = ({
   handleShowTransactions,
   handleDeleteClick,
 }: HoldingTableHelpersProps) => {
-  const formatPercent = (value: number) => {
-    return `${(value * 100).toFixed(2)}%`;
-  };
-
-  const formatShares = (shares: number) => {
-    return shares.toLocaleString("zh-CN");
-  };
-
   const renderStockNameCell = (holding: HoldingDetail) => (
     <TableCell>
       <div className="flex flex-col space-y-1">

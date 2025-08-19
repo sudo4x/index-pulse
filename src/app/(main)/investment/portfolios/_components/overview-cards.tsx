@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown, DollarSign, PieChart, Wallet, Target } from "
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { formatCurrency, formatPercent } from "@/lib/utils/format-utils";
 import { PortfolioOverview } from "@/types/investment";
 
 interface OverviewCardsProps {
@@ -11,18 +12,6 @@ interface OverviewCardsProps {
 }
 
 export function OverviewCards({ portfolio }: OverviewCardsProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("zh-CN", {
-      style: "currency",
-      currency: "CNY",
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const formatPercent = (value: number) => {
-    return `${(value * 100).toFixed(2)}%`;
-  };
-
   const overviewData = [
     {
       title: "总资产",

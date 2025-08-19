@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import { formatShares } from "@/lib/utils/format-utils";
 import { TransactionDetail } from "@/types/investment";
 
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
@@ -146,7 +147,7 @@ export function TransactionsTable({ portfolioId, symbol }: TransactionsTableProp
         {transaction.price ? `¥${Number(transaction.price).toFixed(3)}` : "-"}
       </TableCell>
       <TableCell className="text-right">
-        {transaction.shares ? Number(transaction.shares).toLocaleString("zh-CN") : "-"}
+        {transaction.shares ? formatShares(Number(transaction.shares)) : "-"}
       </TableCell>
       <TableCell className="text-right">¥{Number(transaction.amount).toFixed(2)}</TableCell>
       <TableCell>{transaction.description}</TableCell>

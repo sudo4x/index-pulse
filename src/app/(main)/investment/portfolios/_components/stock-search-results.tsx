@@ -1,5 +1,6 @@
 import { StockSearchResult } from "@/hooks/use-stock-search";
 import { cn } from "@/lib/utils";
+import { formatPercent } from "@/lib/utils/format-utils";
 
 interface StockSearchResultsProps {
   showSearchResults: boolean;
@@ -37,7 +38,7 @@ export function StockSearchResults({
                 <span>
                   最新 <span className="text-green-600">{parseFloat(stock.currentPrice).toFixed(3)}</span>
                   <span className={cn(parseFloat(stock.change) >= 0 ? "text-red-500" : "text-green-500")}>
-                    ({parseFloat(stock.changePercent).toFixed(2)}%)
+                    ({formatPercent(parseFloat(stock.changePercent))})
                   </span>
                   {stock.limitUp && stock.limitDown && (
                     <>

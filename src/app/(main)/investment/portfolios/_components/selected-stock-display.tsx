@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StockSearchResult } from "@/hooks/use-stock-search";
 import { cn } from "@/lib/utils";
+import { formatPercent } from "@/lib/utils/format-utils";
 
 interface SelectedStockDisplayProps {
   selectedStock: StockSearchResult | null;
@@ -21,7 +22,7 @@ export function SelectedStockDisplay({ selectedStock, onClear }: SelectedStockDi
           <span>
             最新 <span className="text-green-600">{parseFloat(selectedStock.currentPrice).toFixed(3)}</span>
             <span className={cn(parseFloat(selectedStock.change || "0") >= 0 ? "text-red-500" : "text-green-500")}>
-              ({parseFloat(selectedStock.changePercent || "0").toFixed(2)}%)
+              ({formatPercent(parseFloat(selectedStock.changePercent || "0"))})
             </span>
             {selectedStock.limitUp && selectedStock.limitDown && (
               <>

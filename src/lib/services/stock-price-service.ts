@@ -334,10 +334,13 @@ export class StockPriceService {
   private static buildStockDataObject(varName: string, parts: string[]): StockPriceData {
     const symbol = this.extractOriginalSymbol(varName);
     const currentPrice = parts[3] || "0";
-    const changePercent = parts[5] || "0";
+    const changePercentRaw = parts[5] || "0";
 
-    // 计算涨跌停价格
-    const { limitUp, limitDown } = this.calculateLimitPrices(symbol, currentPrice, changePercent);
+    // 腾讯财经接口返回的是百分号后的数字（如 1.5 表示 1.5%），需要转换为小数形式（0.015）
+    const changePercent = (parseFloat(changePercentRaw) / 100).toString();
+
+    // 计算涨跌停价格（使用原始的百分号后数字）
+    const { limitUp, limitDown } = this.calculateLimitPrices(symbol, currentPrice, changePercentRaw);
 
     return {
       symbol,
