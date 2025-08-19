@@ -1,10 +1,11 @@
 import { eq, and } from "drizzle-orm";
 
 import { db } from "@/lib/db";
-import { transactions, transfers, stockPrices } from "@/lib/db/schema";
+import { transactions, transfers } from "@/lib/db/schema";
 import { TransactionType, TransferType, HoldingDetail, PortfolioOverview } from "@/types/investment";
 
 import { FinancialCalculator } from "./financial-calculator";
+import { StockPriceService } from "./stock-price-service";
 import { TransactionProcessor } from "./transaction-processor";
 import { StockPrice, CashData } from "./types/calculator-types";
 
@@ -17,6 +18,19 @@ export class PortfolioCalculator {
    * 计算单个品种的持仓信息
    */
   static async calculateHoldingStats(portfolioId: string, symbol: string): Promise<HoldingDetail | null> {
+    // 获取当前价格
+    const currentPrice = await this.getStockPrice(symbol);
+    return this.calculateHoldingStatsWithPrice(portfolioId, symbol, currentPrice);
+  }
+
+  /**
+   * 使用提供的价格计算单个品种的持仓信息（用于批量优化）
+   */
+  private static async calculateHoldingStatsWithPrice(
+    portfolioId: string,
+    symbol: string,
+    currentPrice?: StockPrice,
+  ): Promise<HoldingDetail | null> {
     const portfolioIdInt = parseInt(portfolioId);
     if (isNaN(portfolioIdInt)) {
       throw new Error("portfolioId 必须是有效的数字");
@@ -33,21 +47,21 @@ export class PortfolioCalculator {
       return null;
     }
 
-    // 获取当前价格
-    const currentPrice = await this.getStockPrice(symbol);
+    // 如果没有提供价格，则获取
+    const finalPrice = currentPrice ?? (await this.getStockPrice(symbol));
 
     const sharesData = TransactionProcessor.calculateSharesAndAmounts(holdingTransactions);
-    const costs = FinancialCalculator.calculateCosts(sharesData, currentPrice);
-    const profitLoss = FinancialCalculator.calculateProfitLoss(sharesData, currentPrice, costs);
+    const costs = FinancialCalculator.calculateCosts(sharesData, finalPrice);
+    const profitLoss = FinancialCalculator.calculateProfitLoss(sharesData, finalPrice, costs);
 
     return {
       id: `${portfolioId}-${symbol}`,
       symbol,
       name: holdingTransactions[0].name,
       shares: sharesData.totalShares,
-      currentPrice: currentPrice.currentPrice,
-      change: currentPrice.change,
-      changePercent: currentPrice.changePercent,
+      currentPrice: finalPrice.currentPrice,
+      change: finalPrice.change,
+      changePercent: finalPrice.changePercent,
       marketValue: costs.marketValue,
       dilutedCost: costs.dilutedCost,
       holdCost: costs.holdCost,
@@ -84,7 +98,7 @@ export class PortfolioCalculator {
   }
 
   /**
-   * 获取持仓详情
+   * 获取持仓详情（优化版：批量获取股票价格）
    */
   private static async getHoldingDetails(portfolioId: string, portfolioIdInt: number): Promise<HoldingDetail[]> {
     const holdingSymbols = await db
@@ -92,9 +106,23 @@ export class PortfolioCalculator {
       .from(transactions)
       .where(eq(transactions.portfolioId, portfolioIdInt));
 
+    // 批量获取所有股票价格
+    const symbols = holdingSymbols.map((h) => h.symbol);
+    const stockPricesData = await StockPriceService.getStockPrices(symbols);
+
+    // 创建价格映射表用于快速查找
+    const priceMap = new Map<string, StockPrice>();
+    for (const priceData of stockPricesData) {
+      priceMap.set(priceData.symbol, {
+        currentPrice: Number(priceData.currentPrice),
+        change: Number(priceData.change),
+        changePercent: Number(priceData.changePercent),
+      });
+    }
+
     const holdingDetails: HoldingDetail[] = [];
     for (const { symbol } of holdingSymbols) {
-      const holding = await this.calculateHoldingStats(portfolioId, symbol);
+      const holding = await this.calculateHoldingStatsWithPrice(portfolioId, symbol, priceMap.get(symbol));
       if (holding) {
         holdingDetails.push(holding);
       }
@@ -173,27 +201,6 @@ export class PortfolioCalculator {
    * 获取股票当前价格
    */
   private static async getStockPrice(symbol: string): Promise<StockPrice> {
-    // 先从缓存中获取
-    const cached = await db.select().from(stockPrices).where(eq(stockPrices.symbol, symbol)).limit(1);
-
-    if (cached.length > 0) {
-      const price = cached[0];
-      // 检查是否需要更新（5分钟内的数据认为有效）
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-      if (new Date(price.lastUpdated) > fiveMinutesAgo) {
-        return {
-          currentPrice: Number(price.currentPrice),
-          change: Number(price.change),
-          changePercent: Number(price.changePercent),
-        };
-      }
-    }
-
-    // 从外部接口获取（这里返回模拟数据）
-    return {
-      currentPrice: 100,
-      change: 1.5,
-      changePercent: 0.015,
-    };
+    return await StockPriceService.getStockPrice(symbol);
   }
 }
