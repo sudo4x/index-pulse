@@ -35,3 +35,12 @@ portfolio-calculator.ts 中 getStockPrice(symbol: string)这个函数目前是�
 3、具体获取逻辑是先判断缓存有没有过期了，没有直接从缓存获取。要是过期了就重新获取并更新缓存。
 4、需要特别注意，这些获取方式会跟stock-prices这个接口的一些方法实现重复，比如fetchStockPricesFromExternal，你需要特别注意一下设计模式和代码复用原则，好好设计一下
 
+08-19
+现在获取股票价格有两个来源，一个来自系统自身的stock-prices接口，一个是来自websocket。changePercent的目前的值是百分号后的数字，但是目前两个来源的数据对于这个值的处理并不一致，websocket那边直接认为是取百分号前的数字，而从stock-prices获取的是当成取百分号后的数据。现在我要把这个有异议的changePercent改成一致的，就是取百分号之前的数据，websokcet那边的数据我会去处理，你需要做三件事情：
+1、修改获取股票实时价格那边的底层逻辑，把changePercent改成原始值 除以 100 再保存，保证数据源一致（腾讯财经接口获取到的是取百分号后的数字）。websocket那边我会自己处理掉。
+2，检查并修改所有使用到changePercent进行计算和展示的地方，展示时这个字段统一格式为百分号格式
+
+
+@src/app/(main)/investment/portfolios/_components/holdings-table-container.tsx 中112行开始，只是重新算了市值和浮动盈亏，累计盈亏和当日盈亏相关的没有根据当前价格重算。需要你根据计算公式 @docs/计算公式.md 还有 @src/lib/services/financial-calculator.ts 的相关实现，完善这些重算逻辑
+
+@src/lib/services/holding-service.ts 第42、43行对dilutedCost和holdCost的计算使用了内部的私有函数，这个不对，应该使用 @src/lib/services/financial-calculator.ts 中的calculateCosts 计算成本的函数来实现才对。使用统一的方法，而不是分散在各个地方

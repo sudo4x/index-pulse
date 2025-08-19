@@ -51,8 +51,15 @@ export class PortfolioCalculator {
     const finalPrice = currentPrice ?? (await this.getStockPrice(symbol));
 
     const sharesData = TransactionProcessor.calculateSharesAndAmounts(holdingTransactions);
-    const costs = FinancialCalculator.calculateCosts(sharesData, finalPrice);
-    const profitLoss = FinancialCalculator.calculateProfitLoss(sharesData, finalPrice, costs);
+    const { holdCost, dilutedCost } = FinancialCalculator.calculateCosts(sharesData);
+    const marketValue = FinancialCalculator.calculateMarketValue(sharesData.totalShares, finalPrice.currentPrice);
+    const profitLoss = FinancialCalculator.calculateProfitLoss(
+      sharesData,
+      finalPrice,
+      holdCost,
+      dilutedCost,
+      marketValue,
+    );
 
     return {
       id: `${portfolioId}-${symbol}`,
@@ -62,9 +69,9 @@ export class PortfolioCalculator {
       currentPrice: finalPrice.currentPrice,
       change: finalPrice.change,
       changePercent: finalPrice.changePercent,
-      marketValue: costs.marketValue,
-      dilutedCost: costs.dilutedCost,
-      holdCost: costs.holdCost,
+      marketValue,
+      dilutedCost,
+      holdCost,
       floatAmount: profitLoss.floatAmount,
       floatRate: profitLoss.floatRate,
       accumAmount: profitLoss.accumAmount,

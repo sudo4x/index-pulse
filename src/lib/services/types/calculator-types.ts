@@ -12,12 +12,6 @@ export interface SharesData {
   liquidationTime: Date | null;
 }
 
-export interface CostsData {
-  holdCost: number;
-  dilutedCost: number;
-  marketValue: number;
-}
-
 export interface ProfitLossData {
   floatAmount: number;
   floatRate: number;

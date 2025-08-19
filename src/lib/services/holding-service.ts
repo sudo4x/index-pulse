@@ -2,10 +2,8 @@ import { eq, and } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { holdings, transactions, Holding, NewHolding } from "@/lib/db/schema";
-import { TransactionType } from "@/types/investment";
 
 import { FinancialCalculator } from "./financial-calculator";
-import { PortfolioCalculator } from "./portfolio-calculator";
 import { TransactionProcessor } from "./transaction-processor";
 
 /**
@@ -33,14 +31,17 @@ export class HoldingService {
     // 计算持仓数据
     const sharesData = TransactionProcessor.calculateSharesAndAmounts(holdingTransactions);
 
+    // 使用 FinancialCalculator 计算成本
+    const { holdCost, dilutedCost } = FinancialCalculator.calculateCosts(sharesData);
+
     // 准备持仓数据
     const holdingData: NewHolding = {
       portfolioId,
       symbol,
       name: holdingTransactions[0].name,
       shares: sharesData.totalShares.toString(),
-      dilutedCost: this.calculateDilutedCost(sharesData).toString(),
-      holdCost: this.calculateHoldCost(sharesData).toString(),
+      dilutedCost: dilutedCost.toString(),
+      holdCost: holdCost.toString(),
       totalBuyAmount: sharesData.totalBuyAmount.toString(),
       totalSellAmount: sharesData.totalSellAmount.toString(),
       totalDividend: sharesData.totalDividend.toString(),
@@ -134,24 +135,6 @@ export class HoldingService {
   static async getHoldingShares(portfolioId: number, symbol: string): Promise<number> {
     const holding = await this.getHolding(portfolioId, symbol);
     return holding ? Number(holding.shares) : 0;
-  }
-
-  /**
-   * 计算摊薄成本
-   * 摊薄成本 = (∑买入金额 - ∑卖出金额 - ∑现金股息) / 持股数
-   */
-  private static calculateDilutedCost(sharesData: any): number {
-    if (sharesData.totalShares <= 0) return 0;
-    return (sharesData.totalBuyAmount - sharesData.totalSellAmount - sharesData.totalDividend) / sharesData.totalShares;
-  }
-
-  /**
-   * 计算持仓成本
-   * 持仓成本 = ∑买入金额 / (∑买入数量 + ∑红股数量 + ∑拆股所增数量 - ∑合股所减数量)
-   */
-  private static calculateHoldCost(sharesData: any): number {
-    if (sharesData.totalSharesFromBuyAndStock <= 0) return 0;
-    return sharesData.totalBuyAmount / sharesData.totalSharesFromBuyAndStock;
   }
 
   /**
