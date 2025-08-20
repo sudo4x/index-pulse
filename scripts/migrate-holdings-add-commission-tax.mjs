@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * 数据库迁移脚本：为 holdings 表添加 totalCommission 和 totalTax 字段
+ * 数据库迁移脚本：为 holdings 表添加分离的费用字段
+ * 将 totalCommission 和 totalTax 替换为 buyCommission, sellCommission, buyTax, sellTax, otherTax
  * 并从现有交易记录重新计算这些值
  */
 
@@ -48,19 +49,33 @@ async function migrateDatabase() {
   console.log("开始迁移数据库...");
 
   try {
-    // 1. 添加新字段（如果不存在）
-    console.log("步骤 1: 添加新字段到 holdings 表");
+    // 1. 添加新字段（如果不存在）并移除旧字段
+    console.log("步骤 1: 更新 holdings 表字段结构");
 
+    // 先添加新字段
     await client.unsafe(`
       ALTER TABLE holdings 
-      ADD COLUMN IF NOT EXISTS total_commission DECIMAL(18,2) NOT NULL DEFAULT 0,
-      ADD COLUMN IF NOT EXISTS total_tax DECIMAL(18,2) NOT NULL DEFAULT 0;
+      ADD COLUMN IF NOT EXISTS buy_commission DECIMAL(18,2) NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS sell_commission DECIMAL(18,2) NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS buy_tax DECIMAL(18,2) NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS sell_tax DECIMAL(18,2) NOT NULL DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS other_tax DECIMAL(18,2) NOT NULL DEFAULT 0;
     `);
 
     console.log("✅ 新字段添加成功");
 
-    // 2. 重新计算所有持仓的佣金和税费总额
-    console.log("步骤 2: 重新计算所有持仓的佣金和税费");
+    // 检查是否存在旧字段，如果存在则准备移除
+    const oldColumnsCheck = await client.unsafe(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'holdings' 
+      AND column_name IN ('total_commission', 'total_tax');
+    `);
+
+    console.log(`发现 ${oldColumnsCheck.length} 个旧字段需要处理`);
+
+    // 2. 重新计算所有持仓的分类费用
+    console.log("步骤 2: 重新计算所有持仓的分类费用");
 
     // 获取所有持仓记录
     const holdingsResult = await client.unsafe(`
@@ -70,37 +85,72 @@ async function migrateDatabase() {
     console.log(`找到 ${holdingsResult.length} 条持仓记录`);
 
     for (const holding of holdingsResult) {
-      // 计算该持仓的总佣金和总税费
-      const transactionStats = await client.unsafe(
+      // 分别计算买入、卖出和其他类型的费用
+      const buyStats = await client.unsafe(
         `
         SELECT 
-          COALESCE(SUM(commission), 0) as total_commission,
-          COALESCE(SUM(tax), 0) as total_tax
+          COALESCE(SUM(commission), 0) as buy_commission,
+          COALESCE(SUM(tax), 0) as buy_tax
         FROM transactions 
-        WHERE portfolio_id = $1 AND symbol = $2;
+        WHERE portfolio_id = $1 AND symbol = $2 AND type = 1;
       `,
         [holding.portfolio_id, holding.symbol],
       );
 
-      const stats = transactionStats[0];
+      const sellStats = await client.unsafe(
+        `
+        SELECT 
+          COALESCE(SUM(commission), 0) as sell_commission,
+          COALESCE(SUM(tax), 0) as sell_tax
+        FROM transactions 
+        WHERE portfolio_id = $1 AND symbol = $2 AND type = 2;
+      `,
+        [holding.portfolio_id, holding.symbol],
+      );
+
+      const otherStats = await client.unsafe(
+        `
+        SELECT 
+          COALESCE(SUM(commission + tax), 0) as other_tax
+        FROM transactions 
+        WHERE portfolio_id = $1 AND symbol = $2 AND type NOT IN (1, 2);
+      `,
+        [holding.portfolio_id, holding.symbol],
+      );
+
+      const buyData = buyStats[0];
+      const sellData = sellStats[0];
+      const otherData = otherStats[0];
 
       // 更新持仓记录
       await client.unsafe(
         `
         UPDATE holdings 
         SET 
-          total_commission = $1,
-          total_tax = $2,
+          buy_commission = $1,
+          sell_commission = $2,
+          buy_tax = $3,
+          sell_tax = $4,
+          other_tax = $5,
           updated_at = NOW()
-        WHERE id = $3;
+        WHERE id = $6;
       `,
-        [stats.total_commission, stats.total_tax, holding.id],
+        [
+          buyData.buy_commission,
+          sellData.sell_commission,
+          buyData.buy_tax,
+          sellData.sell_tax,
+          otherData.other_tax,
+          holding.id,
+        ],
       );
 
-      console.log(`✅ 更新持仓 ${holding.symbol}: 佣金=${stats.total_commission}, 税费=${stats.total_tax}`);
+      console.log(
+        `✅ 更新持仓 ${holding.symbol}: 买入佣金=${buyData.buy_commission}, 卖出佣金=${sellData.sell_commission}, 买入税费=${buyData.buy_tax}, 卖出税费=${sellData.sell_tax}, 其他税费=${otherData.other_tax}`,
+      );
     }
 
-    console.log("✅ 所有持仓的佣金和税费重新计算完成");
+    console.log("✅ 所有持仓的分类费用重新计算完成");
 
     // 3. 验证数据
     console.log("步骤 3: 验证迁移结果");
@@ -108,16 +158,35 @@ async function migrateDatabase() {
     const verificationResult = await client.unsafe(`
       SELECT 
         COUNT(*) as total_holdings,
-        SUM(total_commission) as total_commission_sum,
-        SUM(total_tax) as total_tax_sum
+        SUM(buy_commission) as total_buy_commission,
+        SUM(sell_commission) as total_sell_commission,
+        SUM(buy_tax) as total_buy_tax,
+        SUM(sell_tax) as total_sell_tax,
+        SUM(other_tax) as total_other_tax
       FROM holdings;
     `);
 
     const verification = verificationResult[0];
     console.log(`验证结果:`);
     console.log(`- 总持仓数: ${verification.total_holdings}`);
-    console.log(`- 总佣金汇总: ${verification.total_commission_sum}`);
-    console.log(`- 总税费汇总: ${verification.total_tax_sum}`);
+    console.log(`- 买入佣金汇总: ${verification.total_buy_commission}`);
+    console.log(`- 卖出佣金汇总: ${verification.total_sell_commission}`);
+    console.log(`- 买入税费汇总: ${verification.total_buy_tax}`);
+    console.log(`- 卖出税费汇总: ${verification.total_sell_tax}`);
+    console.log(`- 其他税费汇总: ${verification.total_other_tax}`);
+
+    // 4. 移除旧字段（如果存在）
+    if (oldColumnsCheck.length > 0) {
+      console.log("步骤 4: 移除旧字段");
+      
+      await client.unsafe(`
+        ALTER TABLE holdings 
+        DROP COLUMN IF EXISTS total_commission,
+        DROP COLUMN IF EXISTS total_tax;
+      `);
+      
+      console.log("✅ 旧字段移除成功");
+    }
 
     console.log("🎉 数据库迁移完成！");
   } catch (error) {

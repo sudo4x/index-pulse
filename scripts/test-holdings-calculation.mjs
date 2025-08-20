@@ -12,8 +12,11 @@ const mockHoldingData = {
   totalBuyAmount: 10000, // 买入金额 10000元
   totalSellAmount: 2000, // 卖出金额 2000元
   totalDividend: 100, // 红利 100元
-  totalCommission: 15, // 佣金 15元
-  totalTax: 5, // 税费 5元
+  buyCommission: 10, // 买入佣金 10元
+  sellCommission: 5, // 卖出佣金 5元
+  buyTax: 0, // 买入税费 0元（买入通常无税费）
+  sellTax: 3, // 卖出税费 3元（印花税等）
+  otherTax: 2, // 其他税费 2元（除权除息等）
 };
 
 // 模拟股价数据
@@ -63,23 +66,24 @@ try {
   // 4. 手动验证计算
   console.log("=== 手动验证 ===");
 
-  // 验证持仓成本：(总买入金额 + 佣金 + 税费) / 持股数
-  const expectedHoldCost =
-    (mockHoldingData.totalBuyAmount + mockHoldingData.totalCommission + mockHoldingData.totalTax) /
-    mockHoldingData.shares;
+  // 验证持仓成本：(总买入金额 + 买入佣金) / 持股数
+  const expectedHoldCost = (mockHoldingData.totalBuyAmount + mockHoldingData.buyCommission) / mockHoldingData.shares;
   console.log(
     "期望持仓成本:",
     expectedHoldCost.toFixed(4),
     "实际:",
     costs.holdCost.toFixed(4),
-    expectedHoldCost === costs.holdCost ? "✅" : "❌",
+    Math.abs(expectedHoldCost - costs.holdCost) < 0.0001 ? "✅" : "❌",
   );
 
-  // 验证摊薄成本：(总买入金额 + 佣金 + 税费 - 总卖出金额 - 总现金股息) / 持股数
+  // 验证摊薄成本：(总买入金额 + 所有佣金 + 所有税费 - 总卖出金额 - 总现金股息) / 持股数
   const expectedDilutedCost =
     (mockHoldingData.totalBuyAmount +
-      mockHoldingData.totalCommission +
-      mockHoldingData.totalTax -
+      mockHoldingData.buyCommission +
+      mockHoldingData.sellCommission +
+      mockHoldingData.buyTax +
+      mockHoldingData.sellTax +
+      mockHoldingData.otherTax -
       mockHoldingData.totalSellAmount -
       mockHoldingData.totalDividend) /
     mockHoldingData.shares;
@@ -92,7 +96,13 @@ try {
   );
 
   // 验证累计盈亏：多仓市值 - 总成本 + 总卖出金额 + 总现金股息
-  const totalCost = mockHoldingData.totalBuyAmount + mockHoldingData.totalCommission + mockHoldingData.totalTax;
+  const totalCost =
+    mockHoldingData.totalBuyAmount +
+    mockHoldingData.buyCommission +
+    mockHoldingData.sellCommission +
+    mockHoldingData.buyTax +
+    mockHoldingData.sellTax +
+    mockHoldingData.otherTax;
   const expectedAccumAmount = marketValue - totalCost + mockHoldingData.totalSellAmount + mockHoldingData.totalDividend;
   console.log(
     "期望累计盈亏:",

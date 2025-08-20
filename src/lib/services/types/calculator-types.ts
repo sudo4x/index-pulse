@@ -5,8 +5,11 @@ export interface SharesData {
   totalBuyAmount: number;
   totalSellAmount: number;
   totalDividend: number;
-  totalCommission: number; // 总佣金
-  totalTax: number; // 总税费
+  buyCommission: number; // 买入佣金
+  sellCommission: number; // 卖出佣金
+  buyTax: number; // 买入税费（通常为0）
+  sellTax: number; // 卖出税费（印花税等）
+  otherTax: number; // 其他税费（除权除息等产生的税费）
   buyShares: number;
   openTime: Date | null;
   liquidationTime: Date | null;
@@ -43,8 +46,11 @@ export interface TransactionData {
   totalBuyAmount: number;
   totalSellAmount: number;
   totalDividend: number;
-  totalCommission: number;
-  totalTax: number;
+  buyCommission: number;
+  sellCommission: number;
+  buyTax: number;
+  sellTax: number;
+  otherTax: number;
 }
 
 export interface TransactionRecord {

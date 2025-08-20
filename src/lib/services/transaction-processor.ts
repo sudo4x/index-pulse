@@ -15,8 +15,11 @@ export class TransactionProcessor {
     let totalBuyAmount = 0;
     let totalSellAmount = 0;
     let totalDividend = 0;
-    let totalCommission = 0;
-    let totalTax = 0;
+    let buyCommission = 0;
+    let sellCommission = 0;
+    let buyTax = 0;
+    let sellTax = 0;
+    let otherTax = 0;
     let buyShares = 0;
     let openTime: Date | null = null;
     let liquidationTime: Date | null = null;
@@ -33,8 +36,11 @@ export class TransactionProcessor {
         totalBuyAmount,
         totalSellAmount,
         totalDividend,
-        totalCommission,
-        totalTax,
+        buyCommission,
+        sellCommission,
+        buyTax,
+        sellTax,
+        otherTax,
       });
 
       totalShares = result.totalShares;
@@ -42,17 +48,30 @@ export class TransactionProcessor {
       totalBuyAmount = result.totalBuyAmount;
       totalSellAmount = result.totalSellAmount;
       totalDividend = result.totalDividend;
-      totalCommission = result.totalCommission;
-      totalTax = result.totalTax;
+      buyCommission = result.buyCommission;
+      sellCommission = result.sellCommission;
+      buyTax = result.buyTax;
+      sellTax = result.sellTax;
+      otherTax = result.otherTax;
 
-      // 累加佣金和税费
-      totalCommission += commission;
-      totalTax += tax;
-
+      // 根据交易类型分类累加佣金和税费
       if (transaction.type === TransactionType.BUY) {
+        buyCommission += commission;
+        buyTax += tax;
         openTime ??= transaction.transactionDate;
-      } else if (transaction.type === TransactionType.SELL && totalShares <= 0) {
-        liquidationTime = transaction.transactionDate;
+      } else if (transaction.type === TransactionType.SELL) {
+        sellCommission += commission;
+        sellTax += tax;
+        if (totalShares <= 0) {
+          liquidationTime = transaction.transactionDate;
+        }
+      } else {
+        // 除权除息等其他交易类型的税费计入otherTax
+        otherTax += tax;
+        // 佣金仍按交易类型分类（如果有的话）
+        if (commission > 0) {
+          otherTax += commission; // 或者单独处理，这里简化为计入otherTax
+        }
       }
     }
 
@@ -61,8 +80,11 @@ export class TransactionProcessor {
       totalBuyAmount,
       totalSellAmount,
       totalDividend,
-      totalCommission,
-      totalTax,
+      buyCommission,
+      sellCommission,
+      buyTax,
+      sellTax,
+      otherTax,
       buyShares,
       openTime,
       liquidationTime,

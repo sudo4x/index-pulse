@@ -51,8 +51,11 @@ export const holdings = pgTable(
     totalBuyAmount: decimal("total_buy_amount", { precision: 18, scale: 2 }).notNull().default("0"), // 总买入金额
     totalSellAmount: decimal("total_sell_amount", { precision: 18, scale: 2 }).notNull().default("0"), // 总卖出金额
     totalDividend: decimal("total_dividend", { precision: 18, scale: 2 }).notNull().default("0"), // 总现金股息
-    totalCommission: decimal("total_commission", { precision: 18, scale: 2 }).notNull().default("0"), // 总佣金
-    totalTax: decimal("total_tax", { precision: 18, scale: 2 }).notNull().default("0"), // 总税费
+    buyCommission: decimal("buy_commission", { precision: 18, scale: 2 }).notNull().default("0"), // 买入佣金
+    sellCommission: decimal("sell_commission", { precision: 18, scale: 2 }).notNull().default("0"), // 卖出佣金
+    buyTax: decimal("buy_tax", { precision: 18, scale: 2 }).notNull().default("0"), // 买入税费（通常为0）
+    sellTax: decimal("sell_tax", { precision: 18, scale: 2 }).notNull().default("0"), // 卖出税费（印花税等）
+    otherTax: decimal("other_tax", { precision: 18, scale: 2 }).notNull().default("0"), // 其他税费（除权除息等产生的税费）
     isActive: boolean("is_active").notNull().default(true), // 是否活跃持仓
     openTime: timestamp("open_time").notNull(), // 首次买入时间
     liquidationTime: timestamp("liquidation_time"), // 清仓时间

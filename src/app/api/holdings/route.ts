@@ -100,8 +100,11 @@ function transformHoldingData(holding: Holding, currentPrice: StockPrice) {
     totalBuyAmount: parseFloat(String(holding.totalBuyAmount)),
     totalSellAmount: parseFloat(String(holding.totalSellAmount)),
     totalDividend: parseFloat(String(holding.totalDividend)),
-    totalCommission: parseFloat(String(holding.totalCommission)),
-    totalTax: parseFloat(String(holding.totalTax)),
+    buyCommission: parseFloat(String(holding.buyCommission)),
+    sellCommission: parseFloat(String(holding.sellCommission)),
+    buyTax: parseFloat(String(holding.buyTax)),
+    sellTax: parseFloat(String(holding.sellTax)),
+    otherTax: parseFloat(String(holding.otherTax)),
   };
 
   // 直接使用数据库中已计算好的成本

@@ -64,3 +64,23 @@ portfolio-calculator.ts 中 getStockPrice(symbol: string)这个函数目前是�
 6、提供getStockPriceMap(symbols: string[])方法，返回StockPrice的map形式，key是symbol，value是StockPrice对象，参考
 7、6实现之后，@src/lib/services/portfolio-calculator.ts 中116行开始的priceMap的相关实现要改造成用6提供的函数来实现
 8、@src/app/api/holdings/route.ts 中61行：```const prices = await StockPriceService.getMultipleStockPrices(symbols); ```这个错误也要修复，改成用上面改造后的方法来实现。
+
+
+
+08-19
+@src/app/api/holdings/route.ts 中的transformHoldingData方法，计算逻辑有错误，需要修改。
+从数据库中拿到的holdings数据，都是通过交易记录计算好的结果，可以直接带入公式@docs/计算公式.md 来进行计算的。
+holdings数据的定义你看一下@src/lib/db/schema.ts里面的定义。
+好好分析一下目前transformHoldingData方法的实现，仔细思考一下，怎么规划修改，先给我修改方案。
+
+持仓成本计算逻辑修改
+@src/lib/services/financial-calculator.ts 中 FinancialCalculator.calculateCosts 方法计算成本的逻辑需要改造一下
+目前计算公式是：持仓成本 = (总买入金额 + 佣金 + 税费) / (总买入股数 + 红股数量 + 拆股所增数量 - 合股所减数量)
+正确的计算公式是：持仓成本 = (总买入金额（需要算上买入时的佣金）) / (总买入股数 + 红股数量 + 拆股所增数量 - 合股所减数量)
+问题出在这里 (总买入金额 + 佣金 + 税费) 这里的佣金包括了卖出时的佣金，税费包括了卖出时的税费以及其他形式的税费，这个就是导致计算误差的原因所在。
+需要注意的是，买入是没有税费的，所以@src/lib/services/transaction-processor.ts中TransactionProcessor.calculateSharesAndAmounts也要相应进行改造。
+你深入思考并设计一下改造方案
+补充：
+totalCommission: number; // 保留兼容性 这部分不需要保留兼容性，所有涉及到这个字段的地方你也要一并修改掉
+```移除：totalCommission, totalTax 新增：buyCommission, sellCommission, buyTax, sellTax ``` 这样 除权除息 这种交易类型产生的税费就没地方保存了
+```摊薄成本：(totalBuyAmount + buyCommission - totalSellAmount - totalDividend) / totalShares ``` 这部分不对 摊薄成本 = (总买入金额 + 佣金 + 税费 - 总卖出金额 - 总现金股息) / 总持股数 这里的 佣金 + 税费 是包括所有的类型的

@@ -9,11 +9,18 @@ export class FinancialCalculator {
    * 计算成本相关数据
    */
   static calculateCosts(sharesData: SharesData): { holdCost: number; dilutedCost: number } {
-    // 持仓成本 = (总买入金额 + 佣金 + 税费) / (总买入股数 + 红股数量 + 拆股所增数量 - 合股所减数量)
-    const totalCost = sharesData.totalBuyAmount + sharesData.totalCommission + sharesData.totalTax;
-    const holdCost = sharesData.buyShares > 0 ? totalCost / sharesData.buyShares : 0;
+    // 持仓成本 = (总买入金额 + 买入佣金) / (总买入股数 + 红股数量 + 拆股所增数量 - 合股所减数量)
+    const totalBuyCost = sharesData.totalBuyAmount + sharesData.buyCommission;
+    const holdCost = sharesData.buyShares > 0 ? totalBuyCost / sharesData.buyShares : 0;
 
-    // 摊薄成本 = (总买入金额 + 佣金 + 税费 - 总卖出金额 - 总现金股息) / 总持股数
+    // 摊薄成本 = (总买入金额 + 所有佣金 + 所有税费 - 总卖出金额 - 总现金股息) / 总持股数
+    const totalCost =
+      sharesData.totalBuyAmount +
+      sharesData.buyCommission +
+      sharesData.sellCommission +
+      sharesData.buyTax +
+      sharesData.sellTax +
+      sharesData.otherTax;
     const dilutedCost =
       sharesData.totalShares > 0
         ? (totalCost - sharesData.totalSellAmount - sharesData.totalDividend) / sharesData.totalShares
@@ -37,15 +44,25 @@ export class FinancialCalculator {
     totalBuyAmount: number;
     totalSellAmount: number;
     totalDividend: number;
-    totalCommission: number;
-    totalTax: number;
+    buyCommission: number;
+    sellCommission: number;
+    buyTax: number;
+    sellTax: number;
+    otherTax: number;
   }): { holdCost: number; dilutedCost: number } {
-    // 持仓成本 = (总买入金额 + 佣金 + 税费) / 持股数（需要考虑拆股合股后的实际买入股数，这里简化处理）
-    // 注意：这里使用当前持股数作为分母，这是一个简化处理
-    const totalCost = holdingData.totalBuyAmount + holdingData.totalCommission + holdingData.totalTax;
-    const holdCost = holdingData.shares > 0 ? totalCost / holdingData.shares : 0;
+    // 持仓成本 = (总买入金额 + 买入佣金) / 持股数（这里简化使用当前持股数）
+    // ∑买入金额 = 总买入金额 + 总佣金
+    const totalBuyCost = holdingData.totalBuyAmount + holdingData.buyCommission;
+    const holdCost = holdingData.shares > 0 ? totalBuyCost / holdingData.shares : 0;
 
-    // 摊薄成本 = (总买入金额 + 佣金 + 税费 - 总卖出金额 - 总现金股息) / 持股数
+    // 摊薄成本 = (总买入金额 + 所有佣金 + 所有税费 - 总卖出金额 - 总现金股息) / 持股数
+    const totalCost =
+      holdingData.totalBuyAmount +
+      holdingData.buyCommission +
+      holdingData.sellCommission +
+      holdingData.buyTax +
+      holdingData.sellTax +
+      holdingData.otherTax;
     const dilutedCost =
       holdingData.shares > 0
         ? (totalCost - holdingData.totalSellAmount - holdingData.totalDividend) / holdingData.shares
@@ -63,8 +80,11 @@ export class FinancialCalculator {
       totalBuyAmount: number;
       totalSellAmount: number;
       totalDividend: number;
-      totalCommission: number;
-      totalTax: number;
+      buyCommission: number;
+      sellCommission: number;
+      buyTax: number;
+      sellTax: number;
+      otherTax: number;
     },
     currentPrice: StockPrice,
     holdCost: number,
@@ -77,10 +97,21 @@ export class FinancialCalculator {
     const floatAmount = (currentPriceValue - holdCost) * holdingData.shares;
     const floatRate = holdCost > 0 ? floatAmount / (holdCost * holdingData.shares) : 0;
 
-    // 累计盈亏 = 多仓市值 - 总买入金额 - 总佣金 - 总税费 + 总卖出金额 + 总现金股息
-    const totalCost = holdingData.totalBuyAmount + holdingData.totalCommission + holdingData.totalTax;
+    // 累计盈亏率 ＝ 累计盈亏额 / ∑买入金额
+    // ∑买入金额 = 总买入金额 + 总佣金
+    const totalBuyCost = holdingData.totalBuyAmount + holdingData.buyCommission;
+
+    // 累计盈亏 = 多仓市值 - 总买入金额 - 所有佣金 - 所有税费 + 总卖出金额 + 总现金股息
+    const totalCost =
+      holdingData.totalBuyAmount +
+      holdingData.buyCommission +
+      holdingData.sellCommission +
+      holdingData.buyTax +
+      holdingData.sellTax +
+      holdingData.otherTax;
+
     const accumAmount = marketValue - totalCost + holdingData.totalSellAmount + holdingData.totalDividend;
-    const accumRate = totalCost > 0 ? accumAmount / totalCost : 0;
+    const accumRate = totalBuyCost > 0 ? accumAmount / totalBuyCost : 0;
 
     // 当日盈亏计算（简化版本，不支持精确的昨日市值算法）
     const dayFloatAmount = currentPrice.change * holdingData.shares;
@@ -108,8 +139,14 @@ export class FinancialCalculator {
     const floatAmount = (currentPriceValue - holdCost) * sharesData.totalShares;
     const floatRate = holdCost > 0 ? floatAmount / (holdCost * sharesData.totalShares) : 0;
 
-    // 累计盈亏 = 多仓市值 - 总买入金额 - 总佣金 - 总税费 + 总卖出金额 + 总现金股息
-    const totalCost = sharesData.totalBuyAmount + sharesData.totalCommission + sharesData.totalTax;
+    // 累计盈亏 = 多仓市值 - 总买入金额 - 所有佣金 - 所有税费 + 总卖出金额 + 总现金股息
+    const totalCost =
+      sharesData.totalBuyAmount +
+      sharesData.buyCommission +
+      sharesData.sellCommission +
+      sharesData.buyTax +
+      sharesData.sellTax +
+      sharesData.otherTax;
     const accumAmount = marketValue - totalCost + sharesData.totalSellAmount + sharesData.totalDividend;
     const accumRate = totalCost > 0 ? accumAmount / totalCost : 0;
 
@@ -140,8 +177,14 @@ export class FinancialCalculator {
     const floatAmount = (currentPriceValue - holdCost) * sharesData.totalShares;
     const floatRate = holdCost > 0 ? floatAmount / (holdCost * sharesData.totalShares) : 0;
 
-    // 累计盈亏 = 多仓市值 - 总买入金额 - 总佣金 - 总税费 + 总卖出金额 + 总现金股息
-    const totalCost = sharesData.totalBuyAmount + sharesData.totalCommission + sharesData.totalTax;
+    // 累计盈亏 = 多仓市值 - 总买入金额 - 所有佣金 - 所有税费 + 总卖出金额 + 总现金股息
+    const totalCost =
+      sharesData.totalBuyAmount +
+      sharesData.buyCommission +
+      sharesData.sellCommission +
+      sharesData.buyTax +
+      sharesData.sellTax +
+      sharesData.otherTax;
     const accumAmount = marketValue - totalCost + sharesData.totalSellAmount + sharesData.totalDividend;
     const accumRate = totalCost > 0 ? accumAmount / totalCost : 0;
 
@@ -183,7 +226,7 @@ export class FinancialCalculator {
     if (yesterdayMarketValue > 0) {
       // 昨日市值 > 0 的情况
       // 当日盈亏额 = (现市值 - 昨收市值 + 当日∑卖出 - 当日∑买入)
-      const yesterdayClosePrice = currentPrice.previousClose ?? currentPriceValue - currentPrice.change;
+      const yesterdayClosePrice = currentPriceValue - currentPrice.change;
       const yesterdayCloseMarketValue = yesterdayShares * yesterdayClosePrice;
 
       const dayFloatAmount = marketValue - yesterdayCloseMarketValue + todaySellAmount - todayBuyAmount;
