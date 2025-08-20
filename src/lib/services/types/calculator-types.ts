@@ -78,3 +78,16 @@ export interface DayTradingData {
 export interface EnhancedSharesData extends SharesData {
   dayTradingData?: DayTradingData;
 }
+
+export interface TransactionFees {
+  buyCommission: number;
+  sellCommission: number;
+  buyTax: number;
+  sellTax: number;
+  otherTax: number;
+}
+
+export interface TransactionTimestamps {
+  openTime: Date | null;
+  liquidationTime: Date | null;
+}

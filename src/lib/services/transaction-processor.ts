@@ -1,6 +1,6 @@
 import { TransactionType } from "@/types/investment";
 
-import { SharesData, TransactionData, TransactionRecord } from "./types/calculator-types";
+import { SharesData, TransactionData, TransactionRecord, TransactionFees, TransactionTimestamps } from "./types/calculator-types";
 
 /**
  * 交易处理器
@@ -11,88 +11,102 @@ export class TransactionProcessor {
    * 计算股份和金额统计
    */
   static calculateSharesAndAmounts(transactions: TransactionRecord[]): SharesData {
-    let totalShares = 0;
-    let totalBuyAmount = 0;
-    let totalSellAmount = 0;
-    let totalDividend = 0;
-    let buyCommission = 0;
-    let sellCommission = 0;
-    let buyTax = 0;
-    let sellTax = 0;
-    let otherTax = 0;
-    let buyShares = 0;
-    let openTime: Date | null = null;
-    let liquidationTime: Date | null = null;
+    const initialState = this.createInitialState();
 
-    for (const transaction of transactions) {
-      const shares = parseFloat(String(transaction.shares)) || 0;
-      const amount = parseFloat(String(transaction.amount)) || 0;
-      const commission = parseFloat(String(transaction.commission)) || 0;
-      const tax = parseFloat(String(transaction.tax)) || 0;
+    return transactions.reduce((accumulator, transaction) => {
+      return this.processTransactionWithFees(accumulator, transaction);
+    }, initialState);
+  }
 
-      const result = this.processTransaction(transaction, shares, amount, {
-        totalShares,
-        buyShares,
-        totalBuyAmount,
-        totalSellAmount,
-        totalDividend,
-        buyCommission,
-        sellCommission,
-        buyTax,
-        sellTax,
-        otherTax,
-      });
-
-      totalShares = result.totalShares;
-      buyShares = result.buyShares;
-      totalBuyAmount = result.totalBuyAmount;
-      totalSellAmount = result.totalSellAmount;
-      totalDividend = result.totalDividend;
-      buyCommission = result.buyCommission;
-      sellCommission = result.sellCommission;
-      buyTax = result.buyTax;
-      sellTax = result.sellTax;
-      otherTax = result.otherTax;
-
-      // 根据交易类型分类累加佣金和税费
-      if (transaction.type === TransactionType.BUY) {
-        buyCommission += commission;
-        buyTax += tax;
-        openTime ??= transaction.transactionDate;
-      } else if (transaction.type === TransactionType.SELL) {
-        sellCommission += commission;
-        sellTax += tax;
-        if (totalShares <= 0) {
-          liquidationTime = transaction.transactionDate;
-        }
-      } else {
-        // 除权除息等其他交易类型的税费计入otherTax
-        otherTax += tax;
-        // 佣金仍按交易类型分类（如果有的话）
-        if (commission > 0) {
-          otherTax += commission; // 或者单独处理，这里简化为计入otherTax
-        }
-      }
-    }
-
+  /**
+   * 创建初始状态
+   */
+  private static createInitialState(): SharesData {
     return {
-      totalShares,
-      totalBuyAmount,
-      totalSellAmount,
-      totalDividend,
-      buyCommission,
-      sellCommission,
-      buyTax,
-      sellTax,
-      otherTax,
-      buyShares,
-      openTime,
-      liquidationTime,
+      totalShares: 0,
+      totalBuyAmount: 0,
+      totalSellAmount: 0,
+      totalDividend: 0,
+      buyCommission: 0,
+      sellCommission: 0,
+      buyTax: 0,
+      sellTax: 0,
+      otherTax: 0,
+      buyShares: 0,
+      openTime: null,
+      liquidationTime: null,
     };
   }
 
   /**
-   * 处理单个交易记录
+   * 更新费用统计
+   */
+  private static updateFees(current: SharesData, transaction: TransactionRecord): SharesData {
+    const commission = parseFloat(String(transaction.commission)) || 0;
+    const tax = parseFloat(String(transaction.tax)) || 0;
+
+    const result = { ...current };
+
+    switch (transaction.type) {
+      case TransactionType.BUY:
+        result.buyCommission += commission;
+        result.buyTax += tax;
+        break;
+      case TransactionType.SELL:
+        result.sellCommission += commission;
+        result.sellTax += tax;
+        break;
+      default:
+        // 除权除息等其他交易类型的费用计入otherTax
+        result.otherTax += tax + commission;
+        break;
+    }
+
+    return result;
+  }
+
+  /**
+   * 更新时间戳
+   */
+  private static updateTimestamps(current: SharesData, transaction: TransactionRecord): SharesData {
+    const result = { ...current };
+
+    if (transaction.type === TransactionType.BUY && !result.openTime) {
+      result.openTime = transaction.transactionDate;
+    } else if (transaction.type === TransactionType.SELL && result.totalShares <= 0) {
+      result.liquidationTime = transaction.transactionDate;
+    }
+
+    return result;
+  }
+
+  /**
+   * 统一处理交易记录（包括费用和时间戳）
+   */
+  private static processTransactionWithFees(current: SharesData, transaction: TransactionRecord): SharesData {
+    const shares = parseFloat(String(transaction.shares)) || 0;
+    const amount = parseFloat(String(transaction.amount)) || 0;
+
+    // 1. 处理核心交易逻辑
+    const updatedTransactionData = this.processTransaction(transaction, shares, amount, current);
+
+    // 2. 合并交易数据到当前状态
+    const mergedData: SharesData = {
+      ...current,
+      ...updatedTransactionData,
+    };
+
+    // 3. 处理费用分类
+    const withFees = this.updateFees(mergedData, transaction);
+
+    // 4. 处理时间戳
+    const final = this.updateTimestamps(withFees, transaction);
+
+    return final;
+  }
+
+  /**
+   * 处理单个交易记录（核心逻辑）
    */
   private static processTransaction(
     transaction: {
