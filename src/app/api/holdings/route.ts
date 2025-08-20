@@ -104,8 +104,9 @@ function transformHoldingData(holding: Holding, currentPrice: StockPrice) {
     totalTax: parseFloat(String(holding.totalTax)),
   };
 
-  // 计算成本
-  const { holdCost, dilutedCost } = FinancialCalculator.calculateCostsFromHoldings(holdingData);
+  // 直接使用数据库中已计算好的成本
+  const dilutedCost = parseFloat(String(holding.dilutedCost));
+  const holdCost = parseFloat(String(holding.holdCost));
 
   // 计算市值
   const marketValue = FinancialCalculator.calculateMarketValue(holdingData.shares, currentPrice.currentPrice);
