@@ -1,6 +1,12 @@
 import { TransactionType } from "@/types/investment";
 
-import { SharesData, TransactionData, TransactionRecord, TransactionFees, TransactionTimestamps } from "./types/calculator-types";
+import {
+  SharesData,
+  TransactionData,
+  TransactionRecord,
+  TransactionFees,
+  TransactionTimestamps,
+} from "./types/calculator-types";
 
 /**
  * 交易处理器

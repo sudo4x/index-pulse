@@ -84,3 +84,11 @@ holdings数据的定义你看一下@src/lib/db/schema.ts里面的定义。
 totalCommission: number; // 保留兼容性 这部分不需要保留兼容性，所有涉及到这个字段的地方你也要一并修改掉
 ```移除：totalCommission, totalTax 新增：buyCommission, sellCommission, buyTax, sellTax ``` 这样 除权除息 这种交易类型产生的税费就没地方保存了
 ```摊薄成本：(totalBuyAmount + buyCommission - totalSellAmount - totalDividend) / totalShares ``` 这部分不对 摊薄成本 = (总买入金额 + 佣金 + 税费 - 总卖出金额 - 总现金股息) / 总持股数 这里的 佣金 + 税费 是包括所有的类型的
+
+
+交易记录更新/删除后的相关操作需要保持和新增记录一致
+仔细分析一下@src/app/api/transactions/route.ts 里面新增交易记录的相关逻辑
+同样分析一下@src/app/api/transactions/[id]/route.ts 里面更新和删除交易记录的相关逻辑
+仔细对比分析一下，目前来看 新增交易记录里面的逻辑 是没问题的，但是更新交易记录这里面的逻辑有问题。
+比如我修改了购买/卖出价格或者数量，其实相应的佣金或者税费是要同步重新计算的，并且也要触发重算并更新到holdings中。
+你深度分析思考一下，两边需要保持一致，注意代码重用，不要重复写相同的逻辑代码。严格遵守开发规范和设计模式。
