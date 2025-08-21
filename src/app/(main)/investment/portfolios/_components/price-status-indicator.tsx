@@ -1,17 +1,29 @@
 import { Badge } from "@/components/ui/badge";
+import { formatRelativeTime } from "@/lib/utils/time-utils";
 
 interface PriceStatusIndicatorProps {
   isConnected: boolean;
   isConnecting: boolean;
   error: string | null;
-  totalUpdates: number;
+  lastUpdate: string | null;
+  enabled: boolean;
 }
 
-export function PriceStatusIndicator({ isConnected, isConnecting, error, totalUpdates }: PriceStatusIndicatorProps) {
+export function PriceStatusIndicator({
+  isConnected,
+  isConnecting,
+  error,
+  lastUpdate,
+  enabled,
+}: PriceStatusIndicatorProps) {
+  // 如果未启用价格更新，不显示任何状态
+  if (!enabled) {
+    return null;
+  }
+
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">持仓列表</span>
         {isConnecting && (
           <Badge variant="outline" className="text-xs">
             连接中...
@@ -19,7 +31,7 @@ export function PriceStatusIndicator({ isConnected, isConnecting, error, totalUp
         )}
         {isConnected && (
           <Badge variant="default" className="bg-green-500 text-xs">
-            WebSocket 实时
+            实时更新
           </Badge>
         )}
         {error && !isConnected && (
@@ -28,7 +40,7 @@ export function PriceStatusIndicator({ isConnected, isConnecting, error, totalUp
           </Badge>
         )}
       </div>
-      {totalUpdates > 0 && <div className="text-muted-foreground text-xs">已更新 {totalUpdates} 次</div>}
+      {lastUpdate && <div className="text-muted-foreground/70 text-xs">{formatRelativeTime(lastUpdate)}</div>}
     </div>
   );
 }

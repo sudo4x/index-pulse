@@ -90,7 +90,7 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
 
     // 延迟自动连接，确保组件完全挂载
     const autoConnectTimer = setTimeout(() => {
-      if (optionsRef.current.autoConnect !== false && !priceManager.isDestroyed) {
+      if (optionsRef.current.autoConnect === true && !priceManager.isDestroyed) {
         console.log("开始自动连接...");
         priceManager.connect().catch((err) => {
           console.error("自动连接失败:", err);

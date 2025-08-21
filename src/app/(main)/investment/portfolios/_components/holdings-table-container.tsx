@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useHoldingsTableLogic } from "@/hooks/use-holdings-table-logic";
 import { usePriceUpdates } from "@/hooks/use-price-updates";
 import { useToast } from "@/hooks/use-toast";
+import { getLocalStorageItem, setLocalStorageItem, LOCAL_STORAGE_KEYS } from "@/lib/utils/local-storage";
 import { HoldingDetail } from "@/types/investment";
 
 import { HoldingDialogsManager } from "./holding-dialogs-manager";
@@ -20,11 +21,30 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
   const [holdings, setHoldings] = useState<HoldingDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showHistorical, setShowHistorical] = useState(false);
+  const [enablePriceUpdates, setEnablePriceUpdates] = useState(() =>
+    getLocalStorageItem(LOCAL_STORAGE_KEYS.HOLDINGS_PRICE_UPDATES_ENABLED, false),
+  );
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
   // 使用新的价格更新Hook
-  const { isConnected, isConnecting, error: priceError, prices, subscribe, unsubscribe, stats } = usePriceUpdates();
+  const {
+    isConnected,
+    isConnecting,
+    error: priceError,
+    prices,
+    subscribe,
+    unsubscribe,
+    lastUpdate,
+  } = usePriceUpdates({
+    autoConnect: enablePriceUpdates,
+  });
+
+  // 保存价格更新设置
+  const handlePriceUpdatesChange = (checked: boolean) => {
+    setEnablePriceUpdates(checked);
+    setLocalStorageItem(LOCAL_STORAGE_KEYS.HOLDINGS_PRICE_UPDATES_ENABLED, checked);
+  };
 
   const fetchHoldings = useCallback(async () => {
     if (!portfolioId || portfolioId === "undefined") {
@@ -79,20 +99,20 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
     };
   }, [portfolioId, showHistorical, fetchHoldings]);
 
-  // 管理价格订阅 - 简化逻辑，只需要在连接成功时订阅一次
+  // 管理价格订阅 - 只在启用价格更新时才进行订阅
   const hasSubscribedRef = useRef(false);
 
   useEffect(() => {
-    // 只在连接成功且有持仓时才订阅
-    if (isConnected && holdings.length > 0 && !hasSubscribedRef.current) {
+    // 只在启用价格更新、连接成功且有持仓时才订阅
+    if (enablePriceUpdates && isConnected && holdings.length > 0 && !hasSubscribedRef.current) {
       console.log("连接成功，订阅所有价格数据");
       subscribe();
       hasSubscribedRef.current = true;
-    } else if (!isConnected) {
-      // 连接断开时重置订阅状态
+    } else if (!isConnected || !enablePriceUpdates) {
+      // 连接断开或禁用价格更新时重置订阅状态
       hasSubscribedRef.current = false;
     }
-  }, [isConnected, holdings.length, subscribe]);
+  }, [enablePriceUpdates, isConnected, holdings.length, subscribe]);
 
   // 组件卸载时清理订阅
   useEffect(() => {
@@ -138,15 +158,27 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
         <CardHeader>
           <CardTitle>持仓品种</CardTitle>
           <CardAction>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="show-historical"
-                checked={showHistorical}
-                onCheckedChange={(checked) => setShowHistorical(checked === true)}
-              />
-              <Label htmlFor="show-historical" className="text-sm font-medium">
-                显示历史持仓
-              </Label>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="enable-price-updates"
+                  checked={enablePriceUpdates}
+                  onCheckedChange={(checked) => handlePriceUpdatesChange(checked === true)}
+                />
+                <Label htmlFor="enable-price-updates" className="text-sm font-medium">
+                  价格更新
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="show-historical"
+                  checked={showHistorical}
+                  onCheckedChange={(checked) => setShowHistorical(checked === true)}
+                />
+                <Label htmlFor="show-historical" className="text-sm font-medium">
+                  显示历史持仓
+                </Label>
+              </div>
             </div>
           </CardAction>
         </CardHeader>
@@ -165,15 +197,27 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
         <CardHeader>
           <CardTitle>持仓品种</CardTitle>
           <CardAction>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="show-historical"
-                checked={showHistorical}
-                onCheckedChange={(checked) => setShowHistorical(checked === true)}
-              />
-              <Label htmlFor="show-historical" className="text-sm font-medium">
-                显示历史持仓
-              </Label>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="enable-price-updates"
+                  checked={enablePriceUpdates}
+                  onCheckedChange={(checked) => handlePriceUpdatesChange(checked === true)}
+                />
+                <Label htmlFor="enable-price-updates" className="text-sm font-medium">
+                  价格更新
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="show-historical"
+                  checked={showHistorical}
+                  onCheckedChange={(checked) => setShowHistorical(checked === true)}
+                />
+                <Label htmlFor="show-historical" className="text-sm font-medium">
+                  显示历史持仓
+                </Label>
+              </div>
             </div>
           </CardAction>
         </CardHeader>
@@ -195,15 +239,27 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
         <CardHeader>
           <CardTitle>持仓品种</CardTitle>
           <CardAction>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="show-historical"
-                checked={showHistorical}
-                onCheckedChange={(checked) => setShowHistorical(checked === true)}
-              />
-              <Label htmlFor="show-historical" className="text-sm font-medium">
-                显示历史持仓
-              </Label>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="enable-price-updates"
+                  checked={enablePriceUpdates}
+                  onCheckedChange={(checked) => handlePriceUpdatesChange(checked === true)}
+                />
+                <Label htmlFor="enable-price-updates" className="text-sm font-medium">
+                  价格更新
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="show-historical"
+                  checked={showHistorical}
+                  onCheckedChange={(checked) => setShowHistorical(checked === true)}
+                />
+                <Label htmlFor="show-historical" className="text-sm font-medium">
+                  显示历史持仓
+                </Label>
+              </div>
             </div>
           </CardAction>
         </CardHeader>
@@ -213,7 +269,8 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
             isConnected={isConnected}
             isConnecting={isConnecting}
             error={priceError}
-            totalUpdates={stats.totalUpdates}
+            lastUpdate={lastUpdate}
+            enabled={enablePriceUpdates}
           />
 
           {/* 数据表格 */}
