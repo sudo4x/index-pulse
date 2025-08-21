@@ -45,8 +45,11 @@ export function useTransactionDialog({
     defaultValues: getTransactionDefaultValues(transactionType),
   }) as TransactionForm;
 
-  // Reset form when transaction type changes
+  // Reset form when transaction type changes (only for non-editing mode)
   useEffect(() => {
+    // 编辑模式下不重置表单，避免覆盖编辑数据
+    if (editingTransaction) return;
+
     const currentValues = form.getValues();
     form.reset({
       ...getTransactionDefaultValues(transactionType),
@@ -55,15 +58,20 @@ export function useTransactionDialog({
       transactionDate: currentValues.transactionDate,
       comment: currentValues.comment,
     });
-  }, [transactionType, form]);
+  }, [transactionType, form, editingTransaction]);
 
   // Initialize form data for editing transaction
   const initializeEditingTransaction = useCallback(() => {
     if (!editingTransaction) return;
 
+    // 先设置交易类型
     setTransactionType(editingTransaction.type);
-    const formData = createFormDataFromTransaction(editingTransaction);
-    form.reset(formData);
+
+    // 使用setTimeout确保在表单schema更新后再设置数据
+    setTimeout(() => {
+      const formData = createFormDataFromTransaction(editingTransaction);
+      form.reset(formData);
+    }, 0);
 
     // 编辑模式下不触发实时价格获取，保留原始交易价格
     // 只设置股票信息用于显示，不触发价格更新
