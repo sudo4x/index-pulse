@@ -5,8 +5,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Download, Upload, ArrowLeftRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortfolioOverview } from "@/types/investment";
 
@@ -23,7 +21,6 @@ interface PortfolioTabsProps {
 }
 
 export function PortfolioTabs({ portfolioId, portfolioName }: PortfolioTabsProps) {
-  const [showHistoricalHoldings, setShowHistoricalHoldings] = useState(false);
   const [activeDialog, setActiveDialog] = useState<string | null>(null);
   const [overviewData, setOverviewData] = useState<Partial<PortfolioOverview>>({});
   const [activeTab, setActiveTab] = useState("holdings");
@@ -69,19 +66,6 @@ export function PortfolioTabs({ portfolioId, portfolioName }: PortfolioTabsProps
     ...buildPortfolioFinancials(),
     ...buildPortfolioProfitLoss(),
   });
-
-  const renderHistoricalCheckbox = () => (
-    <div className="flex items-center space-x-2">
-      <Checkbox
-        id="show-historical"
-        checked={showHistoricalHoldings}
-        onCheckedChange={(checked) => setShowHistoricalHoldings(checked === true)}
-      />
-      <Label htmlFor="show-historical" className="text-sm font-medium">
-        显示历史持仓
-      </Label>
-    </div>
-  );
 
   const renderActionButtons = () => (
     <div className="flex items-center space-x-2">
@@ -150,14 +134,11 @@ export function PortfolioTabs({ portfolioId, portfolioName }: PortfolioTabsProps
             <TabsTrigger value="transfers">转账记录</TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center space-x-4">
-            {activeTab === "holdings" && renderHistoricalCheckbox()}
-            {renderActionButtons()}
-          </div>
+          <div className="flex items-center space-x-4">{renderActionButtons()}</div>
         </div>
 
         <TabsContent value="holdings" className="space-y-4">
-          <HoldingsTable portfolioId={portfolioId} showHistorical={showHistoricalHoldings} />
+          <HoldingsTable portfolioId={portfolioId} />
         </TabsContent>
 
         <TabsContent value="transactions" className="space-y-4">

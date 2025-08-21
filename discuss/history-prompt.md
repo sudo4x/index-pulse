@@ -119,7 +119,8 @@ totalCommission: number; // 保留兼容性 这部分不需要保留兼容性，
 你也参考上面financial-calculator.ts的改造思路也一起改一下，我想这样应该会更清晰吧，你好好深度思考一下
 
 
+参考 @src/app/(main)/dashboard/crm/_components/table-cards.tsx 使用cardAction里面放Button的形式，改造一下一下几个地方
+1、把@src/app/(main)/investment/portfolios/_components/portfolio-tabs.tsx 里面的 “显示历史持仓” 搬到 @src/app/(main)/investment/portfolios/_components/holdings-table-container.tsx 中。
+2、@src/app/(main)/investment/portfolios/_components/portfolio-tabs.tsx 原来 “显示历史持仓” 的显示逻辑需要删除掉
+你仔细阅读下代码，看看怎么改造，给我方案
 
-@src/app/(main)/dashboard/crm/_components/table-cards.tsx
-
-@src/app/(main)/investment/portfolios/_components/holdings-table-container.tsx

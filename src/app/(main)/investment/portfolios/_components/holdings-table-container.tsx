@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useHoldingsTableLogic } from "@/hooks/use-holdings-table-logic";
 import { usePriceUpdates } from "@/hooks/use-price-updates";
 import { useToast } from "@/hooks/use-toast";
@@ -12,12 +14,12 @@ import { PriceStatusIndicator } from "./price-status-indicator";
 
 interface HoldingsTableContainerProps {
   portfolioId: string;
-  showHistorical: boolean;
 }
 
-export function HoldingsTableContainer({ portfolioId, showHistorical }: HoldingsTableContainerProps) {
+export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerProps) {
   const [holdings, setHoldings] = useState<HoldingDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showHistorical, setShowHistorical] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
@@ -132,7 +134,22 @@ export function HoldingsTableContainer({ portfolioId, showHistorical }: Holdings
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="shadow-xs">
+        <CardHeader>
+          <CardTitle>持仓品种</CardTitle>
+          <CardAction>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="show-historical"
+                checked={showHistorical}
+                onCheckedChange={(checked) => setShowHistorical(checked === true)}
+              />
+              <Label htmlFor="show-historical" className="text-sm font-medium">
+                显示历史持仓
+              </Label>
+            </div>
+          </CardAction>
+        </CardHeader>
         <CardContent>
           <div className="flex h-32 items-center justify-center">
             <div className="text-muted-foreground">加载中...</div>
@@ -144,7 +161,22 @@ export function HoldingsTableContainer({ portfolioId, showHistorical }: Holdings
 
   if (holdings.length === 0) {
     return (
-      <Card>
+      <Card className="shadow-xs">
+        <CardHeader>
+          <CardTitle>持仓品种</CardTitle>
+          <CardAction>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="show-historical"
+                checked={showHistorical}
+                onCheckedChange={(checked) => setShowHistorical(checked === true)}
+              />
+              <Label htmlFor="show-historical" className="text-sm font-medium">
+                显示历史持仓
+              </Label>
+            </div>
+          </CardAction>
+        </CardHeader>
         <CardContent>
           <div className="flex h-32 flex-col items-center justify-center space-y-2">
             <div className="text-muted-foreground">还没有持仓记录</div>
@@ -160,6 +192,21 @@ export function HoldingsTableContainer({ portfolioId, showHistorical }: Holdings
   return (
     <>
       <Card className="shadow-xs">
+        <CardHeader>
+          <CardTitle>持仓品种</CardTitle>
+          <CardAction>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="show-historical"
+                checked={showHistorical}
+                onCheckedChange={(checked) => setShowHistorical(checked === true)}
+              />
+              <Label htmlFor="show-historical" className="text-sm font-medium">
+                显示历史持仓
+              </Label>
+            </div>
+          </CardAction>
+        </CardHeader>
         <CardContent className="flex size-full flex-col gap-4">
           {/* 价格状态指示器 */}
           <PriceStatusIndicator
