@@ -46,10 +46,10 @@ export class BuySellHandler extends BaseTransactionHandler {
       transactionDate: this.parseDate(input.transactionDate),
       shares: shares.toString(),
       price: price.toString(),
-      amount: baseAmount.toFixed(2), // 只记录股票交易金额，不包含费用
-      commission: feeResult.commission.toFixed(2),
-      tax: feeResult.stampTax.toFixed(2),
-      transferFee: feeResult.transferFee.toFixed(2),
+      amount: baseAmount.toFixed(4), // 只记录股票交易金额，不包含费用
+      commission: feeResult.commission.toFixed(4),
+      tax: feeResult.stampTax.toFixed(4),
+      transferFee: feeResult.transferFee.toFixed(4),
       description: feeResult.description,
       comment: input.comment ?? null,
     };
