@@ -55,6 +55,7 @@ export interface TransactionData {
 
 export interface TransactionRecord {
   type: TransactionType;
+  positionCycleId?: number;
   shares: number | string | null;
   amount: number | string;
   commission?: number | string | null;

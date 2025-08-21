@@ -81,6 +81,7 @@ export const transactions = pgTable(
     symbol: varchar("symbol", { length: 20 }).notNull(),
     name: varchar("name", { length: 100 }).notNull(),
     type: integer("type").notNull(), // 1-买入 2-卖出 3-合股 4-拆股 9-除权除息
+    positionCycleId: integer("position_cycle_id").notNull(), // 仓位周期ID
     transactionDate: timestamp("transaction_date").notNull(),
     shares: decimal("shares", { precision: 18, scale: 6 }).notNull().default("0"), // 交易股数
     price: decimal("price", { precision: 18, scale: 6 }).notNull().default("0"), // 交易价格
@@ -112,6 +113,11 @@ export const transactions = pgTable(
       table.symbol,
       table.transactionDate,
     ), // 复合索引：全方位查询
+    portfolioSymbolCycleIdx: index("idx_transactions_portfolio_symbol_cycle").on(
+      table.portfolioId,
+      table.symbol,
+      table.positionCycleId,
+    ), // 复合索引：仓位周期查询
   }),
 );
 

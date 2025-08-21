@@ -1,12 +1,7 @@
 import { TransactionType } from "@/types/investment";
 
-import {
-  SharesData,
-  TransactionData,
-  TransactionRecord,
-  TransactionFees,
-  TransactionTimestamps,
-} from "./types/calculator-types";
+import { PositionCycleManager } from "./position-cycle-manager";
+import { SharesData, TransactionData, TransactionRecord } from "./types/calculator-types";
 
 /**
  * 交易处理器
@@ -14,7 +9,21 @@ import {
  */
 export class TransactionProcessor {
   /**
-   * 计算股份和金额统计
+   * 计算当前仓位周期的股份和金额统计（推荐使用）
+   */
+  static async calculateCurrentCycleData(portfolioId: number, symbol: string): Promise<SharesData> {
+    try {
+      const currentCycleTransactions = await PositionCycleManager.getCurrentCycleTransactions(portfolioId, symbol);
+      return this.calculateSharesAndAmounts(currentCycleTransactions);
+    } catch (error) {
+      // 如果没有找到当前周期，返回空数据
+      console.warn(`No current cycle found for ${symbol}:`, error);
+      return this.createInitialState();
+    }
+  }
+
+  /**
+   * 计算股份和金额统计（兼容原有方法）
    */
   static calculateSharesAndAmounts(transactions: TransactionRecord[]): SharesData {
     const initialState = this.createInitialState();

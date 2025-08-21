@@ -1,4 +1,5 @@
 import { FeeCalculator, CommissionConfig } from "@/lib/services/fee-calculator";
+import { PositionCycleManager } from "@/lib/services/position-cycle-manager";
 import { TransactionType } from "@/types/investment";
 
 import {
@@ -22,6 +23,14 @@ export class BuySellHandler extends BaseTransactionHandler {
     const price = Number(input.price ?? 0);
     const baseAmount = shares * price;
 
+    // 分配仓位周期ID
+    const positionCycleId = await PositionCycleManager.assignCycleId(
+      this.parsePortfolioId(input.portfolioId),
+      this.cleanSymbol(input.symbol),
+      input.type,
+      shares,
+    );
+
     // 构建佣金配置对象
     const commissionConfig: CommissionConfig = {
       stockCommissionRate: Number(portfolioConfig.stockCommissionRate),
@@ -43,6 +52,7 @@ export class BuySellHandler extends BaseTransactionHandler {
       symbol: this.cleanSymbol(input.symbol),
       name: this.cleanName(input.name),
       type: input.type,
+      positionCycleId,
       transactionDate: this.parseDate(input.transactionDate),
       shares: shares.toString(),
       price: price.toString(),

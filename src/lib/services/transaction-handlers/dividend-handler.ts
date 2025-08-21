@@ -3,6 +3,7 @@ import { eq, and } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
 import { HoldingService } from "@/lib/services/holding-service";
+import { PositionCycleManager } from "@/lib/services/position-cycle-manager";
 import { TransactionProcessor } from "@/lib/services/transaction-processor";
 import { TransactionType } from "@/types/investment";
 
@@ -23,11 +24,19 @@ export class DividendHandler extends BaseTransactionHandler {
   }
 
   async processTransaction(input: TransactionInput, _portfolioConfig: PortfolioConfig): Promise<TransactionOutput> {
+    // 分配仓位周期ID（除权除息使用当前周期）
+    const positionCycleId = await PositionCycleManager.assignCycleId(
+      this.parsePortfolioId(input.portfolioId),
+      this.cleanSymbol(input.symbol),
+      input.type,
+      0, // 除权除息不涉及股数变动
+    );
+
     // 查询当前持股数
     const holdingShares = await this.getHoldingShares(input.portfolioId, input.symbol);
 
     const calculations = this.calculateDividendAmounts(input, holdingShares);
-    const basicInfo = this.buildBasicTransactionInfo(input);
+    const basicInfo = this.buildBasicTransactionInfo(input, positionCycleId);
     const dividendInfo = this.buildDividendSpecificInfo(input, calculations.taxAmount);
     return {
       ...basicInfo,
@@ -44,12 +53,13 @@ export class DividendHandler extends BaseTransactionHandler {
     return { dividendAmount, taxAmount };
   }
 
-  private buildBasicTransactionInfo(input: TransactionInput) {
+  private buildBasicTransactionInfo(input: TransactionInput, positionCycleId: number) {
     return {
       portfolioId: this.parsePortfolioId(input.portfolioId),
       symbol: this.cleanSymbol(input.symbol),
       name: this.cleanName(input.name),
       type: input.type,
+      positionCycleId,
       transactionDate: this.parseDate(input.transactionDate),
       shares: "0", // 除权除息不涉及股数变化，这里设为0
       price: "0",

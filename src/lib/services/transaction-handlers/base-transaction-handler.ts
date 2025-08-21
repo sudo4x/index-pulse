@@ -23,6 +23,7 @@ export interface TransactionOutput {
   symbol: string;
   name: string;
   type: TransactionType;
+  positionCycleId: number;
   transactionDate: Date;
   shares: string;
   price: string;

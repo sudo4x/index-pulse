@@ -43,6 +43,7 @@ export async function GET(request: Request) {
         symbol: transactions.symbol,
         name: transactions.name,
         type: transactions.type,
+        positionCycleId: transactions.positionCycleId,
         transactionDate: transactions.transactionDate,
         shares: transactions.shares,
         price: transactions.price,

@@ -92,3 +92,27 @@ totalCommission: number; // 保留兼容性 这部分不需要保留兼容性，
 仔细对比分析一下，目前来看 新增交易记录里面的逻辑 是没问题的，但是更新交易记录这里面的逻辑有问题。
 比如我修改了购买/卖出价格或者数量，其实相应的佣金或者税费是要同步重新计算的，并且也要触发重算并更新到holdings中。
 你深度分析思考一下，两边需要保持一致，注意代码重用，不要重复写相同的逻辑代码。严格遵守开发规范和设计模式。
+
+
+
+08-21
+@src/lib/services/holding-service.ts 中 updateHoldingBySymbol 
+计算持仓成本里面的逻辑在重新买入清仓过的品种，成本计算有问题。
+目前计算公式是：持仓成本 = (总买入金额 + 佣金 + 税费) / (总买入股数 + 红股数量 + 拆股所增数量 - 合股所减数量)，
+这个是涵盖了全部的交易记录，实际上清仓过的品种，对成本的计算不应该包括清仓前的记录，只需要对最新买入的记录进行计算
+
+
+@src/lib/services/holding-service.ts 中
+```// 计算当前仓位周期的持仓数据
+      const sharesData = await TransactionProcessor.calculateCurrentCycleData(portfolioId, symbol);``` 是通过当前仓位周期的数据获得的sharesData。
+但是 第29行的 ```      // 使用 FinancialCalculator 计算成本
+      const { holdCost, dilutedCost } = FinancialCalculator.calculateCosts(sharesData);```计算持仓成本和摊薄成本所需要的sharesData数据是不同的，
+持仓成本：需要的是当前持仓周期中的数据
+摊薄成本：需要的是所有周期中的数据
+你好好深入分析一下目前是实现是不是有问题
+
+
+
+@src/app/(main)/dashboard/crm/_components/table-cards.tsx
+
+@src/app/(main)/investment/portfolios/_components/holdings-table-container.tsx

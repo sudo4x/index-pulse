@@ -15,61 +15,71 @@ export class HoldingService {
    * 根据交易记录重新计算并更新单个品种的持仓数据
    */
   static async updateHoldingBySymbol(portfolioId: number, symbol: string): Promise<void> {
-    // 获取该品种的所有交易记录
-    const holdingTransactions = await db
-      .select()
-      .from(transactions)
-      .where(and(eq(transactions.portfolioId, portfolioId), eq(transactions.symbol, symbol)))
-      .orderBy(transactions.transactionDate);
+    try {
+      // 计算当前仓位周期的持仓数据
+      const sharesData = await TransactionProcessor.calculateCurrentCycleData(portfolioId, symbol);
 
-    if (holdingTransactions.length === 0) {
-      // 如果没有交易记录，删除持仓记录
-      await this.deleteHolding(portfolioId, symbol);
-      return;
-    }
+      if (sharesData.totalShares === 0 && sharesData.totalBuyAmount === 0) {
+        // 如果没有持仓数据，删除持仓记录
+        await this.deleteHolding(portfolioId, symbol);
+        return;
+      }
 
-    // 计算持仓数据
-    const sharesData = TransactionProcessor.calculateSharesAndAmounts(holdingTransactions);
+      // 使用 FinancialCalculator 计算成本
+      const { holdCost, dilutedCost } = FinancialCalculator.calculateCosts(sharesData);
 
-    // 使用 FinancialCalculator 计算成本
-    const { holdCost, dilutedCost } = FinancialCalculator.calculateCosts(sharesData);
+      // 获取股票名称（从最新交易记录获取）
+      const latestTransaction = await db
+        .select({ name: transactions.name })
+        .from(transactions)
+        .where(and(eq(transactions.portfolioId, portfolioId), eq(transactions.symbol, symbol)))
+        .orderBy(transactions.transactionDate)
+        .limit(1);
 
-    // 准备持仓数据
-    const holdingData: NewHolding = {
-      portfolioId,
-      symbol,
-      name: holdingTransactions[0].name,
-      shares: sharesData.totalShares.toString(),
-      dilutedCost: dilutedCost.toString(),
-      holdCost: holdCost.toString(),
-      totalBuyAmount: sharesData.totalBuyAmount.toString(),
-      totalSellAmount: sharesData.totalSellAmount.toString(),
-      totalDividend: sharesData.totalDividend.toString(),
-      buyCommission: sharesData.buyCommission.toString(),
-      sellCommission: sharesData.sellCommission.toString(),
-      buyTax: sharesData.buyTax.toString(),
-      sellTax: sharesData.sellTax.toString(),
-      otherTax: sharesData.otherTax.toString(),
-      isActive: sharesData.totalShares > 0,
-      openTime: sharesData.openTime ?? new Date(),
-      liquidationTime: sharesData.totalShares <= 0 ? new Date() : null,
-    };
+      if (!latestTransaction[0]) {
+        throw new Error(`No transaction found for symbol ${symbol}`);
+      }
 
-    // 检查是否已存在持仓记录
-    const existingHolding = await this.getHolding(portfolioId, symbol);
+      // 准备持仓数据
+      const holdingData: NewHolding = {
+        portfolioId,
+        symbol,
+        name: latestTransaction[0].name,
+        shares: sharesData.totalShares.toString(),
+        dilutedCost: dilutedCost.toString(),
+        holdCost: holdCost.toString(),
+        totalBuyAmount: sharesData.totalBuyAmount.toString(),
+        totalSellAmount: sharesData.totalSellAmount.toString(),
+        totalDividend: sharesData.totalDividend.toString(),
+        buyCommission: sharesData.buyCommission.toString(),
+        sellCommission: sharesData.sellCommission.toString(),
+        buyTax: sharesData.buyTax.toString(),
+        sellTax: sharesData.sellTax.toString(),
+        otherTax: sharesData.otherTax.toString(),
+        isActive: sharesData.totalShares > 0,
+        openTime: sharesData.openTime ?? new Date(),
+        liquidationTime: sharesData.totalShares <= 0 ? new Date() : null,
+      };
 
-    if (existingHolding) {
-      // 更新现有记录
-      await db
-        .update(holdings)
-        .set({
-          ...holdingData,
-          updatedAt: new Date(),
-        })
-        .where(and(eq(holdings.portfolioId, portfolioId), eq(holdings.symbol, symbol)));
-    } else {
-      // 插入新记录
-      await db.insert(holdings).values(holdingData);
+      // 检查是否已存在持仓记录
+      const existingHolding = await this.getHolding(portfolioId, symbol);
+
+      if (existingHolding) {
+        // 更新现有记录
+        await db
+          .update(holdings)
+          .set({
+            ...holdingData,
+            updatedAt: new Date(),
+          })
+          .where(and(eq(holdings.portfolioId, portfolioId), eq(holdings.symbol, symbol)));
+      } else {
+        // 插入新记录
+        await db.insert(holdings).values(holdingData);
+      }
+    } catch (error) {
+      console.error(`Error updating holding for ${symbol}:`, error);
+      throw error;
     }
   }
 
