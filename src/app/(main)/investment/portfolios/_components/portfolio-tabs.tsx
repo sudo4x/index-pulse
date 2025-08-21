@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
-import { ArrowUpRight, ArrowDownRight, ArrowLeftRight } from "lucide-react";
+import { Download, Upload, ArrowLeftRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -85,12 +85,12 @@ export function PortfolioTabs({ portfolioId, portfolioName }: PortfolioTabsProps
 
   const renderActionButtons = () => (
     <div className="flex items-center space-x-2">
-      <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => setActiveDialog("buy")}>
-        <ArrowUpRight className="mr-1 size-4" />
+      <Button size="sm" variant="outline" onClick={() => setActiveDialog("buy")}>
+        <Download className="mr-1 size-4" />
         买入
       </Button>
-      <Button size="sm" variant="destructive" onClick={() => setActiveDialog("sell")}>
-        <ArrowDownRight className="mr-1 size-4" />
+      <Button size="sm" variant="outline" onClick={() => setActiveDialog("sell")}>
+        <Upload className="mr-1 size-4" />
         卖出
       </Button>
       <Button size="sm" variant="outline" onClick={() => setActiveDialog("transfer")}>
