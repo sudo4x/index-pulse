@@ -114,6 +114,30 @@ export function usePriceUpdates(options: PriceManagerOptions = {}): UsePriceUpda
     };
   }, []); // 移除所有依赖，只在组件挂载时执行一次
 
+  // 监听 autoConnect 配置变化，动态控制连接
+  useEffect(() => {
+    const priceManager = priceManagerRef.current;
+    if (!priceManager || priceManager.isDestroyed) return;
+
+    if (options.autoConnect === true) {
+      // 启用自动连接且当前未连接时，尝试连接
+      if (!isConnected && !isConnecting) {
+        console.log("autoConnect启用，开始连接...");
+        priceManager.connect().catch((err) => {
+          console.error("动态连接失败:", err);
+        });
+      }
+    } else if (options.autoConnect === false) {
+      // 禁用自动连接且当前已连接时，断开连接
+      if (isConnected) {
+        console.log("autoConnect禁用，断开连接...");
+        priceManager.disconnect().catch((err) => {
+          console.error("动态断开失败:", err);
+        });
+      }
+    }
+  }, [options.autoConnect, isConnected, isConnecting]);
+
   // 页面可见性检测 - 简化逻辑，避免额外重连
   useEffect(() => {
     const handleVisibilityChange = () => {

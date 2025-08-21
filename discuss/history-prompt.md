@@ -124,3 +124,14 @@ totalCommission: number; // 保留兼容性 这部分不需要保留兼容性，
 2、@src/app/(main)/investment/portfolios/_components/portfolio-tabs.tsx 原来 “显示历史持仓” 的显示逻辑需要删除掉
 你仔细阅读下代码，看看怎么改造，给我方案
 
+
+在@src/app/(main)/investment/portfolios/_components/holdings-table-container.tsx “显示历史持仓”的前面再加一个“价格更新”的checkbox，用来控制是否用websocket连接来更新价格。要求如下：
+1、默认是不选中，即不使用websocket连接来更新价格
+2、需要保存用户对这个checkbox操作结果，当页面再次进来时能恢复到之前的状态
+3、websocket的连接和价格更新相关逻辑在 @src/hooks/use-price-updates.ts 中
+4、里面PriceStatusIndicator也要进行修改，持仓列表那个span，连接状态了，更新次数都不要了，改成显示最近更新时间，显示逻辑为 几秒前 几分钟前，几小时前，超过24小时的显示具体日期时间。位置放到右侧，提示文字尽量小，颜色不需要太明显
+
+
+2个问题
+1、取消选中价格更新后，是断开原来websoket连接还是只是不更新价格了。我看到的连接好像没断开，应该要断开，节省资源
+2、PriceStatusIndicator中 “连接中...” “实时更新“ 和 ”连接失败“ 这个Badge不要了，如果连接上了显示只需要文字“更新于xx秒前”，连接异常才把连接状态用文字显示。这个控件高度不能占用太多空间，需要注意与父组件的间距也不能太大，太浪费空间。

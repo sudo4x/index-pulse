@@ -44,6 +44,7 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
   const handlePriceUpdatesChange = (checked: boolean) => {
     setEnablePriceUpdates(checked);
     setLocalStorageItem(LOCAL_STORAGE_KEYS.HOLDINGS_PRICE_UPDATES_ENABLED, checked);
+    // 连接/断开由use-price-updates内部的动态连接控制处理
   };
 
   const fetchHoldings = useCallback(async () => {
@@ -103,7 +104,7 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
   const hasSubscribedRef = useRef(false);
 
   useEffect(() => {
-    // 只在启用价格更新、连接成功且有持仓时才订阅
+    // 只处理订阅逻辑，连接/断开由use-price-updates内部的动态连接控制处理
     if (enablePriceUpdates && isConnected && holdings.length > 0 && !hasSubscribedRef.current) {
       console.log("连接成功，订阅所有价格数据");
       subscribe();
@@ -263,7 +264,7 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
             </div>
           </CardAction>
         </CardHeader>
-        <CardContent className="flex size-full flex-col gap-4">
+        <CardContent className="flex size-full flex-col gap-2">
           {/* 价格状态指示器 */}
           <PriceStatusIndicator
             isConnected={isConnected}
