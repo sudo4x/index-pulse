@@ -6,29 +6,32 @@ import { SharesData, ProfitLossData, StockPrice, EnhancedSharesData } from "./ty
  */
 export class FinancialCalculator {
   /**
-   * 计算成本相关数据
+   * 计算持仓成本
+   * 只基于当前仓位周期的买入数据
    */
-  static calculateCosts(sharesData: SharesData): { holdCost: number; dilutedCost: number } {
-    // 持仓成本 = (总买入金额 + 买入佣金) / (总买入股数 + 红股数量 + 拆股所增数量 - 合股所减数量)
-    // 只需要当前持仓周期中的数据
-    const totalBuyCost = sharesData.totalBuyAmount + sharesData.buyCommission;
-    const holdCost = sharesData.buyShares > 0 ? totalBuyCost / sharesData.buyShares : 0;
+  static calculateHoldCost(currentCycleData: SharesData): number {
+    // 持仓成本 = (当前周期总买入金额 + 买入佣金) / (当前周期买入股数)
+    const totalBuyCost = currentCycleData.totalBuyAmount + currentCycleData.buyCommission;
+    return currentCycleData.buyShares > 0 ? totalBuyCost / currentCycleData.buyShares : 0;
+  }
 
-    // 摊薄成本 = (总买入金额 + 所有佣金 + 所有税费 - 总卖出金额 - 总现金股息) / 总持股数
-    // 需要全部周期中的数据
+  /**
+   * 计算摊薄成本
+   * 基于全历史数据，体现历史盈亏对成本的摊薄效应
+   */
+  static calculateDilutedCost(allHistoryData: SharesData, currentShares: number): number {
+    // 摊薄成本 = (全历史总成本 - 总卖出金额 - 总现金股息) / 当前持股数
     const totalCost =
-      sharesData.totalBuyAmount +
-      sharesData.buyCommission +
-      sharesData.sellCommission +
-      sharesData.buyTax +
-      sharesData.sellTax +
-      sharesData.otherTax;
-    const dilutedCost =
-      sharesData.totalShares > 0
-        ? (totalCost - sharesData.totalSellAmount - sharesData.totalDividend) / sharesData.totalShares
-        : 0;
+      allHistoryData.totalBuyAmount +
+      allHistoryData.buyCommission +
+      allHistoryData.sellCommission +
+      allHistoryData.buyTax +
+      allHistoryData.sellTax +
+      allHistoryData.otherTax;
 
-    return { holdCost, dilutedCost };
+    return currentShares > 0
+      ? (totalCost - allHistoryData.totalSellAmount - allHistoryData.totalDividend) / currentShares
+      : 0;
   }
 
   /**

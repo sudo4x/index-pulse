@@ -36,36 +36,42 @@ export class PortfolioCalculator {
       throw new Error("portfolioId 必须是有效的数字");
     }
 
-    // 获取该品种的所有交易记录
-    const holdingTransactions = await db
-      .select()
-      .from(transactions)
-      .where(and(eq(transactions.portfolioId, portfolioIdInt), eq(transactions.symbol, symbol)))
-      .orderBy(transactions.transactionDate);
+    // 分别获取当前周期和全历史数据
+    const currentCycleData = await TransactionProcessor.getCurrentCycleSharesData(portfolioIdInt, symbol);
+    const allHistoryData = await TransactionProcessor.getAllHistorySharesData(portfolioIdInt, symbol);
 
-    if (holdingTransactions.length === 0) {
+    if (currentCycleData.totalShares === 0 && currentCycleData.totalBuyAmount === 0) {
       return null;
     }
 
     // 如果没有提供价格，则获取
     const finalPrice = currentPrice ?? (await this.getStockPrice(symbol));
 
-    const sharesData = TransactionProcessor.calculateSharesAndAmounts(holdingTransactions);
-    const { holdCost, dilutedCost } = FinancialCalculator.calculateCosts(sharesData);
-    const marketValue = FinancialCalculator.calculateMarketValue(sharesData.totalShares, finalPrice.currentPrice);
+    // 分别计算两种不同概念的成本
+    const holdCost = FinancialCalculator.calculateHoldCost(currentCycleData);
+    const dilutedCost = FinancialCalculator.calculateDilutedCost(allHistoryData, currentCycleData.totalShares);
+    const marketValue = FinancialCalculator.calculateMarketValue(currentCycleData.totalShares, finalPrice.currentPrice);
     const profitLoss = FinancialCalculator.calculateProfitLoss(
-      sharesData,
+      allHistoryData,
       finalPrice,
       holdCost,
       dilutedCost,
       marketValue,
     );
 
+    // 获取股票名称（从全历史数据的第一条记录）
+    const allTransactions = await db
+      .select({ name: transactions.name })
+      .from(transactions)
+      .where(and(eq(transactions.portfolioId, portfolioIdInt), eq(transactions.symbol, symbol)))
+      .orderBy(transactions.transactionDate)
+      .limit(1);
+
     return {
       id: `${portfolioId}-${symbol}`,
       symbol,
-      name: holdingTransactions[0].name,
-      shares: sharesData.totalShares,
+      name: allTransactions[0]?.name ?? "",
+      shares: currentCycleData.totalShares,
       currentPrice: finalPrice.currentPrice,
       change: finalPrice.change,
       changePercent: finalPrice.changePercent,
@@ -78,9 +84,9 @@ export class PortfolioCalculator {
       accumRate: profitLoss.accumRate,
       dayFloatAmount: profitLoss.dayFloatAmount,
       dayFloatRate: profitLoss.dayFloatRate,
-      isActive: sharesData.totalShares > 0,
-      openTime: sharesData.openTime?.toISOString() ?? "",
-      liquidationTime: sharesData.liquidationTime?.toISOString(),
+      isActive: currentCycleData.totalShares > 0,
+      openTime: currentCycleData.openTime?.toISOString() ?? "",
+      liquidationTime: currentCycleData.liquidationTime?.toISOString(),
     };
   }
 

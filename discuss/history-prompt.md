@@ -112,6 +112,13 @@ totalCommission: number; // 保留兼容性 这部分不需要保留兼容性，
 你好好深入分析一下目前是实现是不是有问题
 
 
+@src/lib/services/financial-calculator.ts 关于计算成本的两个方法 calculateCosts （已deprecated） 和 calculateSeparateCosts 
+现在这两个方法看起来很乱，你直接重构掉，把计算持仓成本和摊薄成本分成两个独立的方法，这样更清晰。
+
+@src/lib/services/transaction-processor.ts 中 calculateCurrentCycleData calculateAllHistoryData calculateSharesAndAmounts三个方法
+你也参考上面financial-calculator.ts的改造思路也一起改一下，我想这样应该会更清晰吧，你好好深度思考一下
+
+
 
 @src/app/(main)/dashboard/crm/_components/table-cards.tsx
 

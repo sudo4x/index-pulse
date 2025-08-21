@@ -16,17 +16,19 @@ export class HoldingService {
    */
   static async updateHoldingBySymbol(portfolioId: number, symbol: string): Promise<void> {
     try {
-      // 计算当前仓位周期的持仓数据
-      const sharesData = await TransactionProcessor.calculateCurrentCycleData(portfolioId, symbol);
+      // 分别获取当前周期和全历史数据
+      const currentCycleData = await TransactionProcessor.getCurrentCycleSharesData(portfolioId, symbol);
+      const allHistoryData = await TransactionProcessor.getAllHistorySharesData(portfolioId, symbol);
 
-      if (sharesData.totalShares === 0 && sharesData.totalBuyAmount === 0) {
+      if (currentCycleData.totalShares === 0 && currentCycleData.totalBuyAmount === 0) {
         // 如果没有持仓数据，删除持仓记录
         await this.deleteHolding(portfolioId, symbol);
         return;
       }
 
-      // 使用 FinancialCalculator 计算成本
-      const { holdCost, dilutedCost } = FinancialCalculator.calculateCosts(sharesData);
+      // 分别计算两种不同概念的成本
+      const holdCost = FinancialCalculator.calculateHoldCost(currentCycleData);
+      const dilutedCost = FinancialCalculator.calculateDilutedCost(allHistoryData, currentCycleData.totalShares);
 
       // 获取股票名称（从最新交易记录获取）
       const latestTransaction = await db
@@ -40,25 +42,25 @@ export class HoldingService {
         throw new Error(`No transaction found for symbol ${symbol}`);
       }
 
-      // 准备持仓数据
+      // 准备持仓数据（使用全历史数据作为holdings表的汇总数据）
       const holdingData: NewHolding = {
         portfolioId,
         symbol,
         name: latestTransaction[0].name,
-        shares: sharesData.totalShares.toString(),
+        shares: currentCycleData.totalShares.toString(), // 当前持股数
         dilutedCost: dilutedCost.toString(),
         holdCost: holdCost.toString(),
-        totalBuyAmount: sharesData.totalBuyAmount.toString(),
-        totalSellAmount: sharesData.totalSellAmount.toString(),
-        totalDividend: sharesData.totalDividend.toString(),
-        buyCommission: sharesData.buyCommission.toString(),
-        sellCommission: sharesData.sellCommission.toString(),
-        buyTax: sharesData.buyTax.toString(),
-        sellTax: sharesData.sellTax.toString(),
-        otherTax: sharesData.otherTax.toString(),
-        isActive: sharesData.totalShares > 0,
-        openTime: sharesData.openTime ?? new Date(),
-        liquidationTime: sharesData.totalShares <= 0 ? new Date() : null,
+        totalBuyAmount: allHistoryData.totalBuyAmount.toString(), // 全历史汇总
+        totalSellAmount: allHistoryData.totalSellAmount.toString(), // 全历史汇总
+        totalDividend: allHistoryData.totalDividend.toString(), // 全历史汇总
+        buyCommission: allHistoryData.buyCommission.toString(), // 全历史汇总
+        sellCommission: allHistoryData.sellCommission.toString(), // 全历史汇总
+        buyTax: allHistoryData.buyTax.toString(), // 全历史汇总
+        sellTax: allHistoryData.sellTax.toString(), // 全历史汇总
+        otherTax: allHistoryData.otherTax.toString(), // 全历史汇总
+        isActive: currentCycleData.totalShares > 0,
+        openTime: currentCycleData.openTime ?? new Date(),
+        liquidationTime: currentCycleData.totalShares <= 0 ? new Date() : null,
       };
 
       // 检查是否已存在持仓记录

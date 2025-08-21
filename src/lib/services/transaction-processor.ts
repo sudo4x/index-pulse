@@ -1,3 +1,7 @@
+import { eq, and } from "drizzle-orm";
+
+import { db } from "@/lib/db";
+import { transactions } from "@/lib/db/schema";
 import { TransactionType } from "@/types/investment";
 
 import { PositionCycleManager } from "./position-cycle-manager";
@@ -9,12 +13,12 @@ import { SharesData, TransactionData, TransactionRecord } from "./types/calculat
  */
 export class TransactionProcessor {
   /**
-   * 计算当前仓位周期的股份和金额统计（推荐使用）
+   * 获取当前仓位周期的股份数据
    */
-  static async calculateCurrentCycleData(portfolioId: number, symbol: string): Promise<SharesData> {
+  static async getCurrentCycleSharesData(portfolioId: number, symbol: string): Promise<SharesData> {
     try {
       const currentCycleTransactions = await PositionCycleManager.getCurrentCycleTransactions(portfolioId, symbol);
-      return this.calculateSharesAndAmounts(currentCycleTransactions);
+      return this.calculateSharesDataFromTransactions(currentCycleTransactions);
     } catch (error) {
       // 如果没有找到当前周期，返回空数据
       console.warn(`No current cycle found for ${symbol}:`, error);
@@ -23,9 +27,23 @@ export class TransactionProcessor {
   }
 
   /**
-   * 计算股份和金额统计（兼容原有方法）
+   * 获取全历史股份数据（用于摊薄成本计算）
    */
-  static calculateSharesAndAmounts(transactions: TransactionRecord[]): SharesData {
+  static async getAllHistorySharesData(portfolioId: number, symbol: string): Promise<SharesData> {
+    // 获取该品种的所有交易记录
+    const allTransactions = await db
+      .select()
+      .from(transactions)
+      .where(and(eq(transactions.portfolioId, portfolioId), eq(transactions.symbol, symbol)))
+      .orderBy(transactions.transactionDate);
+
+    return this.calculateSharesDataFromTransactions(allTransactions);
+  }
+
+  /**
+   * 从交易记录计算股份数据
+   */
+  static calculateSharesDataFromTransactions(transactions: TransactionRecord[]): SharesData {
     const initialState = this.createInitialState();
 
     return transactions.reduce((accumulator, transaction) => {

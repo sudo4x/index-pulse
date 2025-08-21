@@ -111,7 +111,7 @@ export class DividendHandler extends BaseTransactionHandler {
       throw new Error(`未找到股票 ${symbol} 的任何交易记录`);
     }
 
-    const sharesData = TransactionProcessor.calculateSharesAndAmounts(holdingTransactions);
+    const sharesData = TransactionProcessor.calculateSharesDataFromTransactions(holdingTransactions);
     return sharesData.totalShares;
   }
 }
