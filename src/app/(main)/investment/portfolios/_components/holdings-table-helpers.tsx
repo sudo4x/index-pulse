@@ -41,7 +41,7 @@ export const createHoldingRowHelpers = ({
         </div>
         <div className={cn("font-mono text-sm", holding.changePercent >= 0 ? "text-green-600" : "text-red-600")}>
           {holding.changePercent >= 0 ? "+" : ""}
-          {formatPercent(holding.changePercent)}
+          {formatPercent(holding.changePercent, 3)}
         </div>
       </div>
     </TableCell>
@@ -62,7 +62,7 @@ export const createHoldingRowHelpers = ({
     <TableCell className="text-right">
       <div className="flex flex-col items-end space-y-1">
         <div className="font-mono">¥{holding.currentPrice.toFixed(3)}</div>
-        <div className="text-muted-foreground font-mono text-sm">¥{holding.cost.toFixed(4)}</div>
+        <div className="text-muted-foreground font-mono text-sm">¥{holding.cost.toFixed(3)}</div>
       </div>
     </TableCell>
   );
@@ -75,7 +75,7 @@ export const createHoldingRowHelpers = ({
         </div>
         <div className={cn("font-mono text-sm", rate >= 0 ? "text-green-600" : "text-red-600")}>
           {rate >= 0 ? "+" : ""}
-          {formatPercent(rate)}
+          {formatPercent(rate, 3)}
         </div>
       </div>
     </TableCell>

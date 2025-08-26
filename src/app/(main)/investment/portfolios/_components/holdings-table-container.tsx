@@ -135,7 +135,7 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
             // 计算新的市值和盈亏
             const newMarketValue = holding.shares * priceUpdate.currentPrice;
             const profitAmount = newMarketValue - holding.cost * holding.shares;
-            const profitRate = holding.cost > 0 ? (priceUpdate.currentPrice - holding.cost) / holding.cost : 0;
+            const profitRate = holding.cost > 0 ? parseFloat(((priceUpdate.currentPrice - holding.cost) / holding.cost).toFixed(3)) : 0;
 
             return {
               ...holding,

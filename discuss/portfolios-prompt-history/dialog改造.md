@@ -17,3 +17,8 @@ transaction-dialog.tsx 和 transfer-dialog.tsx 的表单内容应该用Card组�
 transaction-dialog.tsx 和 transfer-dialog.tsx 把form内容的布局都改成和备注字段一样是上下布局，这样会比较美观，然后两个按钮也改成上下布局的形式
 
 transaction-dialog.tsx 股票，买入价，买入量，还有其他交易类型里面的其他字段也有一些没改成上下布局，你仔细看看
+
+@src/app/api/holdings/route.ts 这个API中改一下以下几个点
+成本：保留3位小数
+当日盈亏率：保留3位小数
+盈亏率：保留3位小数
