@@ -44,8 +44,7 @@ export const holdings = pgTable(
     symbol: varchar("symbol", { length: 20 }).notNull(), // 股票代码 如 SZ000858
     name: varchar("name", { length: 100 }).notNull(), // 股票名称 如 五粮液
     shares: decimal("shares", { precision: 18, scale: 6 }).notNull().default("0"), // 持股数
-    dilutedCost: decimal("diluted_cost", { precision: 18, scale: 6 }).notNull().default("0"), // 摊薄成本
-    holdCost: decimal("hold_cost", { precision: 18, scale: 6 }).notNull().default("0"), // 持仓成本
+    holdCost: decimal("hold_cost", { precision: 18, scale: 6 }).notNull().default("0"), // 成本价
     totalBuyAmount: decimal("total_buy_amount", { precision: 18, scale: 2 }).notNull().default("0"), // 总买入金额
     totalSellAmount: decimal("total_sell_amount", { precision: 18, scale: 2 }).notNull().default("0"), // 总卖出金额
     totalDividend: decimal("total_dividend", { precision: 18, scale: 2 }).notNull().default("0"), // 总现金股息
@@ -53,7 +52,7 @@ export const holdings = pgTable(
     sellCommission: decimal("sell_commission", { precision: 18, scale: 2 }).notNull().default("0"), // 卖出佣金
     buyTax: decimal("buy_tax", { precision: 18, scale: 2 }).notNull().default("0"), // 买入税费（通常为0）
     sellTax: decimal("sell_tax", { precision: 18, scale: 2 }).notNull().default("0"), // 卖出税费（印花税等）
-    otherTax: decimal("other_tax", { precision: 18, scale: 2 }).notNull().default("0"), // 其他税费（除权除息等产生的税费）
+    otherFee: decimal("other_fee", { precision: 18, scale: 2 }).notNull().default("0"), // 其他费用（如过户费等）
     isActive: boolean("is_active").notNull().default(true), // 是否活跃持仓
     openTime: timestamp("open_time").notNull(), // 首次买入时间
     liquidationTime: timestamp("liquidation_time"), // 清仓时间

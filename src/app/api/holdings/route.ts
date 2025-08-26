@@ -104,24 +104,17 @@ function transformHoldingData(holding: Holding, currentPrice: StockPrice) {
     sellCommission: parseFloat(String(holding.sellCommission)),
     buyTax: parseFloat(String(holding.buyTax)),
     sellTax: parseFloat(String(holding.sellTax)),
-    otherTax: parseFloat(String(holding.otherTax)),
+    otherFee: parseFloat(String(holding.otherFee)),
   };
 
-  // 直接使用数据库中已计算好的成本
-  const dilutedCost = parseFloat(String(holding.dilutedCost));
-  const holdCost = parseFloat(String(holding.holdCost));
+  // 计算统一成本价
+  const cost = FinancialCalculator.calculateCostFromHoldings(holdingData);
 
   // 计算市值
   const marketValue = FinancialCalculator.calculateMarketValue(holdingData.shares, currentPrice.currentPrice);
 
   // 计算盈亏
-  const profitLoss = FinancialCalculator.calculateProfitLossFromHoldings(
-    holdingData,
-    currentPrice,
-    holdCost,
-    dilutedCost,
-    marketValue,
-  );
+  const profitLoss = FinancialCalculator.calculateProfitLossFromHoldings(holdingData, currentPrice, cost, marketValue);
 
   return {
     id: `${holding.portfolioId}-${holding.symbol}`,
@@ -132,12 +125,9 @@ function transformHoldingData(holding: Holding, currentPrice: StockPrice) {
     change: currentPrice.change,
     changePercent: currentPrice.changePercent,
     marketValue,
-    dilutedCost,
-    holdCost,
-    floatAmount: profitLoss.floatAmount,
-    floatRate: profitLoss.floatRate,
-    accumAmount: profitLoss.accumAmount,
-    accumRate: profitLoss.accumRate,
+    cost,
+    profitAmount: profitLoss.profitAmount,
+    profitRate: profitLoss.profitRate,
     dayFloatAmount: profitLoss.dayFloatAmount,
     dayFloatRate: profitLoss.dayFloatRate,
     isActive: holding.isActive,

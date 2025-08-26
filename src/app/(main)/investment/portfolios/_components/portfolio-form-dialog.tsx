@@ -139,10 +139,8 @@ export function PortfolioFormDialog({
     marketValue: 0,
     cash: 0,
     principal: 0,
-    floatAmount: 0,
-    floatRate: 0,
-    accumAmount: 0,
-    accumRate: 0,
+    profitAmount: 0,
+    profitRate: 0,
     dayFloatAmount: 0,
     dayFloatRate: 0,
   });

@@ -34,10 +34,8 @@ export function PortfolioTabs({ portfolioId, portfolioName }: PortfolioTabsProps
   });
 
   const createProfitLossData = (data: Partial<PortfolioOverview>) => ({
-    floatAmount: data.floatAmount ?? 0,
-    floatRate: data.floatRate ?? 0,
-    accumAmount: data.accumAmount ?? 0,
-    accumRate: data.accumRate ?? 0,
+    profitAmount: data.profitAmount ?? 0,
+    profitRate: data.profitRate ?? 0,
     dayFloatAmount: data.dayFloatAmount ?? 0,
     dayFloatRate: data.dayFloatRate ?? 0,
   });

@@ -47,17 +47,10 @@ export class PortfolioCalculator {
     // 如果没有提供价格，则获取
     const finalPrice = currentPrice ?? (await this.getStockPrice(symbol));
 
-    // 分别计算两种不同概念的成本
-    const holdCost = FinancialCalculator.calculateHoldCost(currentCycleData);
-    const dilutedCost = FinancialCalculator.calculateDilutedCost(allHistoryData, currentCycleData.totalShares);
+    // 计算统一成本价
+    const cost = FinancialCalculator.calculateCost(allHistoryData, currentCycleData.totalShares);
     const marketValue = FinancialCalculator.calculateMarketValue(currentCycleData.totalShares, finalPrice.currentPrice);
-    const profitLoss = FinancialCalculator.calculateProfitLoss(
-      allHistoryData,
-      finalPrice,
-      holdCost,
-      dilutedCost,
-      marketValue,
-    );
+    const profitLoss = FinancialCalculator.calculateProfitLoss(allHistoryData, finalPrice, cost, marketValue);
 
     // 获取股票名称（从全历史数据的第一条记录）
     const allTransactions = await db
@@ -76,12 +69,9 @@ export class PortfolioCalculator {
       change: finalPrice.change,
       changePercent: finalPrice.changePercent,
       marketValue,
-      dilutedCost,
-      holdCost,
-      floatAmount: profitLoss.floatAmount,
-      floatRate: profitLoss.floatRate,
-      accumAmount: profitLoss.accumAmount,
-      accumRate: profitLoss.accumRate,
+      cost,
+      profitAmount: profitLoss.profitAmount,
+      profitRate: profitLoss.profitRate,
       dayFloatAmount: profitLoss.dayFloatAmount,
       dayFloatRate: profitLoss.dayFloatRate,
       isActive: currentCycleData.totalShares > 0,
@@ -177,13 +167,11 @@ export class PortfolioCalculator {
    */
   private static calculatePortfolioSummary(holdingDetails: HoldingDetail[], cashData: CashData) {
     const totalMarketValue = holdingDetails.reduce((sum, holding) => sum + holding.marketValue, 0);
-    const totalFloatAmount = holdingDetails.reduce((sum, holding) => sum + holding.floatAmount, 0);
-    const totalAccumAmount = holdingDetails.reduce((sum, holding) => sum + holding.accumAmount, 0);
+    const totalProfitAmount = holdingDetails.reduce((sum, holding) => sum + holding.profitAmount, 0);
     const totalDayFloatAmount = holdingDetails.reduce((sum, holding) => sum + holding.dayFloatAmount, 0);
 
     const totalAssets = totalMarketValue + cashData.cash;
-    const floatRate = totalMarketValue > 0 ? totalFloatAmount / totalMarketValue : 0;
-    const accumRate = cashData.principal > 0 ? totalAccumAmount / cashData.principal : 0;
+    const profitRate = totalMarketValue > 0 ? totalProfitAmount / totalMarketValue : 0;
     const dayFloatRate = totalMarketValue > 0 ? totalDayFloatAmount / totalMarketValue : 0;
 
     return {
@@ -191,10 +179,8 @@ export class PortfolioCalculator {
       marketValue: totalMarketValue,
       cash: cashData.cash,
       principal: cashData.principal,
-      floatAmount: totalFloatAmount,
-      floatRate,
-      accumAmount: totalAccumAmount,
-      accumRate,
+      profitAmount: totalProfitAmount,
+      profitRate,
       dayFloatAmount: totalDayFloatAmount,
       dayFloatRate,
     };

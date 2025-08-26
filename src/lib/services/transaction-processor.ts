@@ -64,7 +64,7 @@ export class TransactionProcessor {
       sellCommission: 0,
       buyTax: 0,
       sellTax: 0,
-      otherTax: 0,
+      otherFee: 0,
       buyShares: 0,
       openTime: null,
       liquidationTime: null,
@@ -90,8 +90,8 @@ export class TransactionProcessor {
         result.sellTax += tax;
         break;
       default:
-        // 除权除息等其他交易类型的费用计入otherTax
-        result.otherTax += tax + commission;
+        // 除权除息等其他交易类型的费用计入otherFee
+        result.otherFee += tax + commission;
         break;
     }
 

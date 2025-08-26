@@ -47,11 +47,22 @@ export const createHoldingRowHelpers = ({
     </TableCell>
   );
 
-  const renderCostCell = (holding: HoldingDetail) => (
+  // 新增：市值/持仓合并单元格
+  const renderMarketValueSharesCell = (holding: HoldingDetail) => (
     <TableCell className="text-right">
       <div className="flex flex-col items-end space-y-1">
-        <div className="font-mono text-sm">¥{holding.dilutedCost.toFixed(4)}</div>
-        <div className="text-muted-foreground font-mono text-sm">¥{holding.holdCost.toFixed(4)}</div>
+        <div className="font-mono">¥{holding.marketValue.toFixed(2)}</div>
+        <div className="text-muted-foreground font-mono text-sm">{formatShares(holding.shares)}</div>
+      </div>
+    </TableCell>
+  );
+
+  // 新增：现价/成本合并单元格
+  const renderPriceCostCell = (holding: HoldingDetail) => (
+    <TableCell className="text-right">
+      <div className="flex flex-col items-end space-y-1">
+        <div className="font-mono">¥{holding.currentPrice.toFixed(3)}</div>
+        <div className="text-muted-foreground font-mono text-sm">¥{holding.cost.toFixed(4)}</div>
       </div>
     </TableCell>
   );
@@ -97,19 +108,11 @@ export const createHoldingRowHelpers = ({
   const renderHoldingRow = (holding: HoldingDetail) => (
     <TableRow key={holding.id}>
       {renderStockNameCell(holding)}
-      <TableCell className="text-right">
-        <div className="font-mono">¥{holding.currentPrice.toFixed(3)}</div>
-      </TableCell>
       {renderPriceChangeCell(holding)}
-      <TableCell className="text-right">
-        <div className="font-mono">¥{holding.marketValue.toFixed(2)}</div>
-      </TableCell>
-      <TableCell className="text-right">
-        <div className="font-mono">{formatShares(holding.shares)}</div>
-      </TableCell>
-      {renderCostCell(holding)}
-      {renderProfitLossCell(holding.floatAmount, holding.floatRate)}
-      {renderProfitLossCell(holding.accumAmount, holding.accumRate)}
+      {renderMarketValueSharesCell(holding)}
+      {renderPriceCostCell(holding)}
+      {renderProfitLossCell(holding.dayFloatAmount, holding.dayFloatRate)}
+      {renderProfitLossCell(holding.profitAmount, holding.profitRate)}
       {renderActionsCell(holding)}
     </TableRow>
   );

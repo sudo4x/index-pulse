@@ -49,20 +49,12 @@ export function OverviewCards({ portfolio }: OverviewCardsProps) {
       description: "今日盈亏金额",
     },
     {
-      title: "浮动盈亏",
-      value: formatCurrency(portfolio.floatAmount),
-      rate: formatPercent(portfolio.floatRate),
-      icon: portfolio.floatAmount >= 0 ? TrendingUp : TrendingDown,
-      isPositive: portfolio.floatAmount >= 0,
-      description: "持仓浮动盈亏",
-    },
-    {
-      title: "累计盈亏",
-      value: formatCurrency(portfolio.accumAmount),
-      rate: formatPercent(portfolio.accumRate),
-      icon: portfolio.accumAmount >= 0 ? TrendingUp : TrendingDown,
-      isPositive: portfolio.accumAmount >= 0,
-      description: "历史累计盈亏",
+      title: "盈亏",
+      value: formatCurrency(portfolio.profitAmount),
+      rate: formatPercent(portfolio.profitRate),
+      icon: portfolio.profitAmount >= 0 ? TrendingUp : TrendingDown,
+      isPositive: portfolio.profitAmount >= 0,
+      description: "当前盈亏状况",
     },
   ];
 

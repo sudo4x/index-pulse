@@ -26,9 +26,8 @@ export class HoldingService {
         return;
       }
 
-      // 分别计算两种不同概念的成本
-      const holdCost = FinancialCalculator.calculateHoldCost(currentCycleData);
-      const dilutedCost = FinancialCalculator.calculateDilutedCost(allHistoryData, currentCycleData.totalShares);
+      // 计算统一成本价
+      const cost = FinancialCalculator.calculateCost(allHistoryData, currentCycleData.totalShares);
 
       // 获取股票名称（从最新交易记录获取）
       const latestTransaction = await db
@@ -48,8 +47,7 @@ export class HoldingService {
         symbol,
         name: latestTransaction[0].name,
         shares: currentCycleData.totalShares.toString(), // 当前持股数
-        dilutedCost: dilutedCost.toString(),
-        holdCost: holdCost.toString(),
+        holdCost: cost.toString(), // 统一成本价
         totalBuyAmount: allHistoryData.totalBuyAmount.toString(), // 全历史汇总
         totalSellAmount: allHistoryData.totalSellAmount.toString(), // 全历史汇总
         totalDividend: allHistoryData.totalDividend.toString(), // 全历史汇总
@@ -57,7 +55,7 @@ export class HoldingService {
         sellCommission: allHistoryData.sellCommission.toString(), // 全历史汇总
         buyTax: allHistoryData.buyTax.toString(), // 全历史汇总
         sellTax: allHistoryData.sellTax.toString(), // 全历史汇总
-        otherTax: allHistoryData.otherTax.toString(), // 全历史汇总
+        otherFee: allHistoryData.otherFee.toString(), // 全历史汇总
         isActive: currentCycleData.totalShares > 0,
         openTime: currentCycleData.openTime ?? new Date(),
         liquidationTime: currentCycleData.totalShares <= 0 ? new Date() : null,

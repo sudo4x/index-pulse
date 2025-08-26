@@ -23,13 +23,11 @@ export function HoldingsDataTable({ holdings, onAddClick, onShowTransactions, on
         <TableHeader>
           <TableRow>
             <TableHead>名称/代码</TableHead>
-            <TableHead className="text-right">现价</TableHead>
             <TableHead className="text-right">涨跌</TableHead>
-            <TableHead className="text-right">市值</TableHead>
-            <TableHead className="text-right">持仓</TableHead>
-            <TableHead className="text-right">摊薄/成本</TableHead>
-            <TableHead className="text-right">浮动盈亏</TableHead>
-            <TableHead className="text-right">累计盈亏</TableHead>
+            <TableHead className="text-right">市值/持仓</TableHead>
+            <TableHead className="text-right">现价/成本</TableHead>
+            <TableHead className="text-right">当日盈亏</TableHead>
+            <TableHead className="text-right">盈亏</TableHead>
             <TableHead className="text-center">操作</TableHead>
           </TableRow>
         </TableHeader>

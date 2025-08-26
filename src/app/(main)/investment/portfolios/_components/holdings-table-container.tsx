@@ -134,8 +134,8 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
           if (priceUpdate) {
             // 计算新的市值和盈亏
             const newMarketValue = holding.shares * priceUpdate.currentPrice;
-            const floatAmount = newMarketValue - holding.holdCost * holding.shares;
-            const floatRate = holding.holdCost > 0 ? floatAmount / (holding.holdCost * holding.shares) : 0;
+            const profitAmount = newMarketValue - holding.cost * holding.shares;
+            const profitRate = holding.cost > 0 ? (priceUpdate.currentPrice - holding.cost) / holding.cost : 0;
 
             return {
               ...holding,
@@ -143,8 +143,8 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
               change: priceUpdate.change,
               changePercent: priceUpdate.changePercent,
               marketValue: newMarketValue,
-              floatAmount,
-              floatRate,
+              profitAmount,
+              profitRate,
             };
           }
           return holding;

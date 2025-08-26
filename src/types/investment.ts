@@ -37,10 +37,8 @@ export interface PortfolioOverview {
   marketValue: number; // 总市值
   cash: number; // 现金
   principal: number; // 本金
-  floatAmount: number; // 浮动盈亏额
-  floatRate: number; // 浮动盈亏率
-  accumAmount: number; // 累计盈亏额
-  accumRate: number; // 累计盈亏率
+  profitAmount: number; // 盈亏额
+  profitRate: number; // 盈亏率
   dayFloatAmount: number; // 当日盈亏额
   dayFloatRate: number; // 当日盈亏率
 }
@@ -55,12 +53,9 @@ export interface HoldingDetail {
   change: number; // 涨跌额
   changePercent: number; // 涨跌幅
   marketValue: number; // 市值
-  dilutedCost: number; // 摊薄成本
-  holdCost: number; // 持仓成本
-  floatAmount: number; // 浮动盈亏额
-  floatRate: number; // 浮动盈亏率
-  accumAmount: number; // 累计盈亏额
-  accumRate: number; // 累计盈亏率
+  cost: number; // 成本价
+  profitAmount: number; // 盈亏额
+  profitRate: number; // 盈亏率
   dayFloatAmount: number; // 当日盈亏额
   dayFloatRate: number; // 当日盈亏率
   isActive: boolean; // 是否活跃持仓
