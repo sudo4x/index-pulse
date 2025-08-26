@@ -1,5 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { HoldingDetail } from "@/types/investment";
 
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
@@ -58,20 +57,17 @@ export function HoldingDialogsManager({
         onSuccess={onDataRefresh}
       />
 
-      {/* 交易记录列表对话框 */}
-      <Dialog open={isTransactionListOpen} onOpenChange={onTransactionListClose}>
-        <DialogContent className="max-h-[85vh] w-full min-w-[70vw] overflow-y-auto p-0">
-          <DialogTitle className="sr-only">{selectedStockName} 交易记录</DialogTitle>
-          <Card className="border-0 shadow-none">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-xl">{selectedStockName} 交易记录</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TransactionsTable portfolioId={portfolioId} symbol={selectedSymbol} />
-            </CardContent>
-          </Card>
-        </DialogContent>
-      </Dialog>
+      {/* 交易记录列表抽屉 */}
+      <Drawer open={isTransactionListOpen} onOpenChange={onTransactionListClose}>
+        <DrawerContent className="max-h-[80vh]">
+          <DrawerHeader>
+            <DrawerTitle className="text-xl">{selectedStockName} 交易记录</DrawerTitle>
+          </DrawerHeader>
+          <div className="flex-1 overflow-auto px-4 pb-4">
+            <TransactionsTable portfolioId={portfolioId} symbol={selectedSymbol} />
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* 确认删除对话框 */}
       <ConfirmDeleteDialog

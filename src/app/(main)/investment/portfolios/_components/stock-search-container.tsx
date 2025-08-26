@@ -1,4 +1,4 @@
-import { Label } from "@/components/ui/label";
+import { FormLabel } from "@/components/ui/form";
 import { useStockSearch, UseStockSearchOptions } from "@/hooks/use-stock-search";
 import { cn } from "@/lib/utils";
 
@@ -23,8 +23,8 @@ export function StockSearchContainer({ className, onStockSelect, ...searchOption
   } = useStockSearch({ onStockSelect, ...searchOptions });
 
   return (
-    <div className={cn("grid grid-cols-[80px_1fr] items-start gap-4", className)}>
-      <Label className="pt-2 text-sm font-medium">股票</Label>
+    <div className={cn("space-y-2", className)}>
+      <FormLabel className="text-sm font-medium">股票</FormLabel>
       <div className="space-y-2">
         <div className="relative">
           <StockSearchInput stockCode={stockCode} onStockCodeChange={handleStockCodeChange} />

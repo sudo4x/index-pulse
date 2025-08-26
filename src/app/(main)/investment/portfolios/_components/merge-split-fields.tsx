@@ -1,8 +1,7 @@
 "use client";
 
-import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { TransactionType } from "@/types/investment";
 
 import { MergeSplitForm } from "./transaction-form-types";
@@ -14,10 +13,10 @@ interface MergeSplitFieldsProps {
 
 export function MergeSplitFields({ transactionType, form }: MergeSplitFieldsProps) {
   return (
-    <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-      <Label className="text-sm font-medium">
+    <div className="space-y-2">
+      <FormLabel className="text-sm font-medium">
         {transactionType === TransactionType.MERGE ? "多股合一" : "每股拆为"}
-      </Label>
+      </FormLabel>
       <FormField
         control={form.control}
         name="unitShares"

@@ -1,8 +1,7 @@
 "use client";
 
-import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 import { DividendForm } from "./transaction-form-types";
 
@@ -13,8 +12,8 @@ interface DividendFieldsProps {
 export function DividendFields({ form }: DividendFieldsProps) {
   return (
     <>
-      <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-        <Label className="text-sm font-medium">每10股转增</Label>
+      <div className="space-y-2">
+        <FormLabel className="text-sm font-medium">每10股转增</FormLabel>
         <FormField
           control={form.control}
           name="per10SharesTransfer"
@@ -37,8 +36,8 @@ export function DividendFields({ form }: DividendFieldsProps) {
         />
       </div>
 
-      <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-        <Label className="text-sm font-medium">每10股送股</Label>
+      <div className="space-y-2">
+        <FormLabel className="text-sm font-medium">每10股送股</FormLabel>
         <FormField
           control={form.control}
           name="per10SharesBonus"
@@ -61,8 +60,8 @@ export function DividendFields({ form }: DividendFieldsProps) {
         />
       </div>
 
-      <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-        <Label className="text-sm font-medium">每10股红利</Label>
+      <div className="space-y-2">
+        <FormLabel className="text-sm font-medium">每10股红利</FormLabel>
         <FormField
           control={form.control}
           name="per10SharesDividend"
@@ -91,8 +90,8 @@ export function DividendFields({ form }: DividendFieldsProps) {
       </div>
 
       {/* 税费 */}
-      <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-        <Label className="text-sm font-medium">税费</Label>
+      <div className="space-y-2">
+        <FormLabel className="text-sm font-medium">税费</FormLabel>
         <FormField
           control={form.control}
           name="tax"

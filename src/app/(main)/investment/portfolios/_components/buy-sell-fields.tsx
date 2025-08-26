@@ -2,9 +2,8 @@
 
 import { RefObject } from "react";
 
-import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { TransactionType } from "@/types/investment";
 
 import { BuySellForm } from "./transaction-form-types";
@@ -19,8 +18,10 @@ export function BuySellFields({ transactionType, form, sharesInputRef }: BuySell
   return (
     <>
       {/* 买入价/卖出价 */}
-      <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-        <Label className="text-sm font-medium">{transactionType === TransactionType.BUY ? "买入价" : "卖出价"}</Label>
+      <div className="space-y-2">
+        <FormLabel className="text-sm font-medium">
+          {transactionType === TransactionType.BUY ? "买入价" : "卖出价"}
+        </FormLabel>
         <FormField
           control={form.control}
           name="price"
@@ -44,8 +45,10 @@ export function BuySellFields({ transactionType, form, sharesInputRef }: BuySell
       </div>
 
       {/* 买入量/卖出量 */}
-      <div className="grid grid-cols-[80px_1fr] items-center gap-4">
-        <Label className="text-sm font-medium">{transactionType === TransactionType.BUY ? "买入量" : "卖出量"}</Label>
+      <div className="space-y-2">
+        <FormLabel className="text-sm font-medium">
+          {transactionType === TransactionType.BUY ? "买入量" : "卖出量"}
+        </FormLabel>
         <FormField
           control={form.control}
           name="shares"
