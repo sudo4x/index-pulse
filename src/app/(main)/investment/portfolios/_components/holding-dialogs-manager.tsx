@@ -59,12 +59,14 @@ export function HoldingDialogsManager({
 
       {/* 交易记录列表抽屉 */}
       <Drawer open={isTransactionListOpen} onOpenChange={onTransactionListClose}>
-        <DrawerContent className="max-h-[80vh]">
+        <DrawerContent className="mx-auto max-h-[80vh] w-[80%]">
           <DrawerHeader>
             <DrawerTitle className="text-xl">{selectedStockName} 交易记录</DrawerTitle>
           </DrawerHeader>
           <div className="flex-1 overflow-auto px-4 pb-4">
-            <TransactionsTable portfolioId={portfolioId} symbol={selectedSymbol} />
+            <div className="mx-auto">
+              <TransactionsTable portfolioId={portfolioId} symbol={selectedSymbol} />
+            </div>
           </div>
         </DrawerContent>
       </Drawer>
