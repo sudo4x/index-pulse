@@ -30,9 +30,7 @@ export const portfolios = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => ({
-    userIdIdx: index("idx_portfolios_user_id").on(table.userId),
-  }),
+  (table) => [index("idx_portfolios_user_id").on(table.userId)],
 );
 
 // 持仓品种表
@@ -62,12 +60,12 @@ export const holdings = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => ({
-    portfolioIdIdx: index("idx_holdings_portfolio_id").on(table.portfolioId),
-    symbolIdx: index("idx_holdings_symbol").on(table.symbol),
-    portfolioSymbolIdx: index("idx_holdings_portfolio_symbol").on(table.portfolioId, table.symbol), // 复合索引：组合查询
-    activeHoldingsIdx: index("idx_holdings_active").on(table.portfolioId, table.isActive), // 复合索引：活跃持仓查询
-  }),
+  (table) => [
+    index("idx_holdings_portfolio_id").on(table.portfolioId),
+    index("idx_holdings_symbol").on(table.symbol),
+    index("idx_holdings_portfolio_symbol").on(table.portfolioId, table.symbol), // 复合索引：组合查询
+    index("idx_holdings_active").on(table.portfolioId, table.isActive), // 复合索引：活跃持仓查询
+  ],
 );
 
 // 交易记录表
@@ -102,23 +100,15 @@ export const transactions = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => ({
-    portfolioIdIdx: index("idx_transactions_portfolio_id").on(table.portfolioId),
-    symbolIdx: index("idx_transactions_symbol").on(table.symbol),
-    dateIdx: index("idx_transactions_date").on(table.transactionDate),
-    portfolioSymbolIdx: index("idx_transactions_portfolio_symbol").on(table.portfolioId, table.symbol), // 复合索引：持仓计算查询
-    portfolioDateIdx: index("idx_transactions_portfolio_date").on(table.portfolioId, table.transactionDate), // 复合索引：按时间查询
-    portfolioSymbolDateIdx: index("idx_transactions_portfolio_symbol_date").on(
-      table.portfolioId,
-      table.symbol,
-      table.transactionDate,
-    ), // 复合索引：全方位查询
-    portfolioSymbolCycleIdx: index("idx_transactions_portfolio_symbol_cycle").on(
-      table.portfolioId,
-      table.symbol,
-      table.positionCycleId,
-    ), // 复合索引：仓位周期查询
-  }),
+  (table) => [
+    index("idx_transactions_portfolio_id").on(table.portfolioId),
+    index("idx_transactions_symbol").on(table.symbol),
+    index("idx_transactions_date").on(table.transactionDate),
+    index("idx_transactions_portfolio_symbol").on(table.portfolioId, table.symbol), // 复合索引：持仓计算查询
+    index("idx_transactions_portfolio_date").on(table.portfolioId, table.transactionDate), // 复合索引：按时间查询
+    index("idx_transactions_portfolio_symbol_date").on(table.portfolioId, table.symbol, table.transactionDate), // 复合索引：全方位查询
+    index("idx_transactions_portfolio_symbol_cycle").on(table.portfolioId, table.symbol, table.positionCycleId), // 复合索引：仓位周期查询
+  ],
 );
 
 // 转账记录表
@@ -136,12 +126,12 @@ export const transfers = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
-  (table) => ({
-    portfolioIdIdx: index("idx_transfers_portfolio_id").on(table.portfolioId),
-    dateIdx: index("idx_transfers_date").on(table.transferDate),
-    portfolioDateIdx: index("idx_transfers_portfolio_date").on(table.portfolioId, table.transferDate), // 复合索引：按组合和时间查询
-    portfolioTypeIdx: index("idx_transfers_portfolio_type").on(table.portfolioId, table.type), // 复合索引：按类型查询
-  }),
+  (table) => [
+    index("idx_transfers_portfolio_id").on(table.portfolioId),
+    index("idx_transfers_date").on(table.transferDate),
+    index("idx_transfers_portfolio_date").on(table.portfolioId, table.transferDate), // 复合索引：按组合和时间查询
+    index("idx_transfers_portfolio_type").on(table.portfolioId, table.type), // 复合索引：按类型查询
+  ],
 );
 
 // 组合快照表 - 用于存储组合历史数据
@@ -165,9 +155,7 @@ export const portfolioSnapshots = pgTable(
     dayFloatRate: decimal("day_float_rate", { precision: 8, scale: 6 }).notNull().default("0"), // 当日盈亏率
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (table) => ({
-    portfolioDateIdx: index("idx_portfolio_snapshots_portfolio_date").on(table.portfolioId, table.snapshotDate),
-  }),
+  (table) => [index("idx_portfolio_snapshots_portfolio_date").on(table.portfolioId, table.snapshotDate)],
 );
 
 // 类型导出
