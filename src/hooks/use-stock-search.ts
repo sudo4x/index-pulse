@@ -89,7 +89,7 @@ export function useStockSearch(options: UseStockSearchOptions = {}): UseStockSea
   // 获取单个股票的实时价格
   const fetchStockPrice = useCallback(async (symbol: string): Promise<StockSearchResult | null> => {
     try {
-      const response = await fetch(`/api/stock-prices?symbols=${symbol}`);
+      const response = await fetch(`/api/stock-info?symbols=${symbol}`);
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data.length > 0) {
@@ -114,7 +114,7 @@ export function useStockSearch(options: UseStockSearchOptions = {}): UseStockSea
       setIsSearching(true);
       try {
         const standardSymbol = generateStandardSymbol(code);
-        const response = await fetch(`/api/stock-prices?symbols=${standardSymbol}`);
+        const response = await fetch(`/api/stock-info?symbols=${standardSymbol}`);
 
         if (response.ok) {
           const result = await response.json();

@@ -5,6 +5,7 @@ import { transactions, transfers } from "@/lib/db/schema";
 import { TransactionType, TransferType, HoldingDetail, PortfolioOverview } from "@/types/investment";
 
 import { FinancialCalculator } from "./financial-calculator";
+import { HoldingService } from "./holding-service";
 import { StockPriceService } from "./stock-price-service";
 import { TransactionProcessor } from "./transaction-processor";
 import { StockPrice, CashData } from "./types/calculator-types";
@@ -184,6 +185,18 @@ export class PortfolioCalculator {
       dayFloatAmount: totalDayFloatAmount,
       dayFloatRate,
     };
+  }
+
+  /**
+   * 更新指定股票品种的holdings数据（用于批量保存优化）
+   */
+  static async updateHoldingsForSymbol(portfolioId: number, symbol: string, userId: string): Promise<void> {
+    try {
+      await HoldingService.updateHoldingBySymbol(portfolioId, symbol);
+    } catch (error) {
+      console.error(`Error updating holdings for symbol ${symbol} in portfolio ${portfolioId}:`, error);
+      throw error;
+    }
   }
 
   /**

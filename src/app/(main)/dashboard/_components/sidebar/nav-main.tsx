@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -26,6 +28,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { type NavGroup, type NavMainItem } from "@/navigation/sidebar/sidebar-items";
+
+import { QuickCreateDialog } from "./quick-create-dialog";
 
 interface NavMainProps {
   readonly items: readonly NavGroup[];
@@ -144,6 +148,7 @@ const NavItemCollapsed = ({
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
   const { state, isMobile } = useSidebar();
+  const [isQuickCreateOpen, setIsQuickCreateOpen] = useState(false);
 
   const isItemActive = (url: string, subItems?: NavMainItem["subItems"]) => {
     if (subItems?.length) {
@@ -156,6 +161,29 @@ export function NavMain({ items }: NavMainProps) {
     return subItems?.some((sub) => path.startsWith(sub.url)) ?? false;
   };
 
+  // 快捷键处理 (Option+Q)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.altKey && event.key.toLowerCase() === "q") {
+        event.preventDefault();
+        setIsQuickCreateOpen(true);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // 处理Quick Create按钮点击
+  const handleQuickCreateClick = () => {
+    setIsQuickCreateOpen(true);
+  };
+
+  // 处理对话框关闭
+  const handleQuickCreateClose = () => {
+    setIsQuickCreateOpen(false);
+  };
+
   return (
     <>
       <SidebarGroup>
@@ -163,8 +191,9 @@ export function NavMain({ items }: NavMainProps) {
           <SidebarMenu>
             <SidebarMenuItem className="flex items-center gap-2">
               <SidebarMenuButton
-                tooltip="Quick Create"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 duration-200 ease-linear"
+                onClick={handleQuickCreateClick}
+                tooltip="Quick Create (Alt+Q)"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary/90 active:text-primary-foreground min-w-8 cursor-pointer duration-200 ease-linear"
               >
                 <PlusCircleIcon />
                 <span>Quick Create</span>
@@ -218,6 +247,9 @@ export function NavMain({ items }: NavMainProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       ))}
+
+      {/* 快速录入对话框 */}
+      <QuickCreateDialog isOpen={isQuickCreateOpen} onClose={handleQuickCreateClose} />
     </>
   );
 }
