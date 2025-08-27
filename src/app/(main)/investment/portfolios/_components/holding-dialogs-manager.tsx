@@ -59,7 +59,7 @@ export function HoldingDialogsManager({
 
       {/* 交易记录列表抽屉 */}
       <Drawer open={isTransactionListOpen} onOpenChange={onTransactionListClose}>
-        <DrawerContent className="mx-auto max-h-[80vh] w-[80%]">
+        <DrawerContent className="mx-auto max-h-[80vh] xl:w-[80%]">
           <DrawerHeader>
             <DrawerTitle className="text-xl">{selectedStockName} 交易记录</DrawerTitle>
           </DrawerHeader>
