@@ -158,7 +158,7 @@ npm run generate:presets  # 生成自定义主题预设文件
 - `/api/holdings/*` - 持仓数据查询
 - `/api/transactions/*` - 交易记录管理
 - `/api/transfers/*` - 转账记录管理
-- `/api/stock-prices/*` - 实时行情获取
+- `/api/stock-info/*` - 实时行情获取
 
 #### 核心计算逻辑
 
