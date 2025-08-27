@@ -191,7 +191,7 @@ export function QuickCreateDialog({ isOpen, onClose }: QuickCreateDialogProps) {
               </div>
             </CardContent>
           </Card>
-       </div>
+        </div>
       </SheetContent>
     </Sheet>
   );

@@ -26,7 +26,62 @@ export function QuickEntryForm({ inputText, portfolioId, onSuccess, onClose }: Q
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState(0);
 
-  // 解析输入文本
+  // 使用自定义 hooks 减少组件复杂度
+  const { parseInput } = useParseLogic(inputText, setParseResults, setIsParsing, toast);
+  const { handleSave } = useSaveLogic(portfolioId, parseResults, setIsSaving, setSaveProgress, toast, onSuccess);
+
+  // 当输入文本变化时自动解析
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      parseInput();
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [parseInput]);
+
+  // 计算解析统计
+  const parseStats = useMemo(() => {
+    const total = parseResults.length;
+    const success = parseResults.filter((r) => r.success).length;
+    const failed = total - success;
+
+    return { total, success, failed };
+  }, [parseResults]);
+
+  // 获取状态图标
+  const getStatusIcon = useCallback((result: QuickEntryParseResult) => {
+    if (result.success) {
+      return <CheckCircleIcon className="h-4 w-4 text-green-500" />;
+    } else {
+      return <XCircleIcon className="h-4 w-4 text-red-500" />;
+    }
+  }, []);
+
+  if (!inputText.trim()) {
+    return null;
+  }
+
+  return (
+    <QuickEntryFormContent
+      parseResults={parseResults}
+      isParsing={isParsing}
+      isSaving={isSaving}
+      saveProgress={saveProgress}
+      parseStats={parseStats}
+      onSave={handleSave}
+      onClose={onClose}
+      getStatusIcon={getStatusIcon}
+    />
+  );
+}
+
+// 解析逻辑 Hook
+function useParseLogic(
+  inputText: string,
+  setParseResults: React.Dispatch<React.SetStateAction<QuickEntryParseResult[]>>,
+  setIsParsing: React.Dispatch<React.SetStateAction<boolean>>,
+  toast: ReturnType<typeof useToast>["toast"],
+) {
   const parseInput = useCallback(async () => {
     if (!inputText.trim()) {
       setParseResults([]);
@@ -48,28 +103,22 @@ export function QuickEntryForm({ inputText, portfolioId, onSuccess, onClose }: Q
     } finally {
       setIsParsing(false);
     }
-  }, [inputText, toast]);
+  }, [inputText, toast, setParseResults, setIsParsing]);
 
-  // 当输入文本变化时自动解析
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      parseInput();
-    }, 500);
+  return { parseInput };
+}
 
-    return () => clearTimeout(debounceTimer);
-  }, [parseInput]);
-
-  // 计算解析统计
-  const parseStats = useMemo(() => {
-    const total = parseResults.length;
-    const success = parseResults.filter((r) => r.success).length;
-    const failed = total - success;
-
-    return { total, success, failed };
-  }, [parseResults]);
-
-  // 批量保存
+// 保存逻辑 Hook
+function useSaveLogic(
+  portfolioId: string,
+  parseResults: QuickEntryParseResult[],
+  setIsSaving: React.Dispatch<React.SetStateAction<boolean>>,
+  setSaveProgress: React.Dispatch<React.SetStateAction<number>>,
+  toast: ReturnType<typeof useToast>["toast"],
+  onSuccess: () => void,
+) {
   const handleSave = useCallback(async () => {
+    // 前置验证
     if (!portfolioId) {
       toast({
         title: "保存失败",
@@ -99,7 +148,7 @@ export function QuickEntryForm({ inputText, portfolioId, onSuccess, onClose }: Q
         transactions,
       };
 
-      // 模拟保存进度
+      // 启动进度模拟
       const progressInterval = setInterval(() => {
         setSaveProgress((prev) => Math.min(prev + 10, 90));
       }, 200);
@@ -123,7 +172,6 @@ export function QuickEntryForm({ inputText, portfolioId, onSuccess, onClose }: Q
           description: `成功保存 ${result.successCount} 条交易记录${result.failureCount > 0 ? `，${result.failureCount} 条失败` : ""}`,
         });
 
-        // 如果全部成功，调用成功回调
         if (result.failureCount === 0) {
           onSuccess();
         }
@@ -145,21 +193,33 @@ export function QuickEntryForm({ inputText, portfolioId, onSuccess, onClose }: Q
       setIsSaving(false);
       setSaveProgress(0);
     }
-  }, [portfolioId, parseResults, toast, onSuccess]);
+  }, [portfolioId, parseResults, toast, onSuccess, setIsSaving, setSaveProgress]);
 
-  // 获取状态图标
-  const getStatusIcon = useCallback((result: QuickEntryParseResult) => {
-    if (result.success) {
-      return <CheckCircleIcon className="h-4 w-4 text-green-500" />;
-    } else {
-      return <XCircleIcon className="h-4 w-4 text-red-500" />;
-    }
-  }, []);
+  return { handleSave };
+}
 
-  if (!inputText.trim()) {
-    return null;
-  }
+// 表单内容组件
+interface QuickEntryFormContentProps {
+  parseResults: QuickEntryParseResult[];
+  isParsing: boolean;
+  isSaving: boolean;
+  saveProgress: number;
+  parseStats: { total: number; success: number; failed: number };
+  onSave: () => void;
+  onClose: () => void;
+  getStatusIcon: (result: QuickEntryParseResult) => React.ReactNode;
+}
 
+function QuickEntryFormContent({
+  parseResults,
+  isParsing,
+  isSaving,
+  saveProgress,
+  parseStats,
+  onSave,
+  onClose,
+  getStatusIcon,
+}: QuickEntryFormContentProps) {
   return (
     <div className="space-y-4">
       {/* 解析状态 */}
@@ -251,7 +311,7 @@ export function QuickEntryForm({ inputText, portfolioId, onSuccess, onClose }: Q
 
       {/* 操作按钮 */}
       <div className="flex flex-col gap-3 pt-4">
-        <Button onClick={handleSave} disabled={parseStats.success === 0 || isParsing || isSaving} className="w-full">
+        <Button onClick={onSave} disabled={parseStats.success === 0 || isParsing || isSaving} className="w-full">
           {isSaving ? (
             <>
               <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />

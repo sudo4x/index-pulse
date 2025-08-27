@@ -58,7 +58,7 @@ export class QuickEntryValidator {
   static validateParseResult(result: unknown): { success: boolean; error?: string; data?: QuickEntryParseResult } {
     try {
       const validated = quickEntryParseResultSchema.parse(result);
-      return { success: true, data: validated };
+      return { success: true, data: validated as QuickEntryParseResult };
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errorMessage = error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ");
@@ -74,7 +74,7 @@ export class QuickEntryValidator {
   static validateParseResults(results: unknown): { success: boolean; error?: string; data?: QuickEntryParseResult[] } {
     try {
       const validated = quickEntryParseResultsSchema.parse(results);
-      return { success: true, data: validated };
+      return { success: true, data: validated as QuickEntryParseResult[] };
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errorMessage = error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join("; ");
@@ -119,35 +119,113 @@ export class QuickEntryValidator {
       const transaction = request.transactions[i];
       const index = i + 1;
 
-      // 验证买入/卖出必需字段
-      if (transaction.type === "buy" || transaction.type === "sell") {
-        if (!transaction.shares || !transaction.price) {
-          return `第${index}条记录：${transaction.type === "buy" ? "买入" : "卖出"}操作必须提供价格和数量`;
-        }
-      }
-
-      // 验证合股/拆股必需字段
-      if (transaction.type === "merge" || transaction.type === "split") {
-        if (!transaction.unitShares) {
-          return `第${index}条记录：${transaction.type === "merge" ? "合股" : "拆股"}操作必须提供合股比例`;
-        }
-      }
-
-      // 验证除权除息必需字段
-      if (transaction.type === "dividend") {
-        const hasAnyDividendField =
-          transaction.per10SharesDividend ?? transaction.per10SharesBonus ?? transaction.per10SharesTransfer;
-        if (!hasAnyDividendField) {
-          return `第${index}条记录：除权除息操作必须提供红利、送股或转增信息`;
-        }
-      }
-
-      // 验证日期不能是未来时间
-      if (transaction.transactionDate > new Date()) {
-        return `第${index}条记录：交易日期不能是未来时间`;
+      const validationError = this.validateSingleTransaction(transaction, index);
+      if (validationError) {
+        return validationError;
       }
     }
 
+    return null;
+  }
+
+  /**
+   * 验证单个交易记录
+   */
+  private static validateSingleTransaction(
+    transaction: BulkTransactionRequest["transactions"][0],
+    index: number,
+  ): string | null {
+    // 验证不同交易类型的必需字段
+    const typeValidationError = this.validateTransactionTypeFields(transaction, index);
+    if (typeValidationError) {
+      return typeValidationError;
+    }
+
+    // 验证日期不能是未来时间
+    if (transaction.transactionDate > new Date()) {
+      return `第${index}条记录：交易日期不能是未来时间`;
+    }
+
+    return null;
+  }
+
+  /**
+   * 验证交易类型特定字段
+   */
+  private static validateTransactionTypeFields(
+    transaction: BulkTransactionRequest["transactions"][0],
+    index: number,
+  ): string | null {
+    switch (transaction.type) {
+      case "buy":
+      case "sell":
+        return this.validateBuySellFields(transaction, index);
+
+      case "merge":
+      case "split":
+        return this.validateMergeSplitFields(transaction, index);
+
+      case "dividend":
+        return this.validateDividendFields(transaction, index);
+
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * 验证买入/卖出字段
+   */
+  private static validateBuySellFields(
+    transaction: BulkTransactionRequest["transactions"][0],
+    index: number,
+  ): string | null {
+    // 类型守卫：检查是否具有买入/卖出相关属性
+    const buySellTransaction = transaction as any;
+    if (
+      !buySellTransaction.shares ||
+      buySellTransaction.shares <= 0 ||
+      !buySellTransaction.price ||
+      buySellTransaction.price <= 0
+    ) {
+      return `第${index}条记录：${transaction.type === "buy" ? "买入" : "卖出"}操作必须提供有效的价格和数量`;
+    }
+    return null;
+  }
+
+  /**
+   * 验证合股/拆股字段
+   */
+  private static validateMergeSplitFields(
+    transaction: BulkTransactionRequest["transactions"][0],
+    index: number,
+  ): string | null {
+    // 类型守卫：检查是否具有合股/拆股相关属性
+    const mergeSplitTransaction = transaction as any;
+    if (!mergeSplitTransaction.unitShares || mergeSplitTransaction.unitShares <= 0) {
+      return `第${index}条记录：${transaction.type === "merge" ? "合股" : "拆股"}操作必须提供有效的比例`;
+    }
+    return null;
+  }
+
+  /**
+   * 验证除权除息字段
+   */
+  private static validateDividendFields(
+    transaction: BulkTransactionRequest["transactions"][0],
+    index: number,
+  ): string | null {
+    // 类型守卫：检查是否具有除权除息相关属性
+    const dividendTransaction = transaction as any;
+    const hasValidDividend =
+      dividendTransaction.per10SharesDividend != null && dividendTransaction.per10SharesDividend > 0;
+    const hasValidBonus = dividendTransaction.per10SharesBonus != null && dividendTransaction.per10SharesBonus > 0;
+    const hasValidTransfer =
+      dividendTransaction.per10SharesTransfer != null && dividendTransaction.per10SharesTransfer > 0;
+
+    if (!hasValidDividend && !hasValidBonus && !hasValidTransfer) {
+      return `第${index}条记录：除权除息操作必须提供有效的红利、送股或转增信息`;
+    }
     return null;
   }
 

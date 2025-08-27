@@ -14,50 +14,78 @@ export class StockInfoResolver {
    * 主要解析方法：根据提供的名称和代码解析股票信息
    */
   static async resolveStockInfo(name?: string, symbol?: string): Promise<ResolvedStockInfo> {
-    // 生成缓存键
+    // 生成缓存键并检查缓存
     const cacheKey = `${name ?? ""}|${symbol ?? ""}`;
-
-    // 检查缓存
-    const cached = this.cache.get(cacheKey);
-    if (cached && this.isCacheValid()) {
-      return cached;
+    const cachedResult = this.getCachedResult(cacheKey);
+    if (cachedResult) {
+      return cachedResult;
     }
-
-    let result: ResolvedStockInfo;
 
     try {
-      // 根据提供的参数选择解析策略
-      if (name && symbol) {
-        result = await this.resolveByBoth(name, symbol);
-      } else if (name && !symbol) {
-        result = await this.resolveByNameOnly(name);
-      } else if (!name && symbol) {
-        result = await this.resolveBySymbolOnly(symbol);
-      } else {
-        result = {
-          success: false,
-          symbol: "",
-          name: "",
-          error: "股票名称和代码不能同时为空",
-        };
-      }
-
-      // 缓存结果（包括失败的结果，避免重复查询）
-      this.cache.set(cacheKey, result);
-
+      const result = await this.performStockResolution(name, symbol);
+      this.cacheResult(cacheKey, result);
       return result;
     } catch (error) {
-      console.error("Stock info resolution error:", error);
-
-      result = {
-        success: false,
-        symbol: symbol ?? "",
-        name: name ?? "",
-        error: "股票信息解析过程中发生错误",
-      };
-
-      return result;
+      return this.handleResolutionError(error, name, symbol);
     }
+  }
+
+  /**
+   * 获取缓存结果
+   */
+  private static getCachedResult(cacheKey: string): ResolvedStockInfo | null {
+    const cached = this.cache.get(cacheKey);
+    return cached && this.isCacheValid() ? cached : null;
+  }
+
+  /**
+   * 执行股票信息解析
+   */
+  private static async performStockResolution(name?: string, symbol?: string): Promise<ResolvedStockInfo> {
+    // 根据提供的参数选择解析策略
+    if (name && symbol) {
+      return await this.resolveByBoth(name, symbol);
+    } else if (name && !symbol) {
+      return await this.resolveByNameOnly(name);
+    } else if (!name && symbol) {
+      return await this.resolveBySymbolOnly(symbol);
+    } else {
+      return this.createEmptyInputError();
+    }
+  }
+
+  /**
+   * 缓存解析结果
+   */
+  private static cacheResult(cacheKey: string, result: ResolvedStockInfo): void {
+    // 缓存结果（包括失败的结果，避免重复查询）
+    this.cache.set(cacheKey, result);
+  }
+
+  /**
+   * 处理解析异常
+   */
+  private static handleResolutionError(error: unknown, name?: string, symbol?: string): ResolvedStockInfo {
+    console.error("Stock info resolution error:", error);
+
+    return {
+      success: false,
+      symbol: symbol ?? "",
+      name: name ?? "",
+      error: "股票信息解析过程中发生错误",
+    };
+  }
+
+  /**
+   * 创建空输入错误结果
+   */
+  private static createEmptyInputError(): ResolvedStockInfo {
+    return {
+      success: false,
+      symbol: "",
+      name: "",
+      error: "股票名称和代码不能同时为空",
+    };
   }
 
   /**

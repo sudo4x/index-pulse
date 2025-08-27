@@ -88,7 +88,7 @@ export async function POST(request: Request) {
           // 如果该品种有成功保存的交易，更新holdings
           if (savedTransactions.length > 0) {
             try {
-              await PortfolioCalculator.updateHoldingsForSymbol(parseInt(portfolioId), symbol, user.id);
+              await PortfolioCalculator.updateHoldingsForSymbol(parseInt(portfolioId), symbol, user.id.toString());
             } catch (error) {
               console.error(`Error updating holdings for ${symbol}:`, error);
               // holdings更新失败不影响交易保存成功的状态
