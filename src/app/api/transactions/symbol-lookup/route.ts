@@ -1,7 +1,10 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-import { createServerClient } from "@supabase/ssr";
+import { eq, and } from "drizzle-orm";
+
+import { getCurrentUser } from "@/lib/auth/get-user";
+import { db } from "@/lib/db";
+import { portfolios, transactions } from "@/lib/db/schema";
 
 // 根据股票名称查找对应的股票代码
 export async function GET(request: Request) {
@@ -13,56 +16,26 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "股票名称参数不能为空" }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-            } catch {
-              // The `setAll` method was called from a Server Component.
-              // This can be ignored if you have middleware refreshing
-              // user sessions.
-            }
-          },
-        },
-      },
-    );
+    const user = await getCurrentUser();
 
-    // 获取用户信息
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
+    if (!user) {
       return NextResponse.json({ error: "用户未登录" }, { status: 401 });
     }
 
     const trimmedName = name.trim();
 
-    // 查询交易记录表中是否有相同名称的记录
-    const { data: transactions, error } = await supabase
-      .from("transactions")
-      .select("symbol")
-      .eq("user_id", user.id)
-      .eq("name", trimmedName)
+    // 通过用户的投资组合查询交易记录表中是否有相同名称的记录
+    const result = await db
+      .select({ symbol: transactions.symbol })
+      .from(transactions)
+      .innerJoin(portfolios, eq(transactions.portfolioId, portfolios.id))
+      .where(and(eq(portfolios.userId, user.id), eq(transactions.name, trimmedName)))
       .limit(1);
 
-    if (error) {
-      console.error("Database query error:", error);
-      return NextResponse.json({ error: "查询数据库时发生错误" }, { status: 500 });
-    }
-
-    if (transactions && transactions.length > 0) {
+    if (result.length > 0) {
       return NextResponse.json({
         success: true,
-        symbol: transactions[0].symbol,
+        symbol: result[0].symbol,
         name: trimmedName,
       });
     }

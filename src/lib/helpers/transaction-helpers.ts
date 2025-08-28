@@ -5,6 +5,25 @@ import { TransactionType, TransactionTypeNames } from "@/types/investment";
  */
 export class TransactionHelpers {
   /**
+   * 将字符串类型转换为TransactionType枚举值
+   */
+  static stringToTransactionType(typeStr: string): TransactionType {
+    switch (typeStr) {
+      case "buy":
+        return TransactionType.BUY;
+      case "sell":
+        return TransactionType.SELL;
+      case "merge":
+        return TransactionType.MERGE;
+      case "split":
+        return TransactionType.SPLIT;
+      case "dividend":
+        return TransactionType.DIVIDEND;
+      default:
+        throw new Error(`未知交易类型: ${typeStr}`);
+    }
+  }
+  /**
    * 格式化股息描述
    */
   static formatDividendDescription(

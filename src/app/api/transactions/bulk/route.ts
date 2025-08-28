@@ -6,6 +6,7 @@ import type { TransactionFormData } from "@/app/(main)/investment/portfolios/_co
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { portfolios } from "@/lib/db/schema";
+import { TransactionHelpers } from "@/lib/helpers/transaction-helpers";
 import { PortfolioCalculator } from "@/lib/services/portfolio-calculator";
 import { TransactionService } from "@/lib/services/transaction-service";
 import { QuickEntryValidator } from "@/lib/validators/quick-entry-validator";
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
                 portfolioId: parseInt(portfolioId),
                 userId: user.id,
                 ...transaction,
+                type: TransactionHelpers.stringToTransactionType(transaction.type),
               });
 
               savedTransactions.push(savedTransaction);

@@ -31,7 +31,7 @@ export const bulkTransactionRequestSchema = z.object({
         type: z.enum(["buy", "sell", "dividend", "split", "merge"], {
           errorMap: () => ({ message: "无效的交易类型" }),
         }),
-        transactionDate: z.date(),
+        transactionDate: z.string().transform((str) => new Date(str)),
         comment: z.string().optional(),
         // 买入/卖出字段
         shares: z.number().positive("数量必须大于0").optional(),
