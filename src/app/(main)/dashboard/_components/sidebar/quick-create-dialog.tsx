@@ -105,13 +105,15 @@ export function QuickCreateDialog({ isOpen, onClose }: QuickCreateDialogProps) {
             <CardContent className="space-y-6 pt-6">
               {/* 投资组合选择 */}
               <div className="space-y-2">
-                <Label className="text-sm font-medium">选择投资组合</Label>
+                <Label className="text-sm font-medium">
+                  选择投资组合 <span className="text-destructive">*</span>
+                </Label>
                 <Select
                   value={selectedPortfolioId}
                   onValueChange={setSelectedPortfolioId}
                   disabled={isLoadingPortfolios}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className={`w-full ${!selectedPortfolioId ? "border-destructive" : ""}`}>
                     <SelectValue placeholder={isLoadingPortfolios ? "加载中..." : "请选择投资组合"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -122,6 +124,7 @@ export function QuickCreateDialog({ isOpen, onClose }: QuickCreateDialogProps) {
                     ))}
                   </SelectContent>
                 </Select>
+                {!selectedPortfolioId && <p className="text-destructive text-xs">请选择一个投资组合</p>}
               </div>
 
               {/* 快速录入文本区域 */}
@@ -140,14 +143,12 @@ export function QuickCreateDialog({ isOpen, onClose }: QuickCreateDialogProps) {
               </div>
 
               {/* 使用QuickEntryForm组件处理解析、验证和保存 */}
-              {inputText && selectedPortfolioId && (
-                <QuickEntryForm
-                  inputText={inputText}
-                  portfolioId={selectedPortfolioId}
-                  onSuccess={handleSuccess}
-                  onClose={handleClose}
-                />
-              )}
+              <QuickEntryForm
+                inputText={inputText}
+                portfolioId={selectedPortfolioId}
+                onSuccess={handleSuccess}
+                onClose={handleClose}
+              />
 
               {/* 格式说明 - 可折叠 */}
               <Collapsible open={isFormatGuideOpen} onOpenChange={setIsFormatGuideOpen}>

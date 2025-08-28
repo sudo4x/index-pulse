@@ -31,12 +31,17 @@ export function QuickEntryForm({ inputText, portfolioId, onSuccess, onClose }: Q
 
   // 当输入文本变化时自动解析
   useEffect(() => {
+    if (!inputText.trim()) {
+      setParseResults([]);
+      return;
+    }
+
     const debounceTimer = setTimeout(() => {
       parseInput();
     }, 500);
 
     return () => clearTimeout(debounceTimer);
-  }, [parseInput]);
+  }, [parseInput, inputText]);
 
   // 计算解析统计
   const parseStats = useMemo(() => {
@@ -47,12 +52,10 @@ export function QuickEntryForm({ inputText, portfolioId, onSuccess, onClose }: Q
     return { total, success, failed };
   }, [parseResults]);
 
-  if (!inputText.trim()) {
-    return null;
-  }
-
   return (
     <QuickEntryFormContent
+      inputText={inputText}
+      portfolioId={portfolioId}
       parseResults={parseResults}
       isParsing={isParsing}
       isSaving={isSaving}
@@ -189,6 +192,8 @@ function useSaveLogic(
 
 // 表单内容组件
 interface QuickEntryFormContentProps {
+  inputText: string;
+  portfolioId: string;
   parseResults: QuickEntryParseResult[];
   isParsing: boolean;
   isSaving: boolean;
@@ -198,7 +203,91 @@ interface QuickEntryFormContentProps {
   onClose: () => void;
 }
 
+// 解析状态显示组件
+function ParseResultDisplay({
+  inputText,
+  isParsing,
+  parseResults,
+  parseStats,
+}: {
+  inputText: string;
+  isParsing: boolean;
+  parseResults: QuickEntryParseResult[];
+  parseStats: { success: number; failed: number };
+}) {
+  const failedLines = parseResults
+    .filter((r) => !r.success)
+    .map((r) => r.line)
+    .sort((a, b) => a - b);
+
+  if (!inputText.trim()) return null;
+
+  return (
+    <div className="text-sm">
+      {isParsing ? (
+        <div className="text-muted-foreground flex items-center gap-2">
+          <LoaderIcon className="h-4 w-4 animate-spin" />
+          正在解析...
+        </div>
+      ) : parseResults.length > 0 ? (
+        <div className="space-y-1">
+          <p className="text-green-600">成功 {parseStats.success} 条</p>
+          {parseStats.failed > 0 && (
+            <p className="text-red-600">
+              失败 {parseStats.failed} 条 (第{failedLines.join(",")}行)
+            </p>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// 保存按钮组件
+function SaveActionButtons({
+  portfolioId,
+  inputText,
+  parseStats,
+  isParsing,
+  isSaving,
+  onSave,
+  onClose,
+}: {
+  portfolioId: string;
+  inputText: string;
+  parseStats: { success: number; failed: number };
+  isParsing: boolean;
+  isSaving: boolean;
+  onSave: () => void;
+  onClose: () => void;
+}) {
+  const canSave = portfolioId && inputText.trim() && parseStats.success > 0 && parseStats.failed === 0 && !isParsing;
+
+  return (
+    <div className="flex flex-col gap-3 pt-4">
+      <Button onClick={onSave} disabled={!canSave || isSaving} className="w-full">
+        {isSaving ? (
+          <>
+            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+            保存中...
+          </>
+        ) : parseStats.success > 0 ? (
+          `保存 ${parseStats.success} 条记录`
+        ) : (
+          "保存记录"
+        )}
+      </Button>
+
+      <Button variant="outline" onClick={onClose} disabled={isSaving} className="w-full">
+        取消
+      </Button>
+    </div>
+  );
+}
+
 function QuickEntryFormContent({
+  inputText,
+  portfolioId,
   parseResults,
   isParsing,
   isSaving,
@@ -207,32 +296,15 @@ function QuickEntryFormContent({
   onSave,
   onClose,
 }: QuickEntryFormContentProps) {
-  // 获取失败的行号
-  const failedLines = parseResults
-    .filter((r) => !r.success)
-    .map((r) => r.line)
-    .sort((a, b) => a - b);
-
   return (
     <div className="space-y-4">
-      {/* 简化的解析状态 */}
-      <div className="text-sm">
-        {isParsing ? (
-          <div className="text-muted-foreground flex items-center gap-2">
-            <LoaderIcon className="h-4 w-4 animate-spin" />
-            正在解析...
-          </div>
-        ) : parseResults.length > 0 ? (
-          <div className="space-y-1">
-            <p className="text-green-600">成功 {parseStats.success} 条</p>
-            {parseStats.failed > 0 && (
-              <p className="text-red-600">
-                失败 {parseStats.failed} 条 (第{failedLines.join(",")}行)
-              </p>
-            )}
-          </div>
-        ) : null}
-      </div>
+      {/* 解析状态显示 */}
+      <ParseResultDisplay
+        inputText={inputText}
+        isParsing={isParsing}
+        parseResults={parseResults}
+        parseStats={parseStats}
+      />
 
       {/* 保存进度 */}
       {isSaving && (
@@ -250,22 +322,15 @@ function QuickEntryFormContent({
       )}
 
       {/* 操作按钮 */}
-      <div className="flex flex-col gap-3 pt-4">
-        <Button onClick={onSave} disabled={parseStats.success === 0 || isParsing || isSaving} className="w-full">
-          {isSaving ? (
-            <>
-              <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
-              保存中...
-            </>
-          ) : (
-            `保存 ${parseStats.success} 条记录`
-          )}
-        </Button>
-
-        <Button variant="outline" onClick={onClose} disabled={isSaving} className="w-full">
-          取消
-        </Button>
-      </div>
+      <SaveActionButtons
+        portfolioId={portfolioId}
+        inputText={inputText}
+        parseStats={parseStats}
+        isParsing={isParsing}
+        isSaving={isSaving}
+        onSave={onSave}
+        onClose={onClose}
+      />
     </div>
   );
 }
