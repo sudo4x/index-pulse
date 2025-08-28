@@ -103,7 +103,8 @@ export class PositionCycleManager {
       .limit(1);
 
     if (!result[0]) {
-      throw new Error(`No existing position cycle found for ${symbol}`);
+      // 没有历史交易记录，创建新周期
+      return await this.getNextCycleId(portfolioId, symbol);
     }
 
     return result[0].cycleId;
