@@ -131,7 +131,7 @@ export function QuickCreateDialog({ isOpen, onClose }: QuickCreateDialogProps) {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="示例: 买入 五粮液 SZ000858 129.06 100 白酒目前属于低位，入一手观望"
-                  className="min-h-[200px] font-mono text-xs"
+                  className="min-h-[200px] font-mono"
                 />
                 <p className="text-muted-foreground text-xs">
                   每行一条记录，用空格分隔字段。备注中如需包含空格，请用双引号包围。
@@ -151,12 +151,11 @@ export function QuickCreateDialog({ isOpen, onClose }: QuickCreateDialogProps) {
               {/* 格式说明 - 可折叠 */}
               <Collapsible open={isFormatGuideOpen} onOpenChange={setIsFormatGuideOpen}>
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-start p-0 text-sm font-medium hover:bg-transparent">
-                    {isFormatGuideOpen ? (
-                      <ChevronDown className="mr-1 h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="mr-1 h-4 w-4" />
-                    )}
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start !gap-1 p-0 !px-0 text-sm font-medium hover:bg-transparent"
+                  >
+                    {isFormatGuideOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     格式说明
                   </Button>
                 </CollapsibleTrigger>
