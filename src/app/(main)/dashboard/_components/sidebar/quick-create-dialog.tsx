@@ -131,7 +131,8 @@ export function QuickCreateDialog({ isOpen, onClose }: QuickCreateDialogProps) {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="示例: 买入 五粮液 SZ000858 129.06 100 白酒目前属于低位，入一手观望"
-                  className="min-h-[200px] font-mono"
+                  className="min-h-[200px] resize-none !text-xs"
+                  rows={8}
                 />
                 <p className="text-muted-foreground text-xs">
                   每行一条记录，用空格分隔字段。备注中如需包含空格，请用双引号包围。

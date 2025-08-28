@@ -29,7 +29,6 @@ export function LayoutControls(props: LayoutControlsProps) {
   const setThemePreset = usePreferencesStore((s) => s.setThemePreset);
 
   const handleValueChange = async (key: string, value: any) => {
-    // eslint-disable-line @typescript-eslint/no-explicit-any
     if (key === "theme_mode") {
       updateThemeMode(value);
       setThemeMode(value as ThemeMode);

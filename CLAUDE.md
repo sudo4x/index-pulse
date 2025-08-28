@@ -22,7 +22,17 @@ npm run start         # 启动生产服务器
 npm run lint          # 运行 ESLint 检查
 npm run format        # 使用 Prettier 格式化代码
 npm run format:check  # 检查代码格式是否符合要求
+npm run build         # 构建并检查编译错误（必须！）
 ```
+
+### 🔥 编译检查规则 - 极其重要！
+
+**【必须遵守！】每次完成功能开发或修复 bug 后，都必须运行 `npm run build` 进行编译检查**
+
+- **强制要求**：任何代码修改完成后都必须编译检查
+- **检查内容**：TypeScript 类型错误、ESLint 错误、构建错误
+- **处理原则**：发现编译错误必须立即修复，不能留到后面
+- **质量保障**：确保代码改动不会破坏项目的整体稳定性
 
 ### Lint 和格式化工作流程
 

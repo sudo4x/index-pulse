@@ -2,12 +2,11 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 
-import { CheckCircleIcon, XCircleIcon, LoaderIcon, AlertCircleIcon } from "lucide-react";
+import { LoaderIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { QuickEntryParser } from "@/lib/services/quick-entry-parser";
 import type { QuickEntryParseResult, BulkTransactionRequest, BulkTransactionResponse } from "@/types/quick-entry";
@@ -48,15 +47,6 @@ export function QuickEntryForm({ inputText, portfolioId, onSuccess, onClose }: Q
     return { total, success, failed };
   }, [parseResults]);
 
-  // 获取状态图标
-  const getStatusIcon = useCallback((result: QuickEntryParseResult) => {
-    if (result.success) {
-      return <CheckCircleIcon className="h-4 w-4 text-green-500" />;
-    } else {
-      return <XCircleIcon className="h-4 w-4 text-red-500" />;
-    }
-  }, []);
-
   if (!inputText.trim()) {
     return null;
   }
@@ -70,7 +60,6 @@ export function QuickEntryForm({ inputText, portfolioId, onSuccess, onClose }: Q
       parseStats={parseStats}
       onSave={handleSave}
       onClose={onClose}
-      getStatusIcon={getStatusIcon}
     />
   );
 }
@@ -207,7 +196,6 @@ interface QuickEntryFormContentProps {
   parseStats: { total: number; success: number; failed: number };
   onSave: () => void;
   onClose: () => void;
-  getStatusIcon: (result: QuickEntryParseResult) => React.ReactNode;
 }
 
 function QuickEntryFormContent({
@@ -218,81 +206,33 @@ function QuickEntryFormContent({
   parseStats,
   onSave,
   onClose,
-  getStatusIcon,
 }: QuickEntryFormContentProps) {
+  // 获取失败的行号
+  const failedLines = parseResults
+    .filter((r) => !r.success)
+    .map((r) => r.line)
+    .sort((a, b) => a - b);
+
   return (
     <div className="space-y-4">
-      {/* 解析状态 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            {isParsing && <LoaderIcon className="h-4 w-4 animate-spin" />}
-            解析结果
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isParsing ? (
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <LoaderIcon className="h-4 w-4 animate-spin" />
-              正在解析...
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex items-center gap-4 text-sm">
-                <span>总计: {parseStats.total}</span>
-                <span className="text-green-600">成功: {parseStats.success}</span>
-                <span className="text-red-600">失败: {parseStats.failed}</span>
-              </div>
-
-              {parseStats.failed > 0 && (
-                <div className="flex items-center gap-2 text-sm text-orange-600">
-                  <AlertCircleIcon className="h-4 w-4" />
-                  请检查并修正失败的记录
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* 详细解析结果 */}
-      {parseResults.length > 0 && !isParsing && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">详细信息</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-48">
-              <div className="space-y-2">
-                {parseResults.map((result) => (
-                  <div
-                    key={`${result.line}-${result.rawText.slice(0, 10)}`}
-                    className="flex items-start gap-3 rounded-md border p-2"
-                  >
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      {getStatusIcon(result)}
-                      <span className="text-muted-foreground text-xs">第{result.line}行:</span>
-                      <span className="text-muted-foreground truncate font-mono text-sm">{result.rawText}</span>
-                    </div>
-                    {!result.success && result.error && (
-                      <div className="max-w-[200px] flex-shrink-0 text-xs text-red-600">{result.error.message}</div>
-                    )}
-                    {result.success && result.data && (
-                      <div className="flex-shrink-0 text-xs text-green-600">
-                        {result.data.type === "buy" && "买入"}
-                        {result.data.type === "sell" && "卖出"}
-                        {result.data.type === "dividend" && "除权除息"}
-                        {result.data.type === "split" && "拆股"}
-                        {result.data.type === "merge" && "合股"} {result.data.name}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      )}
+      {/* 简化的解析状态 */}
+      <div className="text-sm">
+        {isParsing ? (
+          <div className="text-muted-foreground flex items-center gap-2">
+            <LoaderIcon className="h-4 w-4 animate-spin" />
+            正在解析...
+          </div>
+        ) : parseResults.length > 0 ? (
+          <div className="space-y-1">
+            <p className="text-green-600">成功 {parseStats.success} 条</p>
+            {parseStats.failed > 0 && (
+              <p className="text-red-600">
+                失败 {parseStats.failed} 条 (第{failedLines.join(",")}行)
+              </p>
+            )}
+          </div>
+        ) : null}
+      </div>
 
       {/* 保存进度 */}
       {isSaving && (
