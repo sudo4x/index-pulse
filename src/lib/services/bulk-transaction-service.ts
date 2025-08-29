@@ -68,9 +68,12 @@ export class BulkTransactionService {
     try {
       const savedTransactions = [];
 
+      // 按交易日期排序，确保时间顺序正确（买入记录先于除权除息记录处理）
+      const sortedTransactions = this.sortTransactionsByDate(symbolTransactions);
+
       // 处理该品种的所有交易
-      for (let i = 0; i < symbolTransactions.length; i++) {
-        const transaction = symbolTransactions[i];
+      for (let i = 0; i < sortedTransactions.length; i++) {
+        const transaction = sortedTransactions[i];
         const result = await this.processSingleTransaction(transaction, portfolioId, portfolio, userId);
 
         if (result.success) {
@@ -181,5 +184,32 @@ export class BulkTransactionService {
     });
 
     return grouped;
+  }
+
+  /**
+   * 按交易日期对交易记录进行排序（升序）
+   * 严格按照时间顺序处理，同一天的交易按录入顺序
+   */
+  private static sortTransactionsByDate(
+    transactions: (TransactionFormData & { originalIndex: number })[],
+  ): (TransactionFormData & { originalIndex: number })[] {
+    return transactions.sort((a, b) => {
+      try {
+        const dateA = new Date(a.transactionDate);
+        const dateB = new Date(b.transactionDate);
+
+        // 日期升序排序
+        const dateDiff = dateA.getTime() - dateB.getTime();
+        if (dateDiff !== 0) {
+          return dateDiff;
+        }
+
+        // 如果日期相同，按原始索引排序，保持录入顺序
+        return a.originalIndex - b.originalIndex;
+      } catch (error) {
+        console.warn("Error parsing transaction dates, falling back to original order:", error);
+        return a.originalIndex - b.originalIndex;
+      }
+    });
   }
 }
