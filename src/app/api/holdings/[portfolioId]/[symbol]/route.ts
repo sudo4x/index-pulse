@@ -4,7 +4,7 @@ import { eq, and } from "drizzle-orm";
 
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
-import { transactions, portfolios } from "@/lib/db/schema";
+import { transactions, portfolios, holdings } from "@/lib/db/schema";
 
 interface RouteContext {
   params: Promise<{ portfolioId: string; symbol: string }>;
@@ -47,14 +47,21 @@ export async function DELETE(request: Request, context: RouteContext) {
       .where(and(eq(transactions.portfolioId, portfolioIdInt), eq(transactions.symbol, symbol.toUpperCase())))
       .returning();
 
+    // 删除该品种的持仓记录
+    const deletedHoldings = await db
+      .delete(holdings)
+      .where(and(eq(holdings.portfolioId, portfolioIdInt), eq(holdings.symbol, symbol.toUpperCase())))
+      .returning();
+
     // TODO: 在这里触发持仓和组合数据的重新计算
 
     return NextResponse.json({
       success: true,
-      message: `成功删除品种 ${symbol.toUpperCase()} 及其相关的 ${deletedTransactions.length} 条交易记录`,
+      message: `成功删除品种 ${symbol.toUpperCase()}：${deletedTransactions.length} 条交易记录，${deletedHoldings.length} 条持仓记录`,
       data: {
         symbol: symbol.toUpperCase(),
         deletedTransactionsCount: deletedTransactions.length,
+        deletedHoldingsCount: deletedHoldings.length,
       },
     });
   } catch (error) {
