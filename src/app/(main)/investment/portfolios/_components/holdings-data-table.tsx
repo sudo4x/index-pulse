@@ -28,6 +28,8 @@ export function HoldingsDataTable({ holdings, onAddClick, onShowTransactions, on
             <TableHead className="text-right">现价/成本</TableHead>
             <TableHead className="text-right">当日盈亏</TableHead>
             <TableHead className="text-right">盈亏</TableHead>
+            <TableHead className="text-center">距上次买入</TableHead>
+            <TableHead className="text-center">距上次卖出</TableHead>
             <TableHead className="text-center">操作</TableHead>
           </TableRow>
         </TableHeader>

@@ -133,6 +133,11 @@ function transformHoldingData(holding: Holding, currentPrice: StockPrice) {
     isActive: holding.isActive,
     openTime: holding.openTime.toISOString(),
     liquidationTime: holding.liquidationTime?.toISOString(),
+    // 最近交易记录字段
+    lastBuyPrice: holding.lastBuyPrice ? parseFloat(String(holding.lastBuyPrice)) : undefined,
+    lastBuyDate: holding.lastBuyDate?.toISOString(),
+    lastSellPrice: holding.lastSellPrice ? parseFloat(String(holding.lastSellPrice)) : undefined,
+    lastSellDate: holding.lastSellDate?.toISOString(),
   };
 }
 

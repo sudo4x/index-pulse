@@ -1,7 +1,8 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { holdings, transactions, Holding, NewHolding } from "@/lib/db/schema";
+import { TransactionType } from "@/types/investment";
 
 import { FinancialCalculator } from "./financial-calculator";
 import { TransactionProcessor } from "./transaction-processor";
@@ -16,70 +17,106 @@ export class HoldingService {
    */
   static async updateHoldingBySymbol(portfolioId: number, symbol: string): Promise<void> {
     try {
-      // 分别获取当前周期和全历史数据
-      const currentCycleData = await TransactionProcessor.getCurrentCycleSharesData(portfolioId, symbol);
-      const allHistoryData = await TransactionProcessor.getAllHistorySharesData(portfolioId, symbol);
+      // 获取交易数据
+      const { currentCycleData, allHistoryData } = await this.getTransactionData(portfolioId, symbol);
 
+      // 检查是否需要删除持仓
       if (currentCycleData.totalShares === 0 && currentCycleData.totalBuyAmount === 0) {
-        // 如果没有持仓数据，删除持仓记录
         await this.deleteHolding(portfolioId, symbol);
         return;
       }
 
-      // 计算统一成本价
-      const cost = FinancialCalculator.calculateCost(allHistoryData, currentCycleData.totalShares);
+      // 准备持仓数据
+      const holdingData = await this.prepareHoldingData(portfolioId, symbol, currentCycleData, allHistoryData);
 
-      // 获取股票名称（从最新交易记录获取）
-      const latestTransaction = await db
-        .select({ name: transactions.name })
-        .from(transactions)
-        .where(and(eq(transactions.portfolioId, portfolioId), eq(transactions.symbol, symbol)))
-        .orderBy(transactions.transactionDate)
-        .limit(1);
-
-      if (!latestTransaction[0]) {
-        throw new Error(`No transaction found for symbol ${symbol}`);
-      }
-
-      // 准备持仓数据（使用全历史数据作为holdings表的汇总数据）
-      const holdingData: NewHolding = {
-        portfolioId,
-        symbol,
-        name: latestTransaction[0].name,
-        shares: currentCycleData.totalShares.toString(), // 当前持股数
-        holdCost: cost.toString(), // 统一成本价
-        totalBuyAmount: allHistoryData.totalBuyAmount.toString(), // 全历史汇总
-        totalSellAmount: allHistoryData.totalSellAmount.toString(), // 全历史汇总
-        totalDividend: allHistoryData.totalDividend.toString(), // 全历史汇总
-        buyCommission: allHistoryData.buyCommission.toString(), // 全历史汇总
-        sellCommission: allHistoryData.sellCommission.toString(), // 全历史汇总
-        buyTax: allHistoryData.buyTax.toString(), // 全历史汇总
-        sellTax: allHistoryData.sellTax.toString(), // 全历史汇总
-        otherFee: allHistoryData.otherFee.toString(), // 全历史汇总
-        isActive: currentCycleData.totalShares > 0,
-        openTime: currentCycleData.openTime ?? new Date(),
-        liquidationTime: currentCycleData.totalShares <= 0 ? new Date() : null,
-      };
-
-      // 检查是否已存在持仓记录
-      const existingHolding = await this.getHolding(portfolioId, symbol);
-
-      if (existingHolding) {
-        // 更新现有记录
-        await db
-          .update(holdings)
-          .set({
-            ...holdingData,
-            updatedAt: new Date(),
-          })
-          .where(and(eq(holdings.portfolioId, portfolioId), eq(holdings.symbol, symbol)));
-      } else {
-        // 插入新记录
-        await db.insert(holdings).values(holdingData);
-      }
+      // 保存持仓数据
+      await this.saveHoldingData(portfolioId, symbol, holdingData);
     } catch (error) {
       console.error(`Error updating holding for ${symbol}:`, error);
       throw error;
+    }
+  }
+
+  /**
+   * 获取交易数据
+   */
+  private static async getTransactionData(portfolioId: number, symbol: string) {
+    const currentCycleData = await TransactionProcessor.getCurrentCycleSharesData(portfolioId, symbol);
+    const allHistoryData = await TransactionProcessor.getAllHistorySharesData(portfolioId, symbol);
+    return { currentCycleData, allHistoryData };
+  }
+
+  /**
+   * 准备持仓数据
+   */
+  private static async prepareHoldingData(
+    portfolioId: number,
+    symbol: string,
+    currentCycleData: any,
+    allHistoryData: any,
+  ): Promise<NewHolding> {
+    const cost = FinancialCalculator.calculateCost(allHistoryData, currentCycleData.totalShares);
+    const stockName = await this.getStockName(portfolioId, symbol);
+    const lastTradeInfo = await this.getLastTradeInfo(portfolioId, symbol);
+
+    return {
+      portfolioId,
+      symbol,
+      name: stockName,
+      shares: currentCycleData.totalShares.toString(),
+      holdCost: cost.toString(),
+      totalBuyAmount: allHistoryData.totalBuyAmount.toString(),
+      totalSellAmount: allHistoryData.totalSellAmount.toString(),
+      totalDividend: allHistoryData.totalDividend.toString(),
+      buyCommission: allHistoryData.buyCommission.toString(),
+      sellCommission: allHistoryData.sellCommission.toString(),
+      buyTax: allHistoryData.buyTax.toString(),
+      sellTax: allHistoryData.sellTax.toString(),
+      otherFee: allHistoryData.otherFee.toString(),
+      isActive: currentCycleData.totalShares > 0,
+      openTime: currentCycleData.openTime ?? new Date(),
+      liquidationTime: currentCycleData.totalShares <= 0 ? new Date() : null,
+      lastBuyPrice: lastTradeInfo.lastBuyPrice ?? null,
+      lastBuyDate: lastTradeInfo.lastBuyDate ?? null,
+      lastSellPrice: lastTradeInfo.lastSellPrice ?? null,
+      lastSellDate: lastTradeInfo.lastSellDate ?? null,
+    };
+  }
+
+  /**
+   * 获取股票名称
+   */
+  private static async getStockName(portfolioId: number, symbol: string): Promise<string> {
+    const latestTransaction = await db
+      .select({ name: transactions.name })
+      .from(transactions)
+      .where(and(eq(transactions.portfolioId, portfolioId), eq(transactions.symbol, symbol)))
+      .orderBy(transactions.transactionDate)
+      .limit(1);
+
+    if (!latestTransaction[0]) {
+      throw new Error(`No transaction found for symbol ${symbol}`);
+    }
+
+    return latestTransaction[0].name;
+  }
+
+  /**
+   * 保存持仓数据
+   */
+  private static async saveHoldingData(portfolioId: number, symbol: string, holdingData: NewHolding): Promise<void> {
+    const existingHolding = await this.getHolding(portfolioId, symbol);
+
+    if (existingHolding) {
+      await db
+        .update(holdings)
+        .set({
+          ...holdingData,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(holdings.portfolioId, portfolioId), eq(holdings.symbol, symbol)));
+    } else {
+      await db.insert(holdings).values(holdingData);
     }
   }
 
@@ -150,6 +187,60 @@ export class HoldingService {
   static async getHoldingShares(portfolioId: number, symbol: string): Promise<number> {
     const holding = await this.getHolding(portfolioId, symbol);
     return holding ? Number(holding.shares) : 0;
+  }
+
+  /**
+   * 获取最近的买入和卖出交易信息
+   */
+  static async getLastTradeInfo(
+    portfolioId: number,
+    symbol: string,
+  ): Promise<{
+    lastBuyPrice?: string;
+    lastBuyDate?: Date;
+    lastSellPrice?: string;
+    lastSellDate?: Date;
+  }> {
+    // 获取最近的买入交易
+    const lastBuyTransaction = await db
+      .select({
+        price: transactions.price,
+        transactionDate: transactions.transactionDate,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.portfolioId, portfolioId),
+          eq(transactions.symbol, symbol),
+          eq(transactions.type, TransactionType.BUY),
+        ),
+      )
+      .orderBy(desc(transactions.transactionDate))
+      .limit(1);
+
+    // 获取最近的卖出交易
+    const lastSellTransaction = await db
+      .select({
+        price: transactions.price,
+        transactionDate: transactions.transactionDate,
+      })
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.portfolioId, portfolioId),
+          eq(transactions.symbol, symbol),
+          eq(transactions.type, TransactionType.SELL),
+        ),
+      )
+      .orderBy(desc(transactions.transactionDate))
+      .limit(1);
+
+    return {
+      lastBuyPrice: lastBuyTransaction[0]?.price ?? undefined,
+      lastBuyDate: lastBuyTransaction[0]?.transactionDate ?? undefined,
+      lastSellPrice: lastSellTransaction[0]?.price ?? undefined,
+      lastSellDate: lastSellTransaction[0]?.transactionDate ?? undefined,
+    };
   }
 
   /**

@@ -61,6 +61,11 @@ export interface HoldingDetail {
   isActive: boolean; // 是否活跃持仓
   openTime: string; // 开仓时间
   liquidationTime?: string; // 清仓时间
+  // 最近交易记录字段
+  lastBuyPrice?: number; // 最近一次买入价格
+  lastBuyDate?: string; // 最近一次买入日期
+  lastSellPrice?: number; // 最近一次卖出价格
+  lastSellDate?: string; // 最近一次卖出日期
 }
 
 // 交易记录详情接口

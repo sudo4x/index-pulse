@@ -4,7 +4,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { formatPercent, formatShares } from "@/lib/utils/format-utils";
+import { calculateDaysDiff, formatDaysDisplay } from "@/lib/utils/date-utils";
+import {
+  formatPercent,
+  formatShares,
+  calculateChangePercent,
+  formatChangePercent,
+  getChangePercentColorClass,
+} from "@/lib/utils/format-utils";
 import { HoldingDetail } from "@/types/investment";
 
 interface HoldingTableHelpersProps {
@@ -81,6 +88,52 @@ export const createHoldingRowHelpers = ({
     </TableCell>
   );
 
+  const renderLastBuyCell = (holding: HoldingDetail) => {
+    if (!holding.lastBuyPrice || !holding.lastBuyDate) {
+      return (
+        <TableCell className="text-center">
+          <span className="text-gray-400">-</span>
+        </TableCell>
+      );
+    }
+
+    const changePercent = calculateChangePercent(holding.currentPrice, holding.lastBuyPrice);
+    const days = calculateDaysDiff(holding.lastBuyDate);
+    const colorClass = getChangePercentColorClass(changePercent);
+
+    return (
+      <TableCell className="text-center">
+        <div className="flex flex-col space-y-1">
+          <span className={cn("text-sm font-medium", colorClass)}>{formatChangePercent(changePercent)}</span>
+          <span className="text-xs text-gray-500">{formatDaysDisplay(days)}</span>
+        </div>
+      </TableCell>
+    );
+  };
+
+  const renderLastSellCell = (holding: HoldingDetail) => {
+    if (!holding.lastSellPrice || !holding.lastSellDate) {
+      return (
+        <TableCell className="text-center">
+          <span className="text-gray-400">-</span>
+        </TableCell>
+      );
+    }
+
+    const changePercent = calculateChangePercent(holding.currentPrice, holding.lastSellPrice);
+    const days = calculateDaysDiff(holding.lastSellDate);
+    const colorClass = getChangePercentColorClass(changePercent);
+
+    return (
+      <TableCell className="text-center">
+        <div className="flex flex-col space-y-1">
+          <span className={cn("text-sm font-medium", colorClass)}>{formatChangePercent(changePercent)}</span>
+          <span className="text-xs text-gray-500">{formatDaysDisplay(days)}</span>
+        </div>
+      </TableCell>
+    );
+  };
+
   const renderActionsCell = (holding: HoldingDetail) => (
     <TableCell className="text-center">
       <div className="flex items-center justify-center space-x-1">
@@ -113,6 +166,8 @@ export const createHoldingRowHelpers = ({
       {renderPriceCostCell(holding)}
       {renderProfitLossCell(holding.dayFloatAmount, holding.dayFloatRate)}
       {renderProfitLossCell(holding.profitAmount, holding.profitRate)}
+      {renderLastBuyCell(holding)}
+      {renderLastSellCell(holding)}
       {renderActionsCell(holding)}
     </TableRow>
   );

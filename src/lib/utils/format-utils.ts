@@ -33,3 +33,51 @@ export function formatCurrency(value: number, currency: string = "¥"): string {
 export function formatShares(shares: number): string {
   return shares.toLocaleString("zh-CN");
 }
+
+/**
+ * 计算涨跌幅
+ * @param currentPrice 当前价格
+ * @param basePrice 基准价格
+ * @returns 涨跌幅（小数形式，如 0.05 表示 5%）
+ */
+export function calculateChangePercent(
+  currentPrice: number | string | null,
+  basePrice: number | string | null,
+): number {
+  const current = typeof currentPrice === "string" ? parseFloat(currentPrice) : currentPrice;
+  const base = typeof basePrice === "string" ? parseFloat(basePrice) : basePrice;
+
+  if (!current || !base || base === 0) return 0;
+
+  return (current - base) / base;
+}
+
+/**
+ * 格式化涨跌幅显示
+ * @param changePercent 涨跌幅（小数形式）
+ * @param decimalPlaces 小数位数，默认为 2
+ * @returns 格式化的涨跌幅字符串
+ */
+export function formatChangePercent(changePercent: number, decimalPlaces: number = 2): string {
+  const percentValue = changePercent * 100;
+  const formatted = percentValue.toFixed(decimalPlaces);
+
+  if (percentValue > 0) {
+    return `+${formatted}%`;
+  } else if (percentValue < 0) {
+    return `${formatted}%`;
+  } else {
+    return "0.00%";
+  }
+}
+
+/**
+ * 获取涨跌幅颜色类名
+ * @param changePercent 涨跌幅（小数形式）
+ * @returns CSS 类名字符串
+ */
+export function getChangePercentColorClass(changePercent: number): string {
+  if (changePercent > 0) return "text-red-600"; // 涨红
+  if (changePercent < 0) return "text-green-600"; // 跌绿
+  return "text-gray-600"; // 平盘灰
+}

@@ -56,6 +56,11 @@ export const holdings = pgTable(
     isActive: boolean("is_active").notNull().default(true), // 是否活跃持仓
     openTime: timestamp("open_time").notNull(), // 首次买入时间
     liquidationTime: timestamp("liquidation_time"), // 清仓时间
+    // 最近交易记录字段
+    lastBuyPrice: decimal("last_buy_price", { precision: 18, scale: 6 }), // 最近一次买入价格
+    lastBuyDate: timestamp("last_buy_date"), // 最近一次买入日期
+    lastSellPrice: decimal("last_sell_price", { precision: 18, scale: 6 }), // 最近一次卖出价格
+    lastSellDate: timestamp("last_sell_date"), // 最近一次卖出日期
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
