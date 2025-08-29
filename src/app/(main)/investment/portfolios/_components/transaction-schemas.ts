@@ -31,17 +31,17 @@ const splitSchema = baseTransactionSchema.extend({
 });
 
 const dividendSchema = baseTransactionSchema.extend({
-  per10SharesTransfer: z
+  unitIncreaseShares: z
     .number()
     .min(0)
     .optional()
     .transform((val) => val ?? 0),
-  per10SharesBonus: z
+  unitShares: z
     .number()
     .min(0)
     .optional()
     .transform((val) => val ?? 0),
-  per10SharesDividend: z
+  unitDividend: z
     .number()
     .min(0)
     .optional()
@@ -95,9 +95,9 @@ export function getTransactionDefaultValues(transactionType: TransactionType) {
     case TransactionType.DIVIDEND:
       return {
         ...baseDefaults,
-        per10SharesTransfer: 0,
-        per10SharesBonus: 0,
-        per10SharesDividend: 0,
+        unitIncreaseShares: 0,
+        unitShares: 0,
+        unitDividend: 0,
         tax: 0,
       };
     default:

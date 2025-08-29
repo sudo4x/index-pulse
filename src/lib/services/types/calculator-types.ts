@@ -60,9 +60,8 @@ export interface TransactionRecord {
   tax?: number | string | null;
   transactionDate: Date;
   unitShares?: number | string | null;
-  per10SharesTransfer?: number | string | null;
-  per10SharesBonus?: number | string | null;
-  per10SharesDividend?: number | string | null;
+  unitIncreaseShares?: number | string | null;
+  unitDividend?: number | string | null;
 }
 
 export interface DayTradingData {

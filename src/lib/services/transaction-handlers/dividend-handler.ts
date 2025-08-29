@@ -47,8 +47,8 @@ export class DividendHandler extends BaseTransactionHandler {
   }
 
   private calculateDividendAmounts(input: TransactionInput, holdingShares: number) {
-    const per10SharesDividend = Number(input.per10SharesDividend ?? 0);
-    const dividendAmount = (per10SharesDividend / 10) * holdingShares;
+    const unitDividend = Number(input.unitDividend ?? 0);
+    const dividendAmount = (unitDividend / 10) * holdingShares;
     const taxAmount = Number(input.tax ?? 0);
     return { dividendAmount, taxAmount };
   }
@@ -71,9 +71,9 @@ export class DividendHandler extends BaseTransactionHandler {
 
   private buildDividendSpecificInfo(input: TransactionInput, taxAmount: number) {
     return {
-      per10SharesTransfer: input.per10SharesTransfer?.toString() ?? null,
-      per10SharesBonus: input.per10SharesBonus?.toString() ?? null,
-      per10SharesDividend: input.per10SharesDividend?.toString() ?? null,
+      unitIncreaseShares: input.unitIncreaseShares?.toString() ?? null,
+      unitShares: input.unitShares?.toString() ?? null,
+      unitDividend: input.unitDividend?.toString() ?? null,
       description: `除权除息 - 税费: ${taxAmount.toFixed(2)}元`,
     };
   }

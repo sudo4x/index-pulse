@@ -36,12 +36,11 @@ export const bulkTransactionRequestSchema = z.object({
         // 买入/卖出字段
         shares: z.number().positive("数量必须大于0").optional(),
         price: z.number().positive("价格必须大于0").optional(),
-        // 合股/拆股字段
-        unitShares: z.number().positive("合股/拆股比例必须大于0").optional(),
+        // 合股/拆股/送股字段 (共用unitShares字段)
+        unitShares: z.number().min(0, "股数比例不能为负数").optional(),
         // 除权除息字段
-        per10SharesTransfer: z.number().min(0, "每10股转增不能为负数").optional(),
-        per10SharesBonus: z.number().min(0, "每10股送股不能为负数").optional(),
-        per10SharesDividend: z.number().min(0, "每10股红利不能为负数").optional(),
+        unitIncreaseShares: z.number().min(0, "每10股转增不能为负数").optional(),
+        unitDividend: z.number().min(0, "每10股红利不能为负数").optional(),
         tax: z.number().min(0, "税费不能为负数").optional(),
       }),
     )
@@ -217,11 +216,10 @@ export class QuickEntryValidator {
   ): string | null {
     // 类型守卫：检查是否具有除权除息相关属性
     const dividendTransaction = transaction as any;
-    const hasValidDividend =
-      dividendTransaction.per10SharesDividend != null && dividendTransaction.per10SharesDividend > 0;
-    const hasValidBonus = dividendTransaction.per10SharesBonus != null && dividendTransaction.per10SharesBonus > 0;
+    const hasValidDividend = dividendTransaction.unitDividend != null && dividendTransaction.unitDividend > 0;
+    const hasValidBonus = dividendTransaction.unitShares != null && dividendTransaction.unitShares > 0;
     const hasValidTransfer =
-      dividendTransaction.per10SharesTransfer != null && dividendTransaction.per10SharesTransfer > 0;
+      dividendTransaction.unitIncreaseShares != null && dividendTransaction.unitIncreaseShares > 0;
 
     if (!hasValidDividend && !hasValidBonus && !hasValidTransfer) {
       return `第${index}条记录：除权除息操作必须提供有效的红利、送股或转增信息`;

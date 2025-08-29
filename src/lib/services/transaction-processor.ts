@@ -145,9 +145,8 @@ export class TransactionProcessor {
     transaction: {
       type: TransactionType;
       unitShares?: number | string | null;
-      per10SharesTransfer?: number | string | null;
-      per10SharesBonus?: number | string | null;
-      per10SharesDividend?: number | string | null;
+      unitIncreaseShares?: number | string | null;
+      unitDividend?: number | string | null;
     },
     shares: number,
     amount: number,
@@ -207,14 +206,14 @@ export class TransactionProcessor {
   private static processDividendTransaction(
     result: TransactionData,
     transaction: {
-      per10SharesTransfer?: number | string | null;
-      per10SharesBonus?: number | string | null;
-      per10SharesDividend?: number | string | null;
+      unitIncreaseShares?: number | string | null;
+      unitShares?: number | string | null;
+      unitDividend?: number | string | null;
     },
   ) {
-    const transfer = parseFloat(String(transaction.per10SharesTransfer)) || 0;
-    const bonus = parseFloat(String(transaction.per10SharesBonus)) || 0;
-    const dividend = parseFloat(String(transaction.per10SharesDividend)) || 0;
+    const transfer = parseFloat(String(transaction.unitIncreaseShares)) || 0;
+    const bonus = parseFloat(String(transaction.unitShares)) || 0;
+    const dividend = parseFloat(String(transaction.unitDividend)) || 0;
 
     // 每10股红利计算
     if (dividend > 0) {

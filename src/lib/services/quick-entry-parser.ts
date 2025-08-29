@@ -335,9 +335,9 @@ export class QuickEntryParser {
     return {
       ...baseData,
       type: "dividend",
-      per10SharesTransfer: rawData.transferShares,
-      per10SharesBonus: rawData.bonusShares,
-      per10SharesDividend: rawData.dividend,
+      unitIncreaseShares: rawData.transferShares,
+      unitShares: rawData.bonusShares,
+      unitDividend: rawData.dividend,
     } as TransactionFormData;
   }
 

@@ -75,13 +75,10 @@ export interface TransactionDetail {
   price?: number;
   amount: number;
   commission?: number;
-  commissionRate?: number;
   tax?: number;
-  taxRate?: number;
-  unitShares?: number; // 合股拆股相关
-  per10SharesTransfer?: number; // 每10股转增
-  per10SharesBonus?: number; // 每10股送股
-  per10SharesDividend?: number; // 每10股红利
+  unitShares?: number; // 合股拆股送股相关
+  unitIncreaseShares?: number; // 每10股转增股数
+  unitDividend?: number; // 每10股现金红利
   comment?: string;
   description: string; // 描述信息
 }
@@ -120,15 +117,12 @@ export interface TransactionFormData {
   shares?: number;
   price?: number;
   commission?: number;
-  commissionRate?: number;
   tax?: number;
-  taxRate?: number;
-  // 合股/拆股特有字段
+  // 合股/拆股/送股特有字段
   unitShares?: number;
   // 除权除息特有字段
-  per10SharesTransfer?: number;
-  per10SharesBonus?: number;
-  per10SharesDividend?: number;
+  unitIncreaseShares?: number; // 每10股转增股数
+  unitDividend?: number; // 每10股现金红利
   // 通用字段
   comment?: string;
 }

@@ -102,11 +102,11 @@ export class TransactionValidator {
     }
 
     // 验证至少填写一个除权除息字段
-    const per10SharesTransfer = Number(transactionData.per10SharesTransfer ?? 0);
-    const per10SharesBonus = Number(transactionData.per10SharesBonus ?? 0);
-    const per10SharesDividend = Number(transactionData.per10SharesDividend ?? 0);
+    const unitIncreaseShares = Number(transactionData.unitIncreaseShares ?? 0);
+    const unitShares = Number(transactionData.unitShares ?? 0);
+    const unitDividend = Number(transactionData.unitDividend ?? 0);
 
-    if (per10SharesTransfer <= 0 && per10SharesBonus <= 0 && per10SharesDividend <= 0) {
+    if (unitIncreaseShares <= 0 && unitShares <= 0 && unitDividend <= 0) {
       return {
         isValid: false,
         error: "至少需要填写一个除权除息字段：每10股转增、每10股送股或每10股红利",

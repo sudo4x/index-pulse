@@ -27,21 +27,21 @@ export class TransactionHelpers {
    * 格式化股息描述
    */
   static formatDividendDescription(
-    per10SharesTransfer?: string | number | null,
-    per10SharesBonus?: string | number | null,
-    per10SharesDividend?: string | number | null,
+    unitIncreaseShares?: string | number | null,
+    unitShares?: string | number | null,
+    unitDividend?: string | number | null,
   ): string {
     let desc = "";
-    if (per10SharesDividend && Number(per10SharesDividend) > 0) {
-      desc += `每10股红利 ¥${per10SharesDividend}`;
+    if (unitDividend && Number(unitDividend) > 0) {
+      desc += `每10股红利 ¥${unitDividend}`;
     }
-    if (per10SharesTransfer && Number(per10SharesTransfer) > 0) {
+    if (unitIncreaseShares && Number(unitIncreaseShares) > 0) {
       if (desc) desc += "，";
-      desc += `每10股转增 ${per10SharesTransfer} 股`;
+      desc += `每10股转增 ${unitIncreaseShares} 股`;
     }
-    if (per10SharesBonus && Number(per10SharesBonus) > 0) {
+    if (unitShares && Number(unitShares) > 0) {
       if (desc) desc += "，";
-      desc += `每10股送股 ${per10SharesBonus} 股`;
+      desc += `每10股送股 ${unitShares} 股`;
     }
     return desc || "除权除息";
   }
@@ -54,9 +54,8 @@ export class TransactionHelpers {
     shares: string | number | null;
     price: string | number | null;
     unitShares?: string | number | null;
-    per10SharesTransfer?: string | number | null;
-    per10SharesBonus?: string | number | null;
-    per10SharesDividend?: string | number | null;
+    unitIncreaseShares?: string | number | null;
+    unitDividend?: string | number | null;
   }): string {
     const type = transaction.type;
 
@@ -75,9 +74,9 @@ export class TransactionHelpers {
         return `1 股拆为 ${unitShares} 股`;
       case TransactionType.DIVIDEND:
         return this.formatDividendDescription(
-          transaction.per10SharesTransfer,
-          transaction.per10SharesBonus,
-          transaction.per10SharesDividend,
+          transaction.unitIncreaseShares,
+          transaction.unitShares,
+          transaction.unitDividend,
         );
       default:
         return "未知交易类型";

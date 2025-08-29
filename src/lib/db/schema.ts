@@ -84,17 +84,14 @@ export const transactions = pgTable(
     price: decimal("price", { precision: 18, scale: 6 }).notNull().default("0"), // 交易价格
     amount: decimal("amount", { precision: 18, scale: 2 }).notNull().default("0"), // 交易金额
     commission: decimal("commission", { precision: 18, scale: 2 }).default("0"), // 佣金
-    commissionRate: decimal("commission_rate", { precision: 8, scale: 6 }), // 佣金费率 (千分比) - 保留兼容
     tax: decimal("tax", { precision: 18, scale: 2 }).default("0"), // 税费
-    taxRate: decimal("tax_rate", { precision: 8, scale: 6 }), // 税费费率 (千分比) - 保留兼容
     transferFee: decimal("transfer_fee", { precision: 18, scale: 2 }).default("0"), // 过户费
     description: text("description"), // 费用明细说明
-    // 合股拆股相关字段
-    unitShares: decimal("unit_shares", { precision: 18, scale: 6 }), // 合股：多少股合为1股 / 拆股：1股拆为多少股
+    // 合股拆股送股相关字段
+    unitShares: decimal("unit_shares", { precision: 18, scale: 6 }), // 合股：多少股合为1股 / 拆股：1股拆为多少股 / 送股：每10股送股数
     // 除权除息相关字段
-    per10SharesTransfer: decimal("per_10_shares_transfer", { precision: 18, scale: 6 }), // 每10股转增
-    per10SharesBonus: decimal("per_10_shares_bonus", { precision: 18, scale: 6 }), // 每10股送股
-    per10SharesDividend: decimal("per_10_shares_dividend", { precision: 18, scale: 6 }), // 每10股红利
+    unitIncreaseShares: decimal("unit_increase_shares", { precision: 18, scale: 6 }), // 每10股转增股数
+    unitDividend: decimal("unit_dividend", { precision: 18, scale: 6 }), // 每10股现金红利
     comment: text("comment"), // 备注
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

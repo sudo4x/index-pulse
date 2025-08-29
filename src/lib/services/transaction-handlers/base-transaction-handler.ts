@@ -10,11 +10,10 @@ export interface TransactionInput {
   price?: number;
   comment?: string;
   // 除权除息字段
-  per10SharesTransfer?: number;
-  per10SharesBonus?: number;
-  per10SharesDividend?: number;
+  unitIncreaseShares?: number; // 每10股转增股数
+  unitDividend?: number; // 每10股现金红利
   tax?: number;
-  // 合股拆股字段
+  // 合股拆股送股字段
   unitShares?: number;
 }
 
@@ -35,9 +34,8 @@ export interface TransactionOutput {
   comment: string | null;
   // 可选字段
   unitShares?: string | null;
-  per10SharesTransfer?: string | null;
-  per10SharesBonus?: string | null;
-  per10SharesDividend?: string | null;
+  unitIncreaseShares?: string | null;
+  unitDividend?: string | null;
 }
 
 export interface PortfolioConfig {

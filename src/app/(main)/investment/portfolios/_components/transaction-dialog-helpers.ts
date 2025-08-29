@@ -23,9 +23,6 @@ export const createUnitData = (transaction: any) => ({
   unitShares: parseDecimal(transaction.unitShares),
   unitDividend: parseDecimal(transaction.unitDividend),
   unitIncreaseShares: parseDecimal(transaction.unitIncreaseShares),
-  per10SharesTransfer: parseDecimal(transaction.per10SharesTransfer),
-  per10SharesBonus: parseDecimal(transaction.per10SharesBonus),
-  per10SharesDividend: parseDecimal(transaction.per10SharesDividend),
   recordDate: transaction.recordDate ? new Date(transaction.recordDate) : null,
 });
 

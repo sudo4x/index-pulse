@@ -16,7 +16,7 @@ export function DividendFields({ form }: DividendFieldsProps) {
         <FormLabel className="text-sm font-medium">每10股转增</FormLabel>
         <FormField
           control={form.control}
-          name="per10SharesTransfer"
+          name="unitIncreaseShares"
           render={({ field }) => (
             <FormItem>
               <FormControl>
@@ -40,7 +40,7 @@ export function DividendFields({ form }: DividendFieldsProps) {
         <FormLabel className="text-sm font-medium">每10股送股</FormLabel>
         <FormField
           control={form.control}
-          name="per10SharesBonus"
+          name="unitShares"
           render={({ field }) => (
             <FormItem>
               <FormControl>
@@ -64,7 +64,7 @@ export function DividendFields({ form }: DividendFieldsProps) {
         <FormLabel className="text-sm font-medium">每10股红利</FormLabel>
         <FormField
           control={form.control}
-          name="per10SharesDividend"
+          name="unitDividend"
           render={({ field }) => (
             <FormItem>
               <FormControl>

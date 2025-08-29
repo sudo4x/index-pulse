@@ -22,9 +22,9 @@ export interface MergeSplitFormData extends BaseTransactionFormData {
 
 // 股息分红表单数据
 export interface DividendFormData extends BaseTransactionFormData {
-  per10SharesTransfer?: number;
-  per10SharesBonus?: number;
-  per10SharesDividend?: number;
+  unitIncreaseShares?: number; // 每10股转增股数
+  unitShares?: number; // 每10股送股数
+  unitDividend?: number; // 每10股红利
   tax?: number;
 }
 
