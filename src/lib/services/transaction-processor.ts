@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
 import { TransactionType } from "@/types/investment";
 
-import { PositionCycleManager } from "./position-cycle-manager";
 import { SharesData, TransactionData, TransactionRecord } from "./types/calculator-types";
 
 /**
@@ -13,17 +12,17 @@ import { SharesData, TransactionData, TransactionRecord } from "./types/calculat
  */
 export class TransactionProcessor {
   /**
-   * 获取当前仓位周期的股份数据
+   * 获取当前活跃持仓的股份数据（基于所有交易记录计算）
    */
   static async getCurrentCycleSharesData(portfolioId: number, symbol: string): Promise<SharesData> {
-    try {
-      const currentCycleTransactions = await PositionCycleManager.getCurrentCycleTransactions(portfolioId, symbol);
-      return this.calculateSharesDataFromTransactions(currentCycleTransactions);
-    } catch (error) {
-      // 如果没有找到当前周期，返回空数据
-      console.warn(`No current cycle found for ${symbol}:`, error);
-      return this.createInitialState();
-    }
+    // 获取该品种的所有交易记录
+    const allTransactions = await db
+      .select()
+      .from(transactions)
+      .where(and(eq(transactions.portfolioId, portfolioId), eq(transactions.symbol, symbol)))
+      .orderBy(transactions.transactionDate);
+
+    return this.calculateSharesDataFromTransactions(allTransactions);
   }
 
   /**

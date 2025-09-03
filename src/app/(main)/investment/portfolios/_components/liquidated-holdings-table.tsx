@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useRef, useCallback } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
@@ -13,11 +15,11 @@ import { HoldingDialogsManager } from "./holding-dialogs-manager";
 import { HoldingsDataTable } from "./holdings-data-table";
 import { PriceStatusIndicator } from "./price-status-indicator";
 
-interface HoldingsTableContainerProps {
+interface LiquidatedHoldingsTableProps {
   portfolioId: string;
 }
 
-export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerProps) {
+export function LiquidatedHoldingsTable({ portfolioId }: LiquidatedHoldingsTableProps) {
   const [holdings, setHoldings] = useState<HoldingDetail[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [enablePriceUpdates, setEnablePriceUpdates] = useState(() =>
@@ -26,7 +28,7 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
 
-  // 使用新的价格更新Hook
+  // 使用价格更新Hook
   const {
     isConnected,
     isConnecting,
@@ -43,10 +45,9 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
   const handlePriceUpdatesChange = (checked: boolean) => {
     setEnablePriceUpdates(checked);
     setLocalStorageItem(LOCAL_STORAGE_KEYS.HOLDINGS_PRICE_UPDATES_ENABLED, checked);
-    // 连接/断开由use-price-updates内部的动态连接控制处理
   };
 
-  const fetchHoldings = useCallback(async () => {
+  const fetchLiquidatedHoldings = useCallback(async () => {
     if (!portfolioId || portfolioId === "undefined") {
       setIsLoading(false);
       return;
@@ -55,22 +56,24 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
     setIsLoading(true);
 
     try {
-      // 只获取活跃持仓（includeHistorical=false）
-      const response = await fetch(`/api/holdings?portfolioId=${portfolioId}&includeHistorical=false`);
+      // 获取已清仓的持仓记录（includeHistorical=true 但只取 isActive=false）
+      const response = await fetch(`/api/holdings?portfolioId=${portfolioId}&includeHistorical=true`);
 
       if (!response.ok) {
-        throw new Error("获取持仓数据失败");
+        throw new Error("获取已清仓持仓数据失败");
       }
       const result = await response.json();
 
       if (result.success) {
-        setHoldings(result.data ?? []);
+        // 过滤出已清仓的记录
+        const liquidatedHoldings = (result.data ?? []).filter((holding: HoldingDetail) => !holding.isActive);
+        setHoldings(liquidatedHoldings);
       }
     } catch (error) {
-      console.error("Error fetching holdings:", error);
+      console.error("Error fetching liquidated holdings:", error);
       toast({
         title: "错误",
-        description: "获取持仓数据失败，请重试",
+        description: "获取已清仓持仓数据失败，请重试",
         variant: "destructive",
       });
     } finally {
@@ -79,7 +82,7 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
   }, [portfolioId, toast]);
 
   // 使用业务逻辑Hook
-  const [tableState, tableActions] = useHoldingsTableLogic(portfolioId, fetchHoldings);
+  const [tableState, tableActions] = useHoldingsTableLogic(portfolioId, fetchLiquidatedHoldings);
 
   // 使用防抖获取数据
   useEffect(() => {
@@ -89,7 +92,7 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
 
     if (portfolioId && portfolioId !== "undefined") {
       timeoutRef.current = setTimeout(() => {
-        fetchHoldings();
+        fetchLiquidatedHoldings();
       }, 50);
     }
 
@@ -98,19 +101,17 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [portfolioId, fetchHoldings]);
+  }, [portfolioId, fetchLiquidatedHoldings]);
 
-  // 管理价格订阅 - 只在启用价格更新时才进行订阅
+  // 管理价格订阅
   const hasSubscribedRef = useRef(false);
 
   useEffect(() => {
-    // 只处理订阅逻辑，连接/断开由use-price-updates内部的动态连接控制处理
     if (enablePriceUpdates && isConnected && holdings.length > 0 && !hasSubscribedRef.current) {
-      console.log("连接成功，订阅所有价格数据");
+      console.log("连接成功，订阅已清仓品种价格数据");
       subscribe();
       hasSubscribedRef.current = true;
     } else if (!isConnected || !enablePriceUpdates) {
-      // 连接断开或禁用价格更新时重置订阅状态
       hasSubscribedRef.current = false;
     }
   }, [enablePriceUpdates, isConnected, holdings.length, subscribe]);
@@ -119,7 +120,7 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
   useEffect(() => {
     return () => {
       if (hasSubscribedRef.current) {
-        console.log("组件卸载，取消订阅");
+        console.log("已清仓组件卸载，取消订阅");
         unsubscribe();
       }
     };
@@ -132,20 +133,12 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
         prevHoldings.map((holding) => {
           const priceUpdate = prices[holding.symbol];
           if (priceUpdate) {
-            // 计算新的市值和盈亏
-            const newMarketValue = holding.shares * priceUpdate.currentPrice;
-            const profitAmount = newMarketValue - holding.cost * holding.shares;
-            const profitRate =
-              holding.cost > 0 ? parseFloat(((priceUpdate.currentPrice - holding.cost) / holding.cost).toFixed(3)) : 0;
-
+            // 已清仓持仓不需要计算盈亏，但可以显示当前价格变化
             return {
               ...holding,
               currentPrice: priceUpdate.currentPrice,
               change: priceUpdate.change,
               changePercent: priceUpdate.changePercent,
-              marketValue: newMarketValue,
-              profitAmount,
-              profitRate,
             };
           }
           return holding;
@@ -158,19 +151,17 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
     return (
       <Card className="shadow-xs">
         <CardHeader>
-          <CardTitle>持仓品种</CardTitle>
+          <CardTitle>已清仓品种</CardTitle>
           <CardAction>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="enable-price-updates"
-                  checked={enablePriceUpdates}
-                  onCheckedChange={(checked) => handlePriceUpdatesChange(checked === true)}
-                />
-                <Label htmlFor="enable-price-updates" className="text-sm font-medium">
-                  价格更新
-                </Label>
-              </div>
+              <Checkbox
+                id="enable-price-updates-liquidated"
+                checked={enablePriceUpdates}
+                onCheckedChange={(checked) => handlePriceUpdatesChange(checked === true)}
+              />
+              <Label htmlFor="enable-price-updates-liquidated" className="text-sm font-medium">
+                价格更新
+              </Label>
             </div>
           </CardAction>
         </CardHeader>
@@ -187,26 +178,24 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
     return (
       <Card className="shadow-xs">
         <CardHeader>
-          <CardTitle>持仓品种</CardTitle>
+          <CardTitle>已清仓品种</CardTitle>
           <CardAction>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="enable-price-updates"
-                  checked={enablePriceUpdates}
-                  onCheckedChange={(checked) => handlePriceUpdatesChange(checked === true)}
-                />
-                <Label htmlFor="enable-price-updates" className="text-sm font-medium">
-                  价格更新
-                </Label>
-              </div>
+              <Checkbox
+                id="enable-price-updates-liquidated"
+                checked={enablePriceUpdates}
+                onCheckedChange={(checked) => handlePriceUpdatesChange(checked === true)}
+              />
+              <Label htmlFor="enable-price-updates-liquidated" className="text-sm font-medium">
+                价格更新
+              </Label>
             </div>
           </CardAction>
         </CardHeader>
         <CardContent>
           <div className="flex h-32 flex-col items-center justify-center space-y-2">
-            <div className="text-muted-foreground">还没有持仓记录</div>
-            <div className="text-muted-foreground text-sm">开始您的第一笔交易</div>
+            <div className="text-muted-foreground">暂无已清仓记录</div>
+            <div className="text-muted-foreground text-sm">您还没有任何已清仓的持仓记录</div>
           </div>
         </CardContent>
       </Card>
@@ -217,19 +206,17 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
     <>
       <Card className="shadow-xs">
         <CardHeader>
-          <CardTitle>持仓品种</CardTitle>
+          <CardTitle>已清仓品种</CardTitle>
           <CardAction>
             <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="enable-price-updates"
-                  checked={enablePriceUpdates}
-                  onCheckedChange={(checked) => handlePriceUpdatesChange(checked === true)}
-                />
-                <Label htmlFor="enable-price-updates" className="text-sm font-medium">
-                  价格更新
-                </Label>
-              </div>
+              <Checkbox
+                id="enable-price-updates-liquidated"
+                checked={enablePriceUpdates}
+                onCheckedChange={(checked) => handlePriceUpdatesChange(checked === true)}
+              />
+              <Label htmlFor="enable-price-updates-liquidated" className="text-sm font-medium">
+                价格更新
+              </Label>
             </div>
           </CardAction>
         </CardHeader>
@@ -268,7 +255,7 @@ export function HoldingsTableContainer({ portfolioId }: HoldingsTableContainerPr
         isDeleting={tableState.isDeleting}
         onDeleteDialogClose={tableActions.closeDeleteDialog}
         onDeleteConfirm={tableActions.handleDeleteHolding}
-        onDataRefresh={fetchHoldings}
+        onDataRefresh={fetchLiquidatedHoldings}
       />
     </>
   );

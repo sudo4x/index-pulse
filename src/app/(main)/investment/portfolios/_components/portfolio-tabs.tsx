@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortfolioOverview } from "@/types/investment";
 
 import { HoldingsTable } from "./holdings-table";
+import { LiquidatedHoldingsTable } from "./liquidated-holdings-table";
 import { OverviewCards } from "./overview-cards";
 import { TransactionDialog } from "./transaction-dialog";
 import { TransactionsTable } from "./transactions-table";
@@ -128,6 +129,7 @@ export function PortfolioTabs({ portfolioId, portfolioName }: PortfolioTabsProps
         <div className="flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="holdings">持仓</TabsTrigger>
+            <TabsTrigger value="liquidated">已清仓</TabsTrigger>
             <TabsTrigger value="transactions">交易记录</TabsTrigger>
             <TabsTrigger value="transfers">转账记录</TabsTrigger>
           </TabsList>
@@ -137,6 +139,10 @@ export function PortfolioTabs({ portfolioId, portfolioName }: PortfolioTabsProps
 
         <TabsContent value="holdings" className="space-y-4">
           <HoldingsTable portfolioId={portfolioId} />
+        </TabsContent>
+
+        <TabsContent value="liquidated" className="space-y-4">
+          <LiquidatedHoldingsTable portfolioId={portfolioId} />
         </TabsContent>
 
         <TabsContent value="transactions" className="space-y-4">

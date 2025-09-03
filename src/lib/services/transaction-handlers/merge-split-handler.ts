@@ -1,4 +1,3 @@
-import { PositionCycleManager } from "@/lib/services/position-cycle-manager";
 import { TransactionType } from "@/types/investment";
 
 import {
@@ -18,20 +17,11 @@ export class MergeSplitHandler extends BaseTransactionHandler {
   }
 
   async processTransaction(input: TransactionInput, _portfolioConfig: PortfolioConfig): Promise<TransactionOutput> {
-    // 分配仓位周期ID（合股拆股使用当前周期）
-    const positionCycleId = await PositionCycleManager.assignCycleId(
-      this.parsePortfolioId(input.portfolioId),
-      this.cleanSymbol(input.symbol),
-      input.type,
-      0, // 合股拆股不涉及股数变动
-    );
-
     return {
       portfolioId: this.parsePortfolioId(input.portfolioId),
       symbol: this.cleanSymbol(input.symbol),
       name: this.cleanName(input.name),
       type: input.type,
-      positionCycleId,
       transactionDate: this.parseDate(input.transactionDate),
       shares: "0",
       price: "0",
