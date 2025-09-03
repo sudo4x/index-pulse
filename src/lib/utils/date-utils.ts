@@ -59,3 +59,43 @@ export function isValidDate(date: Date | string | null): date is Date | string {
   const d = typeof date === "string" ? new Date(date) : date;
   return !isNaN(d.getTime());
 }
+
+/**
+ * 通用日期格式化函数
+ * @param date 要格式化的日期
+ * @param format 格式化模式，默认为 "YYYY-MM-DD"
+ * @returns 格式化后的日期字符串，无效日期返回空字符串
+ */
+export function formatDate(date: Date | string | null, format: string = "YYYY-MM-DD"): string {
+  if (!date || !isValidDate(date)) return "";
+
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "";
+
+  return formatDateParts(d, format);
+}
+
+/**
+ * 根据日期部分和格式生成格式化字符串
+ * @param date 有效的日期对象
+ * @param format 格式化模式
+ * @returns 格式化后的日期字符串
+ */
+function formatDateParts(date: Date, format: string): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  switch (format) {
+    case "YYYY/MM/DD":
+      return `${year}/${month}/${day}`;
+    case "MM/DD/YYYY":
+      return `${month}/${day}/${year}`;
+    case "DD/MM/YYYY":
+      return `${day}/${month}/${year}`;
+    case "YYYY年MM月DD日":
+      return `${year}年${month}月${day}日`;
+    default:
+      return `${year}-${month}-${day}`;
+  }
+}

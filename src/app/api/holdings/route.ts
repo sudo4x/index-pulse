@@ -78,10 +78,10 @@ async function getHoldingsWithRealTimeData(portfolioIdInt: number, includeHistor
             limitUp: "0.000",
             limitDown: "0.000",
           };
-          return transformHoldingData(holding, defaultPrice);
+          return await transformHoldingData(holding, defaultPrice);
         }
 
-        return transformHoldingData(holding, currentPrice);
+        return await transformHoldingData(holding, currentPrice);
       }),
     );
 
@@ -92,8 +92,38 @@ async function getHoldingsWithRealTimeData(portfolioIdInt: number, includeHistor
   }
 }
 
+// 计算已清仓品种的特殊指标
+function calculateLiquidatedMetrics(holding: Holding, holdingData: any) {
+  if (holding.isActive) {
+    return {
+      liquidationPrice: undefined,
+      realizedProfit: undefined,
+      realizedProfitRate: undefined,
+      holdingDays: undefined,
+    };
+  }
+
+  const liquidationPrice = holding.lastSellPrice ? parseFloat(String(holding.lastSellPrice)) : 0;
+  const realizedProfit = holdingData.totalSellAmount - holdingData.totalBuyAmount;
+  const realizedProfitRate = holdingData.totalBuyAmount > 0 ? realizedProfit / holdingData.totalBuyAmount : 0;
+
+  // 计算持有天数：从首次买入到清仓的天数
+  let holdingDays = 0;
+  if (holding.openTime && holding.liquidationTime) {
+    const timeDiff = holding.liquidationTime.getTime() - holding.openTime.getTime();
+    holdingDays = Math.floor(timeDiff / (1000 * 3600 * 24));
+  }
+
+  return {
+    liquidationPrice,
+    realizedProfit,
+    realizedProfitRate,
+    holdingDays,
+  };
+}
+
 // 转换持仓数据
-function transformHoldingData(holding: Holding, currentPrice: StockPrice) {
+async function transformHoldingData(holding: Holding, currentPrice: StockPrice) {
   // 转换数据库 decimal 字段为 number
   const holdingData = {
     shares: parseFloat(String(holding.shares)),
@@ -115,6 +145,9 @@ function transformHoldingData(holding: Holding, currentPrice: StockPrice) {
 
   // 计算盈亏
   const profitLoss = FinancialCalculator.calculateProfitLossFromHoldings(holdingData, currentPrice, cost, marketValue);
+
+  // 已清仓品种的特殊计算
+  const liquidatedMetrics = calculateLiquidatedMetrics(holding, holdingData);
 
   return {
     id: `${holding.portfolioId}-${holding.symbol}`,
@@ -138,6 +171,10 @@ function transformHoldingData(holding: Holding, currentPrice: StockPrice) {
     lastBuyDate: holding.lastBuyDate?.toISOString(),
     lastSellPrice: holding.lastSellPrice ? parseFloat(String(holding.lastSellPrice)) : undefined,
     lastSellDate: holding.lastSellDate?.toISOString(),
+    // 已清仓品种专用字段
+    totalBuyAmount: holdingData.totalBuyAmount,
+    totalSellAmount: holdingData.totalSellAmount,
+    ...liquidatedMetrics,
   };
 }
 

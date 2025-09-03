@@ -12,7 +12,7 @@ import { getLocalStorageItem, setLocalStorageItem, LOCAL_STORAGE_KEYS } from "@/
 import { HoldingDetail } from "@/types/investment";
 
 import { HoldingDialogsManager } from "./holding-dialogs-manager";
-import { HoldingsDataTable } from "./holdings-data-table";
+import { LiquidatedHoldingsDataTable } from "./liquidated-holdings-data-table";
 import { PriceStatusIndicator } from "./price-status-indicator";
 
 interface LiquidatedHoldingsTableProps {
@@ -231,12 +231,7 @@ export function LiquidatedHoldingsTable({ portfolioId }: LiquidatedHoldingsTable
           />
 
           {/* 数据表格 */}
-          <HoldingsDataTable
-            holdings={holdings}
-            onAddClick={tableActions.handleAddClick}
-            onShowTransactions={tableActions.handleShowTransactions}
-            onDeleteClick={tableActions.handleDeleteClick}
-          />
+          <LiquidatedHoldingsDataTable holdings={holdings} onShowTransactions={tableActions.handleShowTransactions} />
         </CardContent>
       </Card>
 

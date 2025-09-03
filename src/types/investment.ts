@@ -66,6 +66,14 @@ export interface HoldingDetail {
   lastBuyDate?: string; // 最近一次买入日期
   lastSellPrice?: number; // 最近一次卖出价格
   lastSellDate?: string; // 最近一次卖出日期
+  // 已清仓品种相关字段
+  totalBuyAmount?: number; // 总买入金额
+  totalSellAmount?: number; // 总卖出金额
+  liquidationPrice?: number; // 清仓价（最后卖出价格）
+  averageSellPrice?: number; // 平均卖出价格
+  realizedProfit?: number; // 实现盈亏
+  realizedProfitRate?: number; // 实现收益率
+  holdingDays?: number; // 持有天数（从首次买入到清仓）
 }
 
 // 交易记录详情接口
