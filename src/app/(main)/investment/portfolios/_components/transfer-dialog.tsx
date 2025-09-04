@@ -19,8 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import { TransferType, TransferTypeNames } from "@/types/investment";
+import { cn } from "@/utils/style-utils";
 
 interface TransferDialogProps {
   isOpen: boolean;

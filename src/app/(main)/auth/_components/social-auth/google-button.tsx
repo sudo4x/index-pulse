@@ -4,7 +4,7 @@ import { siGoogle } from "simple-icons";
 
 import { SimpleIcon } from "@/components/simple-icon";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/style-utils";
 
 export function GoogleButton({ className, ...props }: React.ComponentProps<typeof Button>) {
   const handleGoogleLogin = async () => {

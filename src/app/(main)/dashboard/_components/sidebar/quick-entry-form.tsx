@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { QuickEntryParser } from "@/lib/services/quick-entry-parser";
+import { QuickEntryParser } from "@/services/quick-entry-parser";
 import type { QuickEntryParseResult, BulkTransactionRequest, BulkTransactionResponse } from "@/types/quick-entry";
 
 interface QuickEntryFormProps {

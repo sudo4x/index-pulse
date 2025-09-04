@@ -1,4 +1,4 @@
-import { FeeCalculator, CommissionConfig } from "@/lib/services/fee-calculator";
+import { FeeCalculator, CommissionConfig } from "@/services/fee-calculator";
 import { TransactionType } from "@/types/investment";
 
 import {

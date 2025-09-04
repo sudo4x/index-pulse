@@ -5,7 +5,7 @@ import { eq, desc, asc } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { portfolios } from "@/lib/db/schema";
-import { PortfolioValidator, PortfolioValidationData } from "@/lib/validators/portfolio-validator";
+import { PortfolioValidator, PortfolioValidationData } from "@/validators/portfolio-validator";
 
 // 获取用户的所有投资组合
 export async function GET() {

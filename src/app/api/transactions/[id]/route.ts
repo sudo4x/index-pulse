@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getCurrentUser } from "@/lib/auth/get-user";
-import { TransactionHelpers } from "@/lib/helpers/transaction-helpers";
-import { TransactionService } from "@/lib/services/transaction-service";
+import { TransactionService } from "@/services/transaction-service";
+import { TransactionHelpers } from "@/utils/transaction-helpers";
 
 interface RouteContext {
   params: Promise<{ id: string }>;

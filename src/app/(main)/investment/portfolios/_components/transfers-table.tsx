@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 import { TransferDetail, TransferType } from "@/types/investment";
+import { cn } from "@/utils/style-utils";
 
 import { ConfirmDeleteDialog } from "./confirm-delete-dialog";
 import { TransferDialog } from "./transfer-dialog";

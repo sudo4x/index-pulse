@@ -1,5 +1,5 @@
-import { getStockType, StockType } from "@/lib/utils/stock-type-utils";
 import { TransactionType } from "@/types/investment";
+import { getStockType, StockType } from "@/utils/stock-type-utils";
 
 /**
  * 股票类型和交易所信息

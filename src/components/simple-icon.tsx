@@ -4,7 +4,7 @@ import * as React from "react";
 
 import type { SimpleIcon } from "simple-icons";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/style-utils";
 
 type SimpleIconProps = {
   icon: SimpleIcon;

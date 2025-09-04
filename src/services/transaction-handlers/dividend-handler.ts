@@ -2,8 +2,8 @@ import { eq, and } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
-import { HoldingService } from "@/lib/services/holding-service";
-import { TransactionProcessor } from "@/lib/services/transaction-processor";
+import { HoldingService } from "@/services/holding-service";
+import { TransactionProcessor } from "@/services/transaction-processor";
 import { TransactionType } from "@/types/investment";
 
 import {

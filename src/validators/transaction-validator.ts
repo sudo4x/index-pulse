@@ -1,4 +1,4 @@
-import { TransactionHandlerFactory } from "@/lib/services/transaction-handlers/transaction-handler-factory";
+import { TransactionHandlerFactory } from "@/services/transaction-handlers/transaction-handler-factory";
 import { TransactionType } from "@/types/investment";
 
 export interface ValidationResult {

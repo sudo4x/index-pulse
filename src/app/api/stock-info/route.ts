@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { StockPriceService } from "@/lib/services/stock-price-service";
+import { StockPriceService } from "@/services/stock-price-service";
 
 // 获取股票信息（包含价格、名称等完整信息）
 export async function GET(request: Request) {

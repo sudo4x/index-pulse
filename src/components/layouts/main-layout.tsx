@@ -10,7 +10,6 @@ import { ThemeSwitcher } from "@/app/(main)/dashboard/_components/sidebar/theme-
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { users } from "@/data/users";
-import { cn } from "@/lib/utils";
 import { getPreference } from "@/server/server-actions";
 import {
   SIDEBAR_VARIANT_VALUES,
@@ -20,6 +19,7 @@ import {
   type SidebarCollapsible,
   type ContentLayout,
 } from "@/types/preferences/layout";
+import { cn } from "@/utils/style-utils";
 
 interface MainLayoutProps {
   children: ReactNode;

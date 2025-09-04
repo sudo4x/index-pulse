@@ -1,6 +1,6 @@
 import { FormLabel } from "@/components/ui/form";
 import { useStockSearch, UseStockSearchOptions } from "@/hooks/use-stock-search";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils/style-utils";
 
 import { SelectedStockDisplay } from "./selected-stock-display";
 import { StockSearchInput } from "./stock-search-input";

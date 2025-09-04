@@ -13,7 +13,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-import { cn, getInitials } from "@/lib/utils";
+import { getInitials } from "@/utils/string-utils";
+import { cn } from "@/utils/style-utils";
 
 export function AccountSwitcher({
   users,

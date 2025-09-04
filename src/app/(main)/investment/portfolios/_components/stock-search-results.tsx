@@ -1,6 +1,6 @@
 import { StockSearchResult } from "@/hooks/use-stock-search";
-import { cn } from "@/lib/utils";
-import { formatPercent } from "@/lib/utils/format-utils";
+import { formatPercent } from "@/utils/format-utils";
+import { cn } from "@/utils/style-utils";
 
 interface StockSearchResultsProps {
   showSearchResults: boolean;

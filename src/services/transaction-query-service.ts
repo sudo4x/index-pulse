@@ -2,8 +2,8 @@ import { eq, and, inArray } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { transactions } from "@/lib/db/schema";
-import { TransactionHelpers } from "@/lib/helpers/transaction-helpers";
 import { TransactionDetail, TransactionType } from "@/types/investment";
+import { TransactionHelpers } from "@/utils/transaction-helpers";
 
 /**
  * 交易查询服务

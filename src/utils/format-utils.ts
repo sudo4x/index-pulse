@@ -13,7 +13,7 @@ export function formatPercent(value: number, decimalPlaces: number = 2): string 
 }
 
 /**
- * 格式化金额
+ * 格式化金额（中文版本）
  * @param value 金额数值
  * @param currency 货币符号，默认为 "¥"
  * @returns 格式化后的金额字符串
@@ -23,6 +23,34 @@ export function formatCurrency(value: number, currency: string = "¥"): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+/**
+ * 格式化货币（国际化版本）
+ * @param amount 金额数值
+ * @param opts 格式化选项
+ * @returns 格式化后的货币字符串
+ */
+export function formatCurrencyIntl(
+  amount: number,
+  opts?: {
+    currency?: string;
+    locale?: string;
+    minimumFractionDigits?: number;
+    maximumFractionDigits?: number;
+    noDecimals?: boolean;
+  },
+) {
+  const { currency = "USD", locale = "en-US", minimumFractionDigits, maximumFractionDigits, noDecimals } = opts ?? {};
+
+  const formatOptions: Intl.NumberFormatOptions = {
+    style: "currency",
+    currency,
+    minimumFractionDigits: noDecimals ? 0 : minimumFractionDigits,
+    maximumFractionDigits: noDecimals ? 0 : maximumFractionDigits,
+  };
+
+  return new Intl.NumberFormat(locale, formatOptions).format(amount);
 }
 
 /**

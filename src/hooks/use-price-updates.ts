@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-import { PriceManager, PriceManagerOptions, PriceUpdateData, ConnectionState } from "@/lib/services/price-manager";
-import { GlobalPriceManager } from "@/lib/services/price-manager/global-price-manager";
-import { PRICE_UPDATE_EVENTS } from "@/lib/services/price-manager/websocket-config";
+import { PriceManager, PriceManagerOptions, PriceUpdateData, ConnectionState } from "@/services/price-manager";
+import { GlobalPriceManager } from "@/services/price-manager/global-price-manager";
+import { PRICE_UPDATE_EVENTS } from "@/services/price-manager/websocket-config";
 
 export interface UsePriceUpdatesReturn {
   // 连接状态

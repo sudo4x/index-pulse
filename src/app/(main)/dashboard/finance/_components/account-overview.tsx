@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrencyIntl } from "@/utils/format-utils";
+import { cn } from "@/utils/style-utils";
 
 function ChipSVG() {
   return (
@@ -158,7 +159,7 @@ export function AccountOverview() {
                               transaction.type === "debit" ? "text-destructive" : "text-green-500",
                             )}
                           >
-                            {formatCurrency(transaction.amount, { noDecimals: true })}
+                            {formatCurrencyIntl(transaction.amount, { noDecimals: true })}
                           </span>
                         </div>
                       </div>

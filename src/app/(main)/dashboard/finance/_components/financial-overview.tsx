@@ -7,7 +7,7 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrencyIntl } from "@/utils/format-utils";
 
 const chartData = [
   { month: "Jan", scheduled: 2000, expenses: 4000, income: 9500 },
@@ -70,7 +70,7 @@ export function FinancialOverview() {
             </div>
             <div>
               <p className="text-muted-foreground text-xs uppercase">Income</p>
-              <p className="font-medium tabular-nums">{formatCurrency(totalIncome, { noDecimals: true })}</p>
+              <p className="font-medium tabular-nums">{formatCurrencyIntl(totalIncome, { noDecimals: true })}</p>
             </div>
           </div>
           <Separator orientation="vertical" className="!h-auto" />
@@ -80,7 +80,7 @@ export function FinancialOverview() {
             </div>
             <div>
               <p className="text-muted-foreground text-xs uppercase">Expenses</p>
-              <p className="font-medium tabular-nums">{formatCurrency(totalExpenses, { noDecimals: true })}</p>
+              <p className="font-medium tabular-nums">{formatCurrencyIntl(totalExpenses, { noDecimals: true })}</p>
             </div>
           </div>
           <Separator orientation="vertical" className="!h-auto" />
@@ -90,7 +90,7 @@ export function FinancialOverview() {
             </div>
             <div>
               <p className="text-muted-foreground text-xs uppercase">Scheduled</p>
-              <p className="font-medium tabular-nums">{formatCurrency(totalScheduled, { noDecimals: true })}</p>
+              <p className="font-medium tabular-nums">{formatCurrencyIntl(totalScheduled, { noDecimals: true })}</p>
             </div>
           </div>
         </div>

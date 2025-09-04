@@ -2,8 +2,8 @@ import { X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { StockSearchResult } from "@/hooks/use-stock-search";
-import { cn } from "@/lib/utils";
-import { formatPercent } from "@/lib/utils/format-utils";
+import { formatPercent } from "@/utils/format-utils";
+import { cn } from "@/utils/style-utils";
 
 interface SelectedStockDisplayProps {
   selectedStock: StockSearchResult | null;

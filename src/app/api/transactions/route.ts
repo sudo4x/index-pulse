@@ -5,8 +5,8 @@ import { eq, and, desc } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { transactions, portfolios } from "@/lib/db/schema";
-import { TransactionHelpers } from "@/lib/helpers/transaction-helpers";
-import { TransactionService } from "@/lib/services/transaction-service";
+import { TransactionService } from "@/services/transaction-service";
+import { TransactionHelpers } from "@/utils/transaction-helpers";
 
 // 获取交易记录
 export async function GET(request: Request) {

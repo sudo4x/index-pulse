@@ -4,10 +4,10 @@ import { eq, and } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { transactions, portfolios } from "@/lib/db/schema";
-import { HoldingService } from "@/lib/services/holding-service";
-import { TransactionHandlerFactory } from "@/lib/services/transaction-handlers/transaction-handler-factory";
-import { TransactionValidator } from "@/lib/validators/transaction-validator";
+import { HoldingService } from "@/services/holding-service";
+import { TransactionHandlerFactory } from "@/services/transaction-handlers/transaction-handler-factory";
 import { TransactionType, TransactionTypeNames } from "@/types/investment";
+import { TransactionValidator } from "@/validators/transaction-validator";
 
 export interface TransactionValidationResult {
   success: boolean;

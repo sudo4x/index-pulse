@@ -5,10 +5,10 @@ import { eq, and } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { Holding, portfolios } from "@/lib/db/schema";
-import { FinancialCalculator } from "@/lib/services/financial-calculator";
-import { HoldingService } from "@/lib/services/holding-service";
-import { StockPriceService } from "@/lib/services/stock-price-service";
-import { StockPrice } from "@/lib/services/types/calculator-types";
+import { FinancialCalculator } from "@/services/financial-calculator";
+import { HoldingService } from "@/services/holding-service";
+import { StockPriceService } from "@/services/stock-price-service";
+import { StockPrice } from "@/services/types/calculator-types";
 
 // 验证请求参数
 function validateRequestParams(portfolioId: string | null) {

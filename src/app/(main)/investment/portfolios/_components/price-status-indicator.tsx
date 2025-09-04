@@ -1,4 +1,4 @@
-import { formatRelativeTime } from "@/lib/utils/time-utils";
+import { formatRelativeTime } from "@/utils/time-utils";
 
 interface PriceStatusIndicatorProps {
   isConnected: boolean;

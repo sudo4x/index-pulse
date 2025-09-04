@@ -3,9 +3,9 @@
 import { Moon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { updateThemeMode } from "@/lib/theme-utils";
 import { setValueToCookie } from "@/server/server-actions";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
+import { updateThemeMode } from "@/utils/theme-utils";
 
 export function ThemeSwitcher() {
   const themeMode = usePreferencesStore((s) => s.themeMode);

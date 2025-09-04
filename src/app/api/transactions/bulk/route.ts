@@ -5,9 +5,9 @@ import { eq } from "drizzle-orm";
 import { getCurrentUser } from "@/lib/auth/get-user";
 import { db } from "@/lib/db";
 import { portfolios } from "@/lib/db/schema";
-import { BulkTransactionService } from "@/lib/services/bulk-transaction-service";
-import { QuickEntryValidator } from "@/lib/validators/quick-entry-validator";
+import { BulkTransactionService } from "@/services/bulk-transaction-service";
 import type { BulkTransactionRequest } from "@/types/quick-entry";
+import { QuickEntryValidator } from "@/validators/quick-entry-validator";
 
 // 批量保存交易记录
 export async function POST(request: Request) {

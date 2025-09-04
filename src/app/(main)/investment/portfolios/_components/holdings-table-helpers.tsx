@@ -3,16 +3,16 @@ import { History, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import { calculateDaysDiff, formatDaysDisplay } from "@/lib/utils/date-utils";
+import { HoldingDetail } from "@/types/investment";
+import { calculateDaysDiff, formatDaysDisplay } from "@/utils/date-utils";
 import {
   formatPercent,
   formatShares,
   calculateChangePercent,
   formatChangePercent,
   getChangePercentColorClass,
-} from "@/lib/utils/format-utils";
-import { HoldingDetail } from "@/types/investment";
+} from "@/utils/format-utils";
+import { cn } from "@/utils/style-utils";
 
 interface HoldingTableHelpersProps {
   handleAddClick: (holding: HoldingDetail) => void;

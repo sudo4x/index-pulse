@@ -6,7 +6,7 @@ import { Label, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrencyIntl } from "@/utils/format-utils";
 
 const chartData = [{ period: "last-week", groceries: 380, transport: 120, other: 80 }];
 
@@ -56,7 +56,7 @@ export function ExpenseSummary() {
                             y={(viewBox.cy ?? 0) - 16}
                             className="fill-foreground text-2xl font-bold tabular-nums"
                           >
-                            {formatCurrency(totalExpenses, { noDecimals: true })}
+                            {formatCurrencyIntl(totalExpenses, { noDecimals: true })}
                           </tspan>
                           <tspan x={viewBox.cx} y={(viewBox.cy ?? 0) + 4} className="fill-muted-foreground">
                             Spent
@@ -99,7 +99,9 @@ export function ExpenseSummary() {
             </div>
             <div className="space-y-0.5 text-center">
               <p className="text-muted-foreground text-xs uppercase">Groceries</p>
-              <p className="font-medium tabular-nums">{formatCurrency(chartData[0].groceries, { noDecimals: true })}</p>
+              <p className="font-medium tabular-nums">
+                {formatCurrencyIntl(chartData[0].groceries, { noDecimals: true })}
+              </p>
             </div>
           </div>
           <Separator orientation="vertical" className="!h-auto" />
@@ -109,7 +111,9 @@ export function ExpenseSummary() {
             </div>
             <div className="space-y-0.5 text-center">
               <p className="text-muted-foreground text-xs uppercase">Transport</p>
-              <p className="font-medium tabular-nums">{formatCurrency(chartData[0].transport, { noDecimals: true })}</p>
+              <p className="font-medium tabular-nums">
+                {formatCurrencyIntl(chartData[0].transport, { noDecimals: true })}
+              </p>
             </div>
           </div>
           <Separator orientation="vertical" className="!h-auto" />
@@ -119,12 +123,12 @@ export function ExpenseSummary() {
             </div>
             <div className="space-y-0.5 text-center">
               <p className="text-muted-foreground text-xs uppercase">Other</p>
-              <p className="font-medium tabular-nums">{formatCurrency(chartData[0].other, { noDecimals: true })}</p>
+              <p className="font-medium tabular-nums">{formatCurrencyIntl(chartData[0].other, { noDecimals: true })}</p>
             </div>
           </div>
         </div>
         <span className="text-muted-foreground text-xs tabular-nums">
-          Weekly spending is capped at {formatCurrency(2000, { noDecimals: true })}
+          Weekly spending is capped at {formatCurrencyIntl(2000, { noDecimals: true })}
         </span>
       </CardContent>
     </Card>

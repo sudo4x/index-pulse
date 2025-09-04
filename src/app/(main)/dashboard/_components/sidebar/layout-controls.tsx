@@ -7,12 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { updateContentLayout } from "@/lib/layout-utils";
-import { updateThemeMode, updateThemePreset } from "@/lib/theme-utils";
 import { setValueToCookie } from "@/server/server-actions";
 import { usePreferencesStore } from "@/stores/preferences/preferences-provider";
 import type { SidebarVariant, SidebarCollapsible, ContentLayout } from "@/types/preferences/layout";
 import { THEME_PRESET_OPTIONS, type ThemePreset, type ThemeMode } from "@/types/preferences/theme";
+import { updateContentLayout } from "@/utils/layout-utils";
+import { updateThemeMode, updateThemePreset } from "@/utils/theme-utils";
 
 type LayoutControlsProps = {
   readonly variant: SidebarVariant;

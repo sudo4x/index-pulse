@@ -2,10 +2,10 @@ import { History } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { TableCell, TableRow } from "@/components/ui/table";
-import { cn } from "@/lib/utils";
-import { formatDate } from "@/lib/utils/date-utils";
-import { formatPercent } from "@/lib/utils/format-utils";
 import { HoldingDetail } from "@/types/investment";
+import { formatDate } from "@/utils/date-utils";
+import { formatPercent } from "@/utils/format-utils";
+import { cn } from "@/utils/style-utils";
 
 interface LiquidatedHoldingTableHelpersProps {
   handleShowTransactions: (holding: HoldingDetail) => void;

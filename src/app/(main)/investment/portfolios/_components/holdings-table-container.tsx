@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { useHoldingsTableLogic } from "@/hooks/use-holdings-table-logic";
 import { usePriceUpdates } from "@/hooks/use-price-updates";
 import { useToast } from "@/hooks/use-toast";
-import { getLocalStorageItem, setLocalStorageItem, LOCAL_STORAGE_KEYS } from "@/lib/utils/local-storage";
 import { HoldingDetail } from "@/types/investment";
+import { getLocalStorageItem, setLocalStorageItem, LOCAL_STORAGE_KEYS } from "@/utils/local-storage";
 
 import { HoldingDialogsManager } from "./holding-dialogs-manager";
 import { HoldingsDataTable } from "./holdings-data-table";

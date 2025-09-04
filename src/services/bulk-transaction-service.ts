@@ -1,8 +1,8 @@
 import type { TransactionFormData } from "@/app/(main)/investment/portfolios/_components/transaction-form-types";
-import { TransactionHelpers } from "@/lib/helpers/transaction-helpers";
-import { PortfolioCalculator } from "@/lib/services/portfolio-calculator";
-import { TransactionService } from "@/lib/services/transaction-service";
+import { PortfolioCalculator } from "@/services/portfolio-calculator";
+import { TransactionService } from "@/services/transaction-service";
 import type { BulkTransactionRequest, BulkTransactionResponse } from "@/types/quick-entry";
+import { TransactionHelpers } from "@/utils/transaction-helpers";
 
 /**
  * 批量交易处理服务

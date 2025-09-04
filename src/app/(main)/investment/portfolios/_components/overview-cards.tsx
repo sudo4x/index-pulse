@@ -3,9 +3,9 @@
 import { TrendingUp, TrendingDown, DollarSign, PieChart, Wallet, Target } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { formatCurrency, formatPercent } from "@/lib/utils/format-utils";
 import { PortfolioOverview } from "@/types/investment";
+import { formatCurrency, formatPercent } from "@/utils/format-utils";
+import { cn } from "@/utils/style-utils";
 
 interface OverviewCardsProps {
   portfolio: PortfolioOverview;
